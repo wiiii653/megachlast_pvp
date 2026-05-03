@@ -90,6 +90,8 @@ cmake --build build_sfml3 --target run
 ## Early Access
 
 Early Access release process and quality gate checklist are documented in [EARLY_ACCESS.md](EARLY_ACCESS.md).
+Runtime overlay includes a build label in the form `EA-0.1.0+<git-hash>` for bug report traceability.
+Release notes and active issue tracking are in [CHANGELOG.md](CHANGELOG.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ## Settings & CLI
 

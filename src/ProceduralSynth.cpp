@@ -189,6 +189,10 @@ void ProceduralSynth::init(uint32_t masterSeed)
         &ProceduralSynth::genFire,
         &ProceduralSynth::genReflect,
         &ProceduralSynth::genHit,
+        &ProceduralSynth::genBarrierHit,
+        &ProceduralSynth::genBombHit,
+        &ProceduralSynth::genPowerupHit,
+        &ProceduralSynth::genStarHit,
         &ProceduralSynth::genExplosion,
         &ProceduralSynth::genPowerupSpawn,
         &ProceduralSynth::genPowerupCollect,
@@ -429,6 +433,113 @@ std::vector<int16_t> ProceduralSynth::genHit(uint32_t seed) const
     });
 
     return mixDown3(buzz, click, sub);
+}
+
+// ── HIT BARRIER ───────────────────────────────────────────────────────────────
+// Dry, short "tok/chunk" impact for brick hits.
+std::vector<int16_t> ProceduralSynth::genBarrierHit(uint32_t seed) const
+{
+    std::mt19937 rng(seed);
+    std::uniform_real_distribution<float> U(0.f, 1.f);
+
+    float dur = 0.060f + U(rng) * 0.030f;
+    auto body = pokeyGen({
+        .freq0 = 180.f + U(rng) * 70.f, .freq1 = 60.f,
+        .noise = 0.55f, .poly5 = true,
+        .duty  = 0.52f,
+        .atk   = 0.0006f, .dec = dur * 0.25f, .sus = 0.25f, .rel = dur * 0.45f, .dur = dur,
+        .bits  = 4.0f, .amp = 0.72f,
+        .pokGrid = true, .seed = seed ^ 0xB4110001u,
+    });
+    auto snap = pokeyGen({
+        .freq0 = 1300.f + U(rng) * 400.f, .freq1 = 220.f,
+        .noise = 0.35f, .poly5 = true,
+        .duty  = 0.50f,
+        .atk   = 0.0003f, .dec = 0.006f, .sus = 0.f, .rel = 0.006f, .dur = 0.014f,
+        .bits  = 3.8f, .amp = 0.65f,
+        .pokGrid = false, .seed = seed ^ 0xB4110002u,
+    });
+    return mixDown3(body, snap, std::vector<int16_t>{});
+}
+
+// ── HIT BOMB ──────────────────────────────────────────────────────────────────
+// Sharp warning "tzing" before explosion body.
+std::vector<int16_t> ProceduralSynth::genBombHit(uint32_t seed) const
+{
+    std::mt19937 rng(seed);
+    std::uniform_real_distribution<float> U(0.f, 1.f);
+
+    float dur = 0.070f + U(rng) * 0.030f;
+    auto ping = pokeyGen({
+        .freq0 = 1500.f + U(rng) * 500.f, .freq1 = 900.f + U(rng) * 200.f,
+        .noise = 0.10f, .poly5 = true,
+        .duty  = 0.32f,
+        .atk   = 0.0004f, .dec = dur * 0.18f, .sus = 0.45f, .rel = dur * 0.50f, .dur = dur,
+        .bits  = 5.2f, .amp = 0.78f,
+        .pokGrid = true, .seed = seed ^ 0xB06B0001u,
+    });
+    auto low = pokeyGen({
+        .freq0 = 120.f, .freq1 = 45.f,
+        .noise = 0.25f, .poly5 = false,
+        .duty  = 0.55f,
+        .atk   = 0.0006f, .dec = dur * 0.20f, .sus = 0.20f, .rel = dur * 0.40f, .dur = dur * 0.7f,
+        .bits  = 4.2f, .amp = 0.45f,
+        .pokGrid = true, .seed = seed ^ 0xB06B0002u,
+    });
+    return mixDown3(ping, low, std::vector<int16_t>{});
+}
+
+// ── HIT POWERUP ───────────────────────────────────────────────────────────────
+// Bright collectible ping distinct from collect fanfare.
+std::vector<int16_t> ProceduralSynth::genPowerupHit(uint32_t seed) const
+{
+    std::mt19937 rng(seed);
+    std::uniform_real_distribution<float> U(0.f, 1.f);
+
+    float dur = 0.065f + U(rng) * 0.025f;
+    auto tone = pokeyGen({
+        .freq0 = 920.f + U(rng) * 260.f, .freq1 = 1400.f + U(rng) * 300.f,
+        .noise = 0.03f, .poly5 = true,
+        .duty  = 0.34f,
+        .atk   = 0.0008f, .dec = dur * 0.20f, .sus = 0.55f, .rel = dur * 0.45f, .dur = dur,
+        .bits  = 6.0f, .amp = 0.65f,
+        .pokGrid = true, .seed = seed ^ 0x50A10001u,
+    });
+    return tone;
+}
+
+// ── HIT STAR ──────────────────────────────────────────────────────────────────
+// Sparkly two-tone twinkle for special star.
+std::vector<int16_t> ProceduralSynth::genStarHit(uint32_t seed) const
+{
+    std::mt19937 rng(seed);
+    std::uniform_real_distribution<float> U(0.f, 1.f);
+
+    float noteDur = 0.045f + U(rng) * 0.015f;
+    int totalN = static_cast<int>(noteDur * 2.f * SR + 0.5f);
+    std::vector<int16_t> out(totalN, 0);
+
+    auto n1 = pokeyGen({
+        .freq0 = 1050.f + U(rng) * 200.f, .freq1 = 1250.f + U(rng) * 220.f,
+        .noise = 0.02f, .poly5 = true, .duty = 0.30f,
+        .atk = 0.0005f, .dec = noteDur * 0.2f, .sus = 0.6f, .rel = noteDur * 0.35f, .dur = noteDur,
+        .bits = 6.5f, .amp = 0.58f, .pokGrid = true, .seed = seed ^ 0x57A20001u,
+    });
+    auto n2 = pokeyGen({
+        .freq0 = 1520.f + U(rng) * 220.f, .freq1 = 1820.f + U(rng) * 260.f,
+        .noise = 0.02f, .poly5 = true, .duty = 0.28f,
+        .atk = 0.0005f, .dec = noteDur * 0.2f, .sus = 0.6f, .rel = noteDur * 0.35f, .dur = noteDur,
+        .bits = 6.5f, .amp = 0.58f, .pokGrid = true, .seed = seed ^ 0x57A20002u,
+    });
+
+    for(int i = 0; i < static_cast<int>(n1.size()) && i < totalN; ++i)
+        out[i] = n1[i];
+    int off = static_cast<int>(noteDur * SR + 0.5f);
+    for(int i = 0; i < static_cast<int>(n2.size()) && (off + i) < totalN; ++i){
+        float fs = out[off + i] / 32767.f + n2[i] / 32767.f;
+        out[off + i] = static_cast<int16_t>(std::max(-1.f, std::min(1.f, fs)) * 32767.f);
+    }
+    return out;
 }
 
 // ── EXPLOSION ─────────────────────────────────────────────────────────────────

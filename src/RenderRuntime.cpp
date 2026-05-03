@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <string>
 
 namespace render_runtime {
 namespace {
@@ -810,6 +811,30 @@ void drawAllBarriers(sf::RenderTarget& rt,
 
 void drawMenuTitle(sf::RenderTarget& rt, sf::Font& font, float t, int fxLevel)
 {
+    static sf::Shader titleSweepShader;
+    static bool titleSweepShaderInit = false;
+    if(!titleSweepShaderInit){
+        const std::string kTitleSweepFrag = R"GLSL(
+            uniform sampler2D texture;
+            uniform float sweepX;
+            uniform float softHalf;
+            uniform float coreHalf;
+            uniform vec4 glowColor;
+
+            void main()
+            {
+                vec4 px = texture2D(texture, gl_TexCoord[0].xy) * gl_Color;
+                float dx = abs(gl_FragCoord.x - sweepX);
+                float soft = clamp(1.0 - dx / softHalf, 0.0, 1.0);
+                float core = clamp(1.0 - dx / coreHalf, 0.0, 1.0);
+                float intensity = soft * 0.28 + core * 0.72;
+                float outA = px.a * intensity * glowColor.a;
+                gl_FragColor = vec4(glowColor.rgb * outA, outA);
+            }
+        )GLSL";
+        titleSweepShaderInit = titleSweepShader.loadFromMemory(kTitleSweepFrag, sf::Shader::Type::Fragment);
+    }
+
     sf::Text title(font, "MEGACHLAST PvP", 20);
     sf::Text sub(font, "// ONE SCREEN DUEL //", 9);
 
@@ -830,34 +855,21 @@ void drawMenuTitle(sf::RenderTarget& rt, sf::Font& font, float t, int fxLevel)
     title.setPosition(sf::Vector2f(cx, titleY));
     rt.draw(title);
 
-    if(fxLevel <= 1){
+    if(fxLevel <= 1 && titleSweepShaderInit){
         float sweepSpan = tb.size.x + 52.f;
         float sweepX = cx - 26.f + std::fmod(t * 140.f, sweepSpan);
-        float y0 = titleY - 1.f;
-        float y1 = titleY + tb.size.y + 3.f;
-        float skew = 9.f;
+        titleSweepShader.setUniform("sweepX", sweepX);
+        titleSweepShader.setUniform("softHalf", 18.f);
+        titleSweepShader.setUniform("coreHalf", 6.f);
+        titleSweepShader.setUniform("glowColor", sf::Glsl::Vec4(0.94f, 0.98f, 1.00f, 0.95f));
 
-        sf::VertexArray shineSoft(sf::PrimitiveType::TriangleStrip, 4);
-        shineSoft[0].position = {sweepX - 18.f, y0};
-        shineSoft[1].position = {sweepX + 18.f, y0};
-        shineSoft[2].position = {sweepX - 18.f + skew, y1};
-        shineSoft[3].position = {sweepX + 18.f + skew, y1};
-        shineSoft[0].color = sf::Color(255, 255, 255, 0);
-        shineSoft[1].color = sf::Color(210, 240, 255, 26);
-        shineSoft[2].color = sf::Color(255, 255, 255, 0);
-        shineSoft[3].color = sf::Color(210, 240, 255, 26);
-        rt.draw(shineSoft, sf::RenderStates(sf::BlendAdd));
+        sf::Text titleFx = title;
+        titleFx.setFillColor(sf::Color::White);
+        titleFx.setPosition(sf::Vector2f(cx, titleY + 1.8f));
 
-        sf::VertexArray shineCore(sf::PrimitiveType::TriangleStrip, 4);
-        shineCore[0].position = {sweepX - 6.f, y0};
-        shineCore[1].position = {sweepX + 6.f, y0};
-        shineCore[2].position = {sweepX - 6.f + skew, y1};
-        shineCore[3].position = {sweepX + 6.f + skew, y1};
-        shineCore[0].color = sf::Color(255, 255, 255, 0);
-        shineCore[1].color = sf::Color(230, 250, 255, 92);
-        shineCore[2].color = sf::Color(255, 255, 255, 0);
-        shineCore[3].color = sf::Color(230, 250, 255, 92);
-        rt.draw(shineCore, sf::RenderStates(sf::BlendAdd));
+        sf::RenderStates rs(sf::BlendAdd);
+        rs.shader = &titleSweepShader;
+        rt.draw(titleFx, rs);
     }
 
     float spulse = 0.5f + 0.5f * std::sin(t * 1.9f + 1.f);

@@ -8,6 +8,25 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(ENABLE_SANITIZERS "Enable Address/UndefinedBehavior sanitizers" OFF)
 option(USE_BUNDLED_SFML "Prefer bundled SFML at ./SFML-3.0.1 when available" ON)
 
+set(APP_VERSION "EA-0.1.0")
+set(APP_GIT_HASH "nogit")
+find_package(Git QUIET)
+if(GIT_FOUND)
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" rev-parse --short HEAD
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        RESULT_VARIABLE _git_hash_result
+        OUTPUT_VARIABLE _git_hash_output
+        ERROR_QUIET
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(_git_hash_result EQUAL 0 AND NOT _git_hash_output STREQUAL "")
+        set(APP_GIT_HASH "${_git_hash_output}")
+    endif()
+endif()
+set(APP_VERSION_LABEL "${APP_VERSION}+${APP_GIT_HASH}")
+configure_file("${CMAKE_SOURCE_DIR}/src/BuildInfo.h.in"
+               "${CMAKE_BINARY_DIR}/generated/BuildInfo.h" @ONLY)
+
 function(enable_project_warnings target)
     if(MSVC)
         target_compile_options(${target} PRIVATE /W4)
@@ -109,6 +128,7 @@ target_link_libraries(bot_controller PRIVATE procedural_synth)
 target_link_libraries(render_runtime PRIVATE SFML::Graphics)
 target_link_libraries(audio_runtime PRIVATE SFML::Audio)
 target_link_libraries(procedural_synth   PRIVATE SFML::Audio)
+target_include_directories(megablast_pvp_sfml PRIVATE ${CMAKE_BINARY_DIR}/generated)
 target_include_directories(procedural_synth PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(arena_layout PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(particles PUBLIC ${CMAKE_SOURCE_DIR}/src)

@@ -34,6 +34,10 @@ public:
         FIRE            = 0, ///< player fires a bullet     [key 1]
         REFLECT,             ///< bullet hits a mirror      [key 2]
         HIT,                 ///< player takes non-fatal damage [key 3]
+        HIT_BARRIER,         ///< bullet hits barrier brick [key 4]
+        HIT_BOMB,            ///< bullet hits bomb core     [key 5]
+        HIT_POWERUP,         ///< bullet hits power-up orb  [key 6]
+        HIT_STAR,            ///< bullet hits special star  [key 7]
         EXPLOSION,           ///< player dies / round over  [key 4]
         POWERUP_SPAWN,       ///< power-up orb appears      [key 5]
         POWERUP_COLLECT,     ///< player collects power-up  [key 6]
@@ -74,6 +78,10 @@ private:
     std::vector<int16_t> genFire          (uint32_t seed) const;
     std::vector<int16_t> genReflect       (uint32_t seed) const;
     std::vector<int16_t> genHit           (uint32_t seed) const;
+    std::vector<int16_t> genBarrierHit    (uint32_t seed) const;
+    std::vector<int16_t> genBombHit       (uint32_t seed) const;
+    std::vector<int16_t> genPowerupHit    (uint32_t seed) const;
+    std::vector<int16_t> genStarHit       (uint32_t seed) const;
     std::vector<int16_t> genExplosion     (uint32_t seed) const;
     std::vector<int16_t> genPowerupSpawn  (uint32_t seed) const;
     std::vector<int16_t> genPowerupCollect(uint32_t seed) const;

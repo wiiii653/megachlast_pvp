@@ -10,6 +10,7 @@
 namespace hud_runtime {
 
 struct TextOverlayContext {
+    const char* appVersion = "";
     GameState state = GameState::MENU;
     float dt = 0.f;
     float menuAnim = 0.f;
@@ -38,6 +39,7 @@ struct TextOverlayContext {
 void drawPlayerRows(sf::RenderTarget& rt, sf::Font& font, const Player& p1, const Player& p2);
 void drawPersistentInfo(sf::RenderTarget& rt,
                         sf::Font& font,
+                        const char* appVersion,
                         PerfLevel perfLevel,
                         int fxLevel,
                         float fpsDisplay,

@@ -144,6 +144,7 @@ void drawPlayerRows(sf::RenderTarget& rt, sf::Font& font, const Player& p1, cons
 
 void drawPersistentInfo(sf::RenderTarget& rt,
                         sf::Font& font,
+                        const char* appVersion,
                         PerfLevel perfLevel,
                         int fxLevel,
                         float fpsDisplay,
@@ -173,6 +174,13 @@ void drawPersistentInfo(sf::RenderTarget& rt,
     rt.draw(pt);
     bt.setPosition(sf::Vector2f(W - bb.size.x - 4.f, H - pb.size.y - bb.size.y - 12.f));
     rt.draw(bt);
+
+    if(appVersion && appVersion[0] != '\0'){
+        sf::Text vt(font, appVersion, 7);
+        vt.setFillColor(sf::Color(120, 130, 155, 175));
+        vt.setPosition(sf::Vector2f(4.f, H - 9.f));
+        rt.draw(vt);
+    }
 }
 
 void drawMenuInstructions(sf::RenderTarget& rt, sf::Font& font, float menuAnim, bool showBlink)
@@ -545,7 +553,7 @@ void drawTextOverlays(sf::RenderTarget& rt, sf::Font& font, const TextOverlayCon
     if(context.state == GameState::DONATE && context.donateMsgTimer)
         drawDonateOverlay(rt, font, *context.donateMsgTimer, context.dt);
 
-    drawPersistentInfo(rt, font, context.perfLevel, context.fxLevel, context.fpsDisplay,
+    drawPersistentInfo(rt, font, context.appVersion, context.perfLevel, context.fxLevel, context.fpsDisplay,
                        context.botEnabled, context.botDifficulty);
 
     if(context.state == GameState::MENU){

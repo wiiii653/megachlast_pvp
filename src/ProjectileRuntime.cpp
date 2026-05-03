@@ -10,6 +10,16 @@
 
 namespace projectile_runtime {
 
+namespace {
+
+float scaledSfxVolume(bool muted, float base, float scale)
+{
+    if(muted) return 0.f;
+    return std::clamp(base * scale, 0.f, 100.f);
+}
+
+} // namespace
+
 void simulateProjectilesAndCollisions(std::array<Bullet, MAX_BULLETS>& bullets,
                                       Player& p1,
                                       Player& p2,
@@ -130,7 +140,7 @@ void simulateProjectilesAndCollisions(std::array<Bullet, MAX_BULLETS>& bullets,
             }
 
             if(hooks.spawnSpark) hooks.spawnSpark(particles, rng, u.x, u.y);
-            synth.play(ProceduralSynth::SFX::POWERUP_COLLECT, muted ? 0.f : sfxVolume);
+            synth.play(ProceduralSynth::SFX::HIT_POWERUP, scaledSfxVolume(muted, sfxVolume, 0.82f));
             u.alive = false;
             b.alive = false;
             hitPowerup = true;
@@ -148,6 +158,7 @@ void simulateProjectilesAndCollisions(std::array<Bullet, MAX_BULLETS>& bullets,
             b.alive = false;
             if(hooks.spawnSpark) hooks.spawnSpark(particles, rng, bk.x + (b.x - bk.x) * 0.4f, bk.y);
             if(bk.hp <= 0) bk.alive = false;
+            synth.play(ProceduralSynth::SFX::HIT_BARRIER, scaledSfxVolume(muted, sfxVolume, 0.60f));
             hitBarrier = true;
             break;
         }
@@ -167,7 +178,8 @@ void simulateProjectilesAndCollisions(std::array<Bullet, MAX_BULLETS>& bullets,
             int bombShooter = b.owner;
 
             if(hooks.spawnExplosion) hooks.spawnExplosion(particles, rng, bomb.x, bomb.y, 2);
-            synth.play(ProceduralSynth::SFX::EXPLOSION, muted ? 0.f : sfxVolume);
+            synth.play(ProceduralSynth::SFX::HIT_BOMB, scaledSfxVolume(muted, sfxVolume, 0.72f));
+            synth.play(ProceduralSynth::SFX::EXPLOSION, scaledSfxVolume(muted, sfxVolume, 0.95f));
             if(hooks.triggerMusicDuck) hooks.triggerMusicDuck(0.45f, 0.25f);
             if(hooks.triggerScreenShake) hooks.triggerScreenShake(0.35f, 6.0f);
 
@@ -200,7 +212,7 @@ void simulateProjectilesAndCollisions(std::array<Bullet, MAX_BULLETS>& bullets,
                         if(hooks.spawnExplosion) hooks.spawnExplosion(particles, rng, tgt->x, tgt->y, (scorerB == 1) ? 0 : 1);
                         if(hooks.spawnShipDisintegration) hooks.spawnShipDisintegration(particles, rng, tgt->x, tgt->y, (tgt == &p1) ? 1 : 2);
                         if(hooks.spawnFragFloat) hooks.spawnFragFloat(fragFloats, tgt->x, tgt->y, scorerB);
-                        synth.play(ProceduralSynth::SFX::EXPLOSION, muted ? 0.f : sfxVolume);
+                        synth.play(ProceduralSynth::SFX::EXPLOSION, scaledSfxVolume(muted, sfxVolume, 1.00f));
                         if(hooks.triggerMusicDuck) hooks.triggerMusicDuck(0.55f, 0.30f);
                         if(hooks.triggerScreenShake) hooks.triggerScreenShake(0.45f, 7.0f);
                         if(hooks.applyFragTransition) hooks.applyFragTransition(*tgt, scorerB);
@@ -242,7 +254,7 @@ void simulateProjectilesAndCollisions(std::array<Bullet, MAX_BULLETS>& bullets,
             else p2.points += SPECIAL_STAR_PTS;
             if(hooks.spawnExplosion) hooks.spawnExplosion(particles, rng, ss.x, ss.y, 0);
             if(hooks.spawnSpark) hooks.spawnSpark(particles, rng, ss.x, ss.y);
-            synth.play(ProceduralSynth::SFX::POWERUP_COLLECT, muted ? 0.f : sfxVolume);
+            synth.play(ProceduralSynth::SFX::HIT_STAR, scaledSfxVolume(muted, sfxVolume, 0.86f));
             break;
         }
         if(hitStar) continue;
@@ -256,7 +268,7 @@ void simulateProjectilesAndCollisions(std::array<Bullet, MAX_BULLETS>& bullets,
                 m.slash = !m.slash;
                 m.hitFlash = 1.0f;
                 if(hooks.spawnSpark) hooks.spawnSpark(particles, rng, m.x, m.y);
-                synth.play(ProceduralSynth::SFX::REFLECT, muted ? 0.f : sfxVolume);
+                synth.play(ProceduralSynth::SFX::REFLECT, scaledSfxVolume(muted, sfxVolume, 0.78f));
                 float len = std::sqrt(b.vx * b.vx + b.vy * b.vy);
                 if(len > 0.0001f){
                     b.x += (b.vx / len) * (MIRROR_R + 1.5f);
@@ -278,10 +290,10 @@ void simulateProjectilesAndCollisions(std::array<Bullet, MAX_BULLETS>& bullets,
             tgt->energy -= cfg.damage;
             tgt->flashTimer = 0.14f;
             if(hooks.spawnHitSpark) hooks.spawnHitSpark(particles, rng, tgt->x, tgt->y, b.owner);
-            synth.play(ProceduralSynth::SFX::HIT, muted ? 0.f : sfxVolume);
+            synth.play(ProceduralSynth::SFX::HIT, scaledSfxVolume(muted, sfxVolume, 0.96f));
             if(hooks.triggerMusicDuck) hooks.triggerMusicDuck(0.20f, 0.12f);
             tgt->slowTimer = std::min(tgt->slowTimer + 0.5f, 2.0f);
-            synth.play(ProceduralSynth::SFX::SLOW_HIT, muted ? 0.f : sfxVolume);
+            synth.play(ProceduralSynth::SFX::SLOW_HIT, scaledSfxVolume(muted, sfxVolume, 0.70f));
 
             if(tgt->energy <= 0.f){
                 tgt->energy = 0.f;
@@ -290,7 +302,7 @@ void simulateProjectilesAndCollisions(std::array<Bullet, MAX_BULLETS>& bullets,
                 if(hooks.spawnExplosion) hooks.spawnExplosion(particles, rng, tgt->x, tgt->y, (scorer == 1) ? 0 : 1);
                 if(hooks.spawnShipDisintegration) hooks.spawnShipDisintegration(particles, rng, tgt->x, tgt->y, (tgt == &p1) ? 1 : 2);
                 if(hooks.spawnFragFloat) hooks.spawnFragFloat(fragFloats, tgt->x, tgt->y, scorer);
-                synth.play(ProceduralSynth::SFX::EXPLOSION, muted ? 0.f : sfxVolume);
+                synth.play(ProceduralSynth::SFX::EXPLOSION, scaledSfxVolume(muted, sfxVolume, 1.00f));
                 if(hooks.triggerMusicDuck) hooks.triggerMusicDuck(0.55f, 0.30f);
                 if(hooks.triggerScreenShake) hooks.triggerScreenShake(0.45f, 7.0f);
                 if(hooks.applyFragTransition) hooks.applyFragTransition(*tgt, scorer);

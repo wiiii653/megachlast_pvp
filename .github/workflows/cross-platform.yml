@@ -78,6 +78,43 @@ jobs:
       - name: Test
         run: ctest --test-dir build_sfml3 --build-config ${{ matrix.build_type }} --output-on-failure
 
+      - name: Package artifact (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          PKG_DIR="release/megachlast_pvp_${{ runner.os }}_${{ matrix.compiler }}_${{ matrix.build_type }}"
+          mkdir -p "$PKG_DIR"
+          cp build_sfml3/megablast_pvp_sfml "$PKG_DIR/"
+          cp -r assets "$PKG_DIR/"
+          cp README.md EARLY_ACCESS.md CHANGELOG.md KNOWN_ISSUES.md "$PKG_DIR/"
+          tar -czf "${PKG_DIR}.tar.gz" -C release "$(basename "$PKG_DIR")"
+
+      - name: Package artifact (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $pkgDir = "release/megachlast_pvp_${{ runner.os }}_${{ matrix.compiler }}_${{ matrix.build_type }}"
+          New-Item -ItemType Directory -Force -Path $pkgDir | Out-Null
+          Copy-Item "build_sfml3/Release/megablast_pvp_sfml.exe" "$pkgDir/" -Force
+          Copy-Item "assets" "$pkgDir/assets" -Recurse -Force
+          Copy-Item "README.md","EARLY_ACCESS.md","CHANGELOG.md","KNOWN_ISSUES.md" $pkgDir -Force
+          Compress-Archive -Path "$pkgDir/*" -DestinationPath "$pkgDir.zip" -Force
+
+      - name: Upload artifact (Linux/macOS)
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: megachlast_pvp_${{ runner.os }}_${{ matrix.compiler }}_${{ matrix.build_type }}
+          path: release/*.tar.gz
+          if-no-files-found: error
+
+      - name: Upload artifact (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: megachlast_pvp_${{ runner.os }}_${{ matrix.compiler }}_${{ matrix.build_type }}
+          path: release/*.zip
+          if-no-files-found: error
+
   linux-sanitizers:
     name: ubuntu-latest / sanitizers
     runs-on: ubuntu-latest

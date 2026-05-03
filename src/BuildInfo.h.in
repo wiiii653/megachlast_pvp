@@ -1,0 +1,5 @@
+#pragma once
+
+inline constexpr const char* BUILD_APP_VERSION = "@APP_VERSION@";
+inline constexpr const char* BUILD_GIT_HASH = "@APP_GIT_HASH@";
+inline constexpr const char* BUILD_VERSION_LABEL = "@APP_VERSION_LABEL@";

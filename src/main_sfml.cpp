@@ -33,6 +33,7 @@
 #include "AudioRuntime.h"
 #include "BoardRuntime.h"
 #include "BotController.h"
+#include "BuildInfo.h"
 #include "FxRuntime.h"
 #include "FrameRuntime.h"
 #include "GameUpdateRuntime.h"
@@ -585,6 +586,7 @@ int main(int argc, char** argv){
 
         if(haveFont){
             hud_runtime::TextOverlayContext hudCtx{};
+            hudCtx.appVersion = BUILD_VERSION_LABEL;
             hudCtx.state = state;
             hudCtx.dt = dt;
             hudCtx.menuAnim = menuAnim;
