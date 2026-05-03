@@ -1,0 +1,48 @@
+# Example settings for megachlast_pvp (assets/settings.cfg)
+# Lines are KEY=VALUE, comments with '#'
+# Available keys:
+# TARGET_SCORE — int
+# P_SPEED — float (player speed px/sec)
+# BULLET_SPEED — float (px/sec)
+# BULLET_TTL — float (seconds)
+# HIT_R — float (collision radius)
+# DAMAGE — float (energy per hit)
+# FIRE_CD_P1_FRAMES — int (frames between shots for Player 1)
+# FIRE_CD_P2_FRAMES — int (frames between shots for Player 2)
+TARGET_SCORE=8
+P_SPEED=120.0
+BULLET_SPEED=190.0
+BULLET_TTL=3.5
+HIT_R=5.0
+# Lower damage to lengthen fights and reduce single-shot kills
+DAMAGE=10.0
+# Shot cooldown per player (lower = faster firing)
+FIRE_CD_P1_FRAMES=9
+FIRE_CD_P2_FRAMES=9
+# Bot enabled by default on startup (0/1)
+BOT_ENABLED=0
+# Bot difficulty: EASY, MEDIUM, HARD
+BOT_DIFFICULTY=MEDIUM
+
+# Optional bot tuning overrides (uncomment to enable per-difficulty or per-behaviour tuning)
+# Values: floats; negative value or omitted = use built-in defaults
+# Example usage: BOT_AIM_LEAD_EASY=0.25
+
+# BOT_AIM_LEAD_EASY=0.18
+# BOT_AIM_LEAD_MED=0.6
+# BOT_AIM_LEAD_HARD=1.05
+
+# BOT_DODGE_ZONE=60.0
+# BOT_DODGE_X_THR=8.0
+# BOT_ALIGN_TOL=8.0
+# BOT_FIRE_PROB=0.9
+# BOT_REACTION=0.95
+# BOT_POWERUP_INTEREST=0.6
+# BOT_STRAFE_LO=0.8
+# BOT_STRAFE_HI=2.0
+# BOT_BOMB_FEAR=42.0
+
+# Audio defaults (percent)
+MUSIC_VOLUME=90
+SFX_VOLUME=90
+MUTE=0

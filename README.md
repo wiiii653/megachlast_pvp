@@ -1,0 +1,242 @@
+# Megachlast PvP (one-screen duel)
+
+Two-player duel shooter on a single shared screen.
+Players face each other: P2 top, P1 bottom. Horizontal movement only. Mirror blocks reflect and redirect bullets.
+
+## Controls
+
+Player 1 (bottom):
+
+- A / D: move left/right
+- Left Ctrl or Z: fire
+
+Player 2 (top):
+
+- Left / Right arrows: move left/right
+- Right Ctrl or /: fire
+
+General:
+
+- Space: pause/resume
+- R: reset scores
+- O: open settings screen
+- F11: toggle fullscreen
+- Escape: open menu from game screens (quit only when already in menu)
+
+## Rules
+
+- Each player has ENERGY (0..100).
+- Getting hit reduces ENERGY by 10 per bullet (friendly fire enabled).
+- When ENERGY hits 0: the shooter scores +1 and victim respawns with a brief invulnerability window.
+- Mirror blocks reflect bullets and rotate on hit.
+- Being hit also applies a brief SLOWED debuff (half movement speed for up to 2 s, stacks per hit).
+- First to 8 frags wins (configurable via `TARGET_SCORE` in settings).
+
+## Build (SFML 3)
+
+This project requires **SFML 3.x**.
+
+- If `SFML-3.0.1/` exists in the project root, CMake uses it by default.
+- To force system SFML, configure with `-DUSE_BUNDLED_SFML=OFF`.
+- CMake always uses `find_package(SFML 3 ...)`, either from bundled package config or system install.
+- Note: Ubuntu 24.04 default repositories provide SFML 2.6 (`libsfml-dev`), which is not sufficient.
+
+```bash
+cd megachlast_PvP_clean
+cmake -S . -B build_sfml3
+cmake --build build_sfml3 -j
+```
+
+### Linux
+
+Install SFML 3 (or use bundled `SFML-3.0.1/`), then:
+
+```bash
+cmake -S . -B build_sfml3 -DUSE_BUNDLED_SFML=ON
+cmake --build build_sfml3 -j
+ctest --test-dir build_sfml3 --output-on-failure
+```
+
+### macOS
+
+Install SFML 3 (or keep bundled `SFML-3.0.1/`), then:
+
+```bash
+cmake -S . -B build_sfml3 -DUSE_BUNDLED_SFML=OFF
+cmake --build build_sfml3 -j
+ctest --test-dir build_sfml3 --output-on-failure
+```
+
+### Windows 10/11 (MSVC)
+
+Use a VS Developer PowerShell and install SFML 3 (for example via vcpkg), then:
+
+```powershell
+cmake -S . -B build_sfml3 -DUSE_BUNDLED_SFML=OFF -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake --build build_sfml3 --config Release --parallel
+ctest --test-dir build_sfml3 --build-config Release --output-on-failure
+```
+
+## Run
+
+```bash
+# From project root (assets/ must be in CWD):
+./build_sfml3/megablast_pvp_sfml
+
+# Or via CMake:
+cmake --build build_sfml3 --target run
+```
+
+## Early Access
+
+Early Access release process and quality gate checklist are documented in [EARLY_ACCESS.md](EARLY_ACCESS.md).
+
+## Settings & CLI
+
+- `--no-music` — start without playing background music.
+- `--no-postfx` — disable post-processing and cosmetic overlays (copper bars, scanlines, edge vignettes, chromatic aberration, final vignette) for lowest latency.
+- `--assets-dir PATH` — override the default `assets/` directory when running.
+- `--bot` — enable AI opponent (controls Player 2).
+- `--bot-difficulty <easy|medium|hard>` — choose AI difficulty (default: medium).
+- `--perf <high|medium|low|ultra>` — select performance profile.
+- Runtime note: during heavy `PLAYING` scenes, effects now auto-scale down and recover to keep frame pacing smooth.
+- Runtime note: key gameplay SFX (hits/explosions) briefly duck active music streams for cue clarity.
+- `--log-perf PATH` — write periodic perf CSV.
+- `--log-interval N` — perf log interval in seconds.
+- `--log-duration N` — auto-exit after N seconds (useful with perf logging).
+- `--gl-info` — print graphics environment and active OpenGL context diagnostics at startup.
+- `--gl-profile <default|clean|nvidia|dri3-off|software>` — choose a graphics loader profile before SFML creates the window.
+
+Perf CSV columns: `time,perf,fx_level,fps,alive_particles,alive_bullets,spawn_budget,spawn_used,vm_rss_kb`.
+
+Linux graphics fallback profiles:
+
+- `default` — do not alter the user's graphics environment.
+- `clean` — clear common GL loader overrides so the system GLVND/Mesa setup chooses the vendor.
+- `nvidia` — clear overrides and force NVIDIA's PRIME/GLX path via `__NV_PRIME_RENDER_OFFLOAD=1` and `__GLX_VENDOR_LIBRARY_NAME=nvidia`.
+- `dri3-off` — clear overrides and disable DRI3 via `LIBGL_DRI3_DISABLE=1`, useful for some NVIDIA/XWayland failures.
+- `software` — clear overrides and force Mesa software rendering via `LIBGL_ALWAYS_SOFTWARE=1` for diagnostics or last-resort launch.
+
+If launch logs mention `failed to load driver: nvidia-drm`, try:
+
+```bash
+./build_sfml3/megablast_pvp_sfml --gl-info --gl-profile clean
+./build_sfml3/megablast_pvp_sfml --gl-info --gl-profile nvidia
+./build_sfml3/megablast_pvp_sfml --gl-info --gl-profile dri3-off
+./build_sfml3/megablast_pvp_sfml --gl-info --gl-profile software
+```
+
+Keyboard shortcuts:
+
+- `B` — toggle bot on/off
+- `V` — cycle bot difficulty (EASY → MED → HARD)
+- `G` — toggle bot debug logging
+- `P` — cycle performance profile (HIGH → MED → LOW → ULTRA)
+- `M` — mute/unmute audio
+- `,` / `.` — decrease/increase volume (applies to music and sfx)
+- `K` — save current settings to `assets/settings.cfg`
+- `L` — load settings from `assets/settings.cfg` (in settings screen)
+
+Optional runtime overrides can be placed in `assets/settings.cfg` (copy and edit `assets/settings.cfg.example`).
+Persistent toggles include `BOT_ENABLED`, `BOT_DIFFICULTY`, `MUSIC_VOLUME`, `SFX_VOLUME`, and `MUTE`.
+Supported gameplay/audio keys include: `TARGET_SCORE`, `P_SPEED`, `BULLET_SPEED`, `BULLET_TTL`, `HIT_R`, `DAMAGE`, `FIRE_CD_P1_FRAMES`, `FIRE_CD_P2_FRAMES`, `BOT_ENABLED`, `BOT_DIFFICULTY`, `MUSIC_VOLUME`, `SFX_VOLUME`, `MUTE`.
+Supported bot tuning overrides include: `BOT_DODGE_ZONE`, `BOT_DODGE_X_THR`, `BOT_ALIGN_TOL`, `BOT_FIRE_PROB`, `BOT_REACTION`, `BOT_POWERUP_INTEREST`, `BOT_STRAFE_LO`, `BOT_STRAFE_HI`, `BOT_BOMB_FEAR`, `BOT_AIM_LEAD_EASY`, `BOT_AIM_LEAD_MED`, `BOT_AIM_LEAD_HARD`.
+
+## Assets
+
+- `assets/sansation.ttf` — font
+- `assets/menu.mp3` — menu music
+- `assets/ingame.mp3` — in-game music
+- `assets/get_ready.mp3` — round-start jingle
+- `assets/pl1red.png` — Player 1 ship sprite
+- `assets/pl2blu.png` — Player 2 ship sprite
+
+All sound effects (fire, hit, explosions, power-ups) are **procedurally generated** at runtime via `ProceduralSynth` — no `.wav` files needed.
+
+## Power-ups & Traits (shootable / collectible)
+
+Megachlast PvP features shootable floating power-up orbs that grant short-term "traits" to the collecting player (the player whose bullet hits the orb). Power-ups are spawned periodically in the arena and can be destroyed/collected by either player (friendly fire is enabled). Below is the full list of shootable power-ups and what they do.
+
+Important gameplay parameters (from the code):
+
+- Max simultaneous power-ups: 4
+- Spawn interval: ~7 seconds (first spawn is slightly sooner)
+- Orb lifetime (time-to-live): 12 seconds (then the orb vanishes)
+- Collection method: a bullet that overlaps the orb gives the effect to the bullet's owner; the orb and the bullet are both removed on collection
+- Visuals: each power-up type has a distinct neon color and a spinning hex icon; active traits are shown on the HUD as small colored dots
+
+Power-up types:
+
+- SHIELD
+
+  - Effect: grants the collector 5 seconds of shield (invulnerability to damage and bomb blast while shielded).
+  - Duration: 5.0 s
+  - Color: ice blue
+  - Notes: shields also prevent damage from bombs (checked in blast logic).
+
+- RAPID
+
+  - Effect: halves the player's fire cooldown so they can shoot faster.
+  - Duration: 5.0 s
+  - Color: gold
+  - Notes: the game's fire cooldown frames are divided by two while the trait is active (minimum 1 frame enforced).
+
+- SPREAD
+
+  - Effect: enables a 3-way spread shot (center + angled left/right) for the player when firing.
+  - Duration: 5.0 s
+  - Color: lime (green)
+  - Notes: spread uses fixed ±18° angles for the side bullets.
+
+- HEAL
+
+  - Effect: instantly restores 40 ENERGY to the collector (clamped to maximum 100).
+  - Duration: instant (no timed trait).
+  - Color: mint
+  - Notes: useful to recover from damage without waiting for respawn.
+
+- CHAOS
+
+  - Effect: scrambles all mirror block orientations in the arena (each mirror becomes randomly / or \).
+  - Duration: instant (global effect).
+  - Color: purple
+  - Notes: a tactical power that can disrupt opponent aiming and existing mirror-based redirects.
+
+- REVERSE
+
+  - Effect: applies a 5 second debuff to the opponent that reverses their horizontal steering input (left/right are flipped).
+  - Duration: 5.0 s (applied to opponent)
+  - Color: orange
+  - Notes: collected by shooting an orb; the effect is applied to the opponent (debuff).
+
+HUD & feedback
+
+- When a timed trait (SHIELD, RAPID, SPREAD, REVERSE) is active it is shown as a small colored "trait dot" on the player's HUD row. The dot disappears when the timer runs out.
+- Power-up spawn and collect SFX are played (POWERUP_SPAWN and POWERUP_COLLECT). Collecting spawns a small particle burst.
+
+Design notes
+
+- Because power-ups are collected by bullets, mirrors and bouncing bullets can result in surprising collections (including accidental self-collection). Friendly fire and mirror reflections are part of the intended interaction.
+- CHAOS is the only global (non-timed) type that immediately mutates arena state. REVERSE is a strategic debuff that targets the opponent rather than the collector.
+
+## Arena Hazards
+
+### Bombs
+
+Each round may spawn 0–3 **bombs** depending on the generated layout (some layouts are intentionally more hazardous than others). Shoot a bomb to detonate it. The `CHAOS` power-up may also add extra bombs during a round.
+
+- Blast radius: ~52 px — destroys all mirrors within range and deals damage to any player caught in the blast.
+- Bombs do not trigger on bullet pass-through; only a direct bullet hit detonates them.
+- Shielded players are immune to bomb blast damage.
+- A bomb hit also applies the SLOWED debuff to the victim.
+
+### Special Stars
+
+Up to 3 **special stars** drift slowly around the arena each round. Shoot one to collect it.
+
+- Awards **+50 bonus points** to the shooter each time.
+- Stars respawn each round.
+
+## Barriers
+
+Each player starts with a **destructible barrier** of bricks placed just in front of their spawn row (40 bricks per side, spanning the full arena width). Bricks have 3 HP each and are damaged by bullets from either player. Destroyed bricks are removed permanently for that round. Barriers reset on each new round.

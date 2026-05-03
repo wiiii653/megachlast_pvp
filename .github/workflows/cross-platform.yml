@@ -1,0 +1,107 @@
+name: Cross Platform CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test:
+    name: ${{ matrix.os }} / ${{ matrix.compiler }} / ${{ matrix.build_type }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            compiler: gcc
+            cc: gcc
+            cxx: g++
+            build_type: Release
+          - os: ubuntu-latest
+            compiler: clang
+            cc: clang
+            cxx: clang++
+            build_type: Release
+          - os: macos-latest
+            compiler: clang
+            cc: clang
+            cxx: clang++
+            build_type: Release
+          - os: windows-latest
+            compiler: msvc
+            build_type: Release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install SFML (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxrandr-dev libxcursor-dev libxi-dev libudev-dev libopenal-dev libflac-dev libvorbis-dev libgl1-mesa-dev
+          git clone --depth 1 --branch 3.0.1 https://github.com/SFML/SFML.git /tmp/sfml
+          cmake -S /tmp/sfml -B /tmp/sfml-build -DCMAKE_BUILD_TYPE=Release -DSFML_BUILD_EXAMPLES=OFF -DSFML_BUILD_DOC=OFF -DSFML_BUILD_TEST_SUITE=OFF
+          cmake --build /tmp/sfml-build --config Release --parallel
+          sudo cmake --install /tmp/sfml-build --prefix /usr/local
+
+      - name: Install SFML (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          git clone --depth 1 --branch 3.0.1 https://github.com/SFML/SFML.git /tmp/sfml
+          cmake -S /tmp/sfml -B /tmp/sfml-build -DCMAKE_BUILD_TYPE=Release -DSFML_BUILD_EXAMPLES=OFF -DSFML_BUILD_DOC=OFF -DSFML_BUILD_TEST_SUITE=OFF
+          cmake --build /tmp/sfml-build --config Release --parallel
+          sudo cmake --install /tmp/sfml-build --prefix /usr/local
+
+      - name: Install SFML (Windows, vcpkg)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git C:\\vcpkg
+          C:\\vcpkg\\bootstrap-vcpkg.bat
+          C:\\vcpkg\\vcpkg install sfml:x64-windows
+
+      - name: Configure (Linux/macOS)
+        if: runner.os != 'Windows'
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: cmake -S . -B build_sfml3 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DUSE_BUNDLED_SFML=OFF
+
+      - name: Configure (Windows)
+        if: runner.os == 'Windows'
+        run: cmake -S . -B build_sfml3 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DUSE_BUNDLED_SFML=OFF -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+      - name: Build
+        run: cmake --build build_sfml3 --config ${{ matrix.build_type }} --parallel
+
+      - name: Test
+        run: ctest --test-dir build_sfml3 --build-config ${{ matrix.build_type }} --output-on-failure
+
+  linux-sanitizers:
+    name: ubuntu-latest / sanitizers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install deps and SFML 3.0.1
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang libxrandr-dev libxcursor-dev libxi-dev libudev-dev libopenal-dev libflac-dev libvorbis-dev libgl1-mesa-dev
+          git clone --depth 1 --branch 3.0.1 https://github.com/SFML/SFML.git /tmp/sfml
+          cmake -S /tmp/sfml -B /tmp/sfml-build -DCMAKE_BUILD_TYPE=Release -DSFML_BUILD_EXAMPLES=OFF -DSFML_BUILD_DOC=OFF -DSFML_BUILD_TEST_SUITE=OFF
+          cmake --build /tmp/sfml-build --config Release --parallel
+          sudo cmake --install /tmp/sfml-build --prefix /usr/local
+
+      - name: Configure (ASan+UBSan)
+        env:
+          CC: clang
+          CXX: clang++
+        run: cmake -S . -B build_san -DCMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_BUNDLED_SFML=OFF -DENABLE_SANITIZERS=ON
+
+      - name: Build (ASan+UBSan)
+        run: cmake --build build_san --parallel
+
+      - name: Test (ASan+UBSan)
+        run: ctest --test-dir build_san --output-on-failure

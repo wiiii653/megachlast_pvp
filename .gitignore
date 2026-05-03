@@ -1,0 +1,48 @@
+# --- Build directories ---
+build*/
+cmake-build-*/
+out/
+
+# --- CMake / CTest artifacts ---
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+Testing/
+Makefile
+compile_commands.json
+install_manifest.txt
+
+# --- Native build artifacts ---
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.exp
+*.pdb
+*.idb
+*.ilk
+*.d
+
+# --- Runtime / diagnostics ---
+*.log
+*.csv
+
+# --- Local runtime config ---
+assets/settings.cfg
+
+# --- IDE/editor ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- OS cruft ---
+.DS_Store
+Thumbs.db
