@@ -51,9 +51,11 @@ bool handleSettingsKeyPressed(const sf::Event::KeyPressed& kp,
                               BotDifficulty& botDifficulty,
                               float& musicVolume,
                               float& sfxVolume,
+                              GraphicsSettings& graphicsSettings,
                               const std::string& cfgPath,
                               const std::function<void(const std::string&)>& saveSettings,
-                              const std::function<bool(const std::string&)>& loadSettings)
+                              const std::function<bool(const std::string&)>& loadSettings,
+                              const std::function<void()>& applyGraphicsSettings)
 {
     switch(kp.scancode){
         case sf::Keyboard::Scan::Up:
@@ -72,6 +74,10 @@ bool handleSettingsKeyPressed(const sf::Event::KeyPressed& kp,
             else if(settingsSel == OPT_FIRE_CD_P1) cfg.fire_cd_p1_frames = std::max(1, cfg.fire_cd_p1_frames - 1);
             else if(settingsSel == OPT_FIRE_CD_P2) cfg.fire_cd_p2_frames = std::max(1, cfg.fire_cd_p2_frames - 1);
             else if(settingsSel == OPT_P_SPEED) cfg.p_speed = std::max(20.f, cfg.p_speed - 5.f);
+            else if(settingsSel == OPT_WINDOW_SCALE){
+                graphicsSettings.window_scale = std::max(2, graphicsSettings.window_scale - 1);
+                applyGraphicsSettings();
+            }
             break;
         case sf::Keyboard::Scan::Right:
             if(settingsSel == OPT_MUSIC) musicVolume = std::min(100.f, musicVolume + 5.f);
@@ -83,18 +89,35 @@ bool handleSettingsKeyPressed(const sf::Event::KeyPressed& kp,
             else if(settingsSel == OPT_FIRE_CD_P1) cfg.fire_cd_p1_frames = std::min(60, cfg.fire_cd_p1_frames + 1);
             else if(settingsSel == OPT_FIRE_CD_P2) cfg.fire_cd_p2_frames = std::min(60, cfg.fire_cd_p2_frames + 1);
             else if(settingsSel == OPT_P_SPEED) cfg.p_speed = std::min(400.f, cfg.p_speed + 5.f);
+            else if(settingsSel == OPT_WINDOW_SCALE){
+                graphicsSettings.window_scale = std::min(6, graphicsSettings.window_scale + 1);
+                applyGraphicsSettings();
+            }
             break;
         case sf::Keyboard::Scan::Enter:
             if(settingsSel == OPT_BOT_ENABLED) botEnabled = !botEnabled;
+            else if(settingsSel == OPT_POSTFX) graphicsSettings.postfx_enabled = !graphicsSettings.postfx_enabled;
+            else if(settingsSel == OPT_SCANLINES) graphicsSettings.scanlines_enabled = !graphicsSettings.scanlines_enabled;
+            else if(settingsSel == OPT_VIGNETTE) graphicsSettings.vignette_enabled = !graphicsSettings.vignette_enabled;
+            else if(settingsSel == OPT_CHROMATIC) graphicsSettings.chromatic_enabled = !graphicsSettings.chromatic_enabled;
+            else if(settingsSel == OPT_COPPER_BARS) graphicsSettings.copper_bars_enabled = !graphicsSettings.copper_bars_enabled;
             else if(settingsSel == OPT_SAVE) saveSettings(cfgPath);
-            else if(settingsSel == OPT_LOAD) loadSettings(cfgPath);
+            else if(settingsSel == OPT_LOAD){
+                int oldScale = graphicsSettings.window_scale;
+                bool loaded = loadSettings(cfgPath);
+                if(loaded && graphicsSettings.window_scale != oldScale) applyGraphicsSettings();
+            }
             break;
         default:
             break;
     }
 
     if(kp.code == sf::Keyboard::Key::K) saveSettings(cfgPath);
-    if(kp.code == sf::Keyboard::Key::L) loadSettings(cfgPath);
+    if(kp.code == sf::Keyboard::Key::L){
+        int oldScale = graphicsSettings.window_scale;
+        bool loaded = loadSettings(cfgPath);
+        if(loaded && graphicsSettings.window_scale != oldScale) applyGraphicsSettings();
+    }
     if(kp.code == sf::Keyboard::Key::Escape) state = GameState::MENU;
     return true;
 }
@@ -184,6 +207,7 @@ void handleGlobalControlKeyPressed(const sf::Event::KeyPressed& kp,
                                    float& musicVolume,
                                    float& sfxVolume,
                                    bool& isFullscreen,
+                                   const GraphicsSettings& graphicsSettings,
                                    game_update_runtime::InputState& input,
                                    sf::RenderWindow& win,
                                    const std::string& assetsDir,
@@ -225,8 +249,8 @@ void handleGlobalControlKeyPressed(const sf::Event::KeyPressed& kp,
                        sf::Style::Default, sf::State::Fullscreen);
         else
             win.create(sf::VideoMode(sf::Vector2u{
-                static_cast<unsigned int>(W * SCALE),
-                static_cast<unsigned int>(H * SCALE)}),
+                static_cast<unsigned int>(W * graphicsSettings.window_scale),
+                static_cast<unsigned int>(H * graphicsSettings.window_scale)}),
                 "Megachlast PvP", sf::Style::Default, sf::State::Windowed);
         win.setMouseCursorVisible(!isFullscreen);
         win.setFramerateLimit(60);
@@ -245,6 +269,7 @@ void handleKeyPressed(const sf::Event::KeyPressed& kp,
     BotDifficulty& botDifficulty = *context.botDifficulty;
     float& musicVolume = *context.musicVolume;
     float& sfxVolume = *context.sfxVolume;
+    GraphicsSettings& graphicsSettings = *context.graphicsSettings;
     float& donateMsgTimer = *context.donateMsgTimer;
     bool& botDebug = *context.botDebug;
     PerfLevel& perfLevel = *context.perfLevel;
@@ -254,6 +279,8 @@ void handleKeyPressed(const sf::Event::KeyPressed& kp,
 
     if(state == GameState::SETTINGS){
         float oldMusicVol = musicVolume;
+        float oldSfxVol = sfxVolume;
+        bool oldMuted = muted;
         handleSettingsKeyPressed(kp,
                                  state,
                                  settingsSel,
@@ -262,10 +289,13 @@ void handleKeyPressed(const sf::Event::KeyPressed& kp,
                                  botDifficulty,
                                  musicVolume,
                                  sfxVolume,
+                                 graphicsSettings,
                                  *context.cfgPath,
                                  context.saveSettings,
-                                 context.loadSettings);
-        if(musicVolume != oldMusicVol) context.applyAllMusicSettings();
+                                 context.loadSettings,
+                                 context.applyGraphicsSettings);
+        if(musicVolume != oldMusicVol || sfxVolume != oldSfxVol || muted != oldMuted)
+            context.applyAllMusicSettings();
         return;
     }
 
@@ -282,6 +312,7 @@ void handleKeyPressed(const sf::Event::KeyPressed& kp,
                                   musicVolume,
                                   sfxVolume,
                                   isFullscreen,
+                                  graphicsSettings,
                                   input,
                                   win,
                                   *context.assetsDir,

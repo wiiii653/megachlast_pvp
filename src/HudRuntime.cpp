@@ -178,7 +178,7 @@ void drawPersistentInfo(sf::RenderTarget& rt,
     if(appVersion && appVersion[0] != '\0'){
         sf::Text vt(font, appVersion, 7);
         vt.setFillColor(sf::Color(120, 130, 155, 175));
-        vt.setPosition(sf::Vector2f(4.f, H - 9.f));
+        vt.setPosition(sf::Vector2f(4.f, 4.f));
         rt.draw(vt);
     }
 }
@@ -402,7 +402,8 @@ void drawSettingsPanel(sf::RenderTarget& rt,
                        float musicVolume,
                        float sfxVolume,
                        bool botEnabled,
-                       BotDifficulty botDifficulty)
+                       BotDifficulty botDifficulty,
+                       const GraphicsSettings& graphicsSettings)
 {
     constexpr int OPT_MUSIC = 0;
     constexpr int OPT_SFX = 1;
@@ -413,10 +414,16 @@ void drawSettingsPanel(sf::RenderTarget& rt,
     constexpr int OPT_FIRE_CD_P1 = 6;
     constexpr int OPT_FIRE_CD_P2 = 7;
     constexpr int OPT_P_SPEED = 8;
-    constexpr int OPT_SAVE = 9;
-    constexpr int OPT_LOAD = 10;
+    constexpr int OPT_WINDOW_SCALE = 9;
+    constexpr int OPT_POSTFX = 10;
+    constexpr int OPT_SCANLINES = 11;
+    constexpr int OPT_VIGNETTE = 12;
+    constexpr int OPT_CHROMATIC = 13;
+    constexpr int OPT_COPPER_BARS = 14;
+    constexpr int OPT_SAVE = 15;
+    constexpr int OPT_LOAD = 16;
 
-    float panelW = 248.f, panelH = 232.f;
+    float panelW = 278.f, panelH = 322.f;
     float px = W / 2.f - panelW / 2.f, py = H / 2.f - panelH / 2.f;
 
     sf::RectangleShape panel(sf::Vector2f(panelW, panelH));
@@ -513,13 +520,39 @@ void drawSettingsPanel(sf::RenderTarget& rt,
     drawOpt(OPT_P_SPEED, tmp);
     ly += 18.f;
 
+    std::snprintf(tmp, sizeof(tmp), "Resolution: %dx%d",
+                  W * graphicsSettings.window_scale,
+                  H * graphicsSettings.window_scale);
+    drawOpt(OPT_WINDOW_SCALE, tmp);
+    ly += 14.f;
+
+    std::snprintf(tmp, sizeof(tmp), "Post FX: %s", graphicsSettings.postfx_enabled ? "ON " : "OFF");
+    drawOpt(OPT_POSTFX, tmp);
+    ly += 14.f;
+
+    std::snprintf(tmp, sizeof(tmp), "Scanlines: %s", graphicsSettings.scanlines_enabled ? "ON " : "OFF");
+    drawOpt(OPT_SCANLINES, tmp);
+    ly += 14.f;
+
+    std::snprintf(tmp, sizeof(tmp), "Vignette: %s", graphicsSettings.vignette_enabled ? "ON " : "OFF");
+    drawOpt(OPT_VIGNETTE, tmp);
+    ly += 14.f;
+
+    std::snprintf(tmp, sizeof(tmp), "Chromatic: %s", graphicsSettings.chromatic_enabled ? "ON " : "OFF");
+    drawOpt(OPT_CHROMATIC, tmp);
+    ly += 14.f;
+
+    std::snprintf(tmp, sizeof(tmp), "Copper Bars: %s", graphicsSettings.copper_bars_enabled ? "ON " : "OFF");
+    drawOpt(OPT_COPPER_BARS, tmp);
+    ly += 18.f;
+
     drawOpt(OPT_SAVE, "[ Save Settings ]");
     ly += 14.f;
     drawOpt(OPT_LOAD, "[ Load Settings ]");
     ly += 20.f;
 
     sf::Text hint(font,
-        "Up/Down: select   Left/Right: change   K: save   L: load   Esc: back", 7);
+        "Up/Down: select   Left/Right: size   Enter: toggle/save/load   Esc: back", 7);
     hint.setFillColor(sf::Color(100, 100, 120));
     auto hb = hint.getLocalBounds();
     hint.setPosition(sf::Vector2f(px + panelW / 2.f - hb.size.x / 2.f, py + panelH - 14.f));
@@ -575,10 +608,11 @@ void drawTextOverlays(sf::RenderTarget& rt, sf::Font& font, const TextOverlayCon
     if(context.fightFlashTimer > 0.f && context.state == GameState::PLAYING)
         drawFightFlashOverlay(rt, font, context.fightFlashTimer);
 
-    if(context.state == GameState::SETTINGS && context.cfg)
+    if(context.state == GameState::SETTINGS && context.cfg && context.graphicsSettings)
         drawSettingsPanel(rt, font, context.menuAnim, context.settingsSel, *context.cfg,
                           context.musicVolume, context.sfxVolume,
-                          context.botEnabled, context.botDifficulty);
+                          context.botEnabled, context.botDifficulty,
+                          *context.graphicsSettings);
 }
 
 } // namespace hud_runtime

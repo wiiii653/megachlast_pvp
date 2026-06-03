@@ -55,6 +55,7 @@ static app_runtime::RuntimeOptions g_runtime{};
 // Negative value = not set (use built-in defaults)
 static app_runtime::BotRuntime g_bot_runtime{};
 static app_runtime::AudioSettings g_audio{};
+static GraphicsSettings g_graphics{};
 
 static ProceduralSynth g_synth;
 
@@ -130,11 +131,13 @@ int main(int argc, char** argv){
     auto save_settings_file = [&](const std::string& path){
         settings_io::saveSettingsFile(path, cfg, g_runtime.bot_enabled, g_runtime.bot_difficulty,
                                       g_audio.music_volume, g_audio.sfx_volume, g_audio.muted,
+                                      g_graphics,
                                       g_bot_runtime.overrides);
     };
     auto load_settings_file = [&](const std::string& path) -> bool {
         return settings_io::loadSettingsFile(path, cfg, g_runtime.bot_enabled, g_runtime.bot_difficulty,
                                              g_audio.music_volume, g_audio.sfx_volume, g_audio.muted,
+                                             g_graphics,
                                              g_bot_runtime.overrides);
     };
     if(!load_settings_file(cfgpath))
@@ -150,8 +153,8 @@ int main(int argc, char** argv){
     sf::ContextSettings windowSettings = graphics_runtime::makeWindowContextSettings();
     sf::RenderWindow win(
         sf::VideoMode(sf::Vector2u{
-            static_cast<unsigned int>(W*SCALE),
-            static_cast<unsigned int>(H*SCALE)}),
+            static_cast<unsigned int>(W * g_graphics.window_scale),
+            static_cast<unsigned int>(H * g_graphics.window_scale)}),
         "Megachlast PvP",
         sf::Style::Default,
         sf::State::Windowed,
@@ -159,6 +162,18 @@ int main(int argc, char** argv){
     if(cli.glInfo) graphics_runtime::printWindowDiagnostics(stderr, win);
     win.setFramerateLimit(60);
     bool isFullscreen = false;
+    auto applyWindowedGraphicsSettings = [&]{
+        if(isFullscreen) return;
+        win.create(sf::VideoMode(sf::Vector2u{
+                       static_cast<unsigned int>(W * g_graphics.window_scale),
+                       static_cast<unsigned int>(H * g_graphics.window_scale)}),
+                   "Megachlast PvP",
+                   sf::Style::Default,
+                   sf::State::Windowed,
+                   windowSettings);
+        win.setMouseCursorVisible(true);
+        win.setFramerateLimit(60);
+    };
 
     // Offscreen texture for CRT post-process (scanlines, shake)
     sf::RenderTexture rt;
@@ -377,6 +392,7 @@ int main(int argc, char** argv){
     inputContext.botDifficulty = &g_runtime.bot_difficulty;
     inputContext.musicVolume = &g_audio.music_volume;
     inputContext.sfxVolume = &g_audio.sfx_volume;
+    inputContext.graphicsSettings = &g_graphics;
     inputContext.donateMsgTimer = &donate_msg_timer;
     inputContext.botDebug = &g_bot_runtime.state.debug;
     inputContext.perfLevel = &g_runtime.perf_level;
@@ -387,6 +403,7 @@ int main(int argc, char** argv){
     inputContext.cfgPath = &cfgpath;
     inputContext.playMenuMusic = playMenuMusic;
     inputContext.applyAllMusicSettings = apply_all_music_settings;
+    inputContext.applyGraphicsSettings = applyWindowedGraphicsSettings;
     inputContext.saveSettings = save_settings_file;
     inputContext.loadSettings = load_settings_file;
     inputContext.startCountdownRound = startCountdownFromMenu;
@@ -479,6 +496,7 @@ int main(int argc, char** argv){
         frameCtx.shakeIntensity = &g_shake_intensity;
         frameCtx.p1 = &p1;
         frameCtx.p2 = &p2;
+        frameCtx.playMenuMusic = playMenuMusic;
         frameCtx.playIngameMusic = playIngameMusic;
         frame_runtime::updateStateAndTimers(frameCtx);
 
@@ -566,12 +584,15 @@ int main(int argc, char** argv){
         renderCtx.drawPlayerRows = [&]{ if(haveFont) hud_runtime::drawPlayerRows(rt, font, p1, p2); };
         render_runtime::drawIngameElements(rt, renderCtx);
 
-        bool postfxDisabled = render_runtime::isPostfxDisabled(g_runtime.no_postfx, state, g_fx_runtime.fx_level);
+        bool postfxDisabled = render_runtime::isPostfxDisabled(g_runtime.no_postfx,
+                                                               g_graphics,
+                                                               state,
+                                                               g_fx_runtime.fx_level);
 
         render_runtime::SceneOverlayContext sceneOverlayCtx{};
         sceneOverlayCtx.state = state;
-        sceneOverlayCtx.menuAnim = menuAnim;
         sceneOverlayCtx.postfxDisabled = postfxDisabled;
+        sceneOverlayCtx.vignetteEnabled = g_graphics.vignette_enabled;
         sceneOverlayCtx.drawMenuSpectStars = [&]{ render_runtime::drawSpectStars(rt, spectStars); };
         render_runtime::drawSceneOverlays(rt, sceneOverlayCtx);
 
@@ -581,6 +602,8 @@ int main(int argc, char** argv){
         postfxCtx.state = state;
         postfxCtx.fxLevel = g_fx_runtime.fx_level;
         postfxCtx.menuAnim = menuAnim;
+        postfxCtx.scanlinesEnabled = g_graphics.scanlines_enabled;
+        postfxCtx.copperBarsEnabled = g_graphics.copper_bars_enabled;
         postfxCtx.drawScanlines = [&]{ render_runtime::drawScanlines(rt); };
         render_runtime::drawPostfxOverlays(rt, postfxCtx);
 
@@ -609,6 +632,7 @@ int main(int argc, char** argv){
             hudCtx.cfg = &cfg;
             hudCtx.musicVolume = g_audio.music_volume;
             hudCtx.sfxVolume = g_audio.sfx_volume;
+            hudCtx.graphicsSettings = &g_graphics;
             hudCtx.drawMenuTitle = [&]{
                 render_runtime::drawMenuTitle(rt, font, menuAnim, g_fx_runtime.fx_level);
             };
@@ -620,6 +644,8 @@ int main(int argc, char** argv){
         render_runtime::CompositeContext compositeCtx{};
         compositeCtx.texture = &rt.getTexture();
         compositeCtx.postfxDisabled = postfxDisabled;
+        compositeCtx.vignetteEnabled = g_graphics.vignette_enabled;
+        compositeCtx.chromaticEnabled = g_graphics.chromatic_enabled;
         compositeCtx.shakeTimer = g_shake_timer;
         compositeCtx.shakeDuration = g_shake_duration;
         compositeCtx.shakeIntensity = g_shake_intensity;

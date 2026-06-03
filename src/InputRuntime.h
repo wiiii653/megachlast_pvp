@@ -21,9 +21,15 @@ enum SettingsOption {
     OPT_FIRE_CD_P1 = 6,
     OPT_FIRE_CD_P2 = 7,
     OPT_P_SPEED = 8,
-    OPT_SAVE = 9,
-    OPT_LOAD = 10,
-    OPT_COUNT = 11,
+    OPT_WINDOW_SCALE = 9,
+    OPT_POSTFX = 10,
+    OPT_SCANLINES = 11,
+    OPT_VIGNETTE = 12,
+    OPT_CHROMATIC = 13,
+    OPT_COPPER_BARS = 14,
+    OPT_SAVE = 15,
+    OPT_LOAD = 16,
+    OPT_COUNT = 17,
 };
 
 void setMovementKeyPressed(sf::Keyboard::Scancode sc, game_update_runtime::InputState& input);
@@ -37,9 +43,11 @@ bool handleSettingsKeyPressed(const sf::Event::KeyPressed& kp,
                               BotDifficulty& botDifficulty,
                               float& musicVolume,
                               float& sfxVolume,
+                              GraphicsSettings& graphicsSettings,
                               const std::string& cfgPath,
                               const std::function<void(const std::string&)>& saveSettings,
-                              const std::function<bool(const std::string&)>& loadSettings);
+                              const std::function<bool(const std::string&)>& loadSettings,
+                              const std::function<void()>& applyGraphicsSettings);
 
 bool handleDonateKeyPressed(const sf::Event::KeyPressed& kp,
                             GameState& state,
@@ -67,6 +75,7 @@ void handleGlobalControlKeyPressed(const sf::Event::KeyPressed& kp,
                                    float& musicVolume,
                                    float& sfxVolume,
                                    bool& isFullscreen,
+                                   const GraphicsSettings& graphicsSettings,
                                    game_update_runtime::InputState& input,
                                    sf::RenderWindow& win,
                                    const std::string& assetsDir,
@@ -82,6 +91,7 @@ struct FrameContext {
     BotDifficulty* botDifficulty = nullptr;
     float* musicVolume = nullptr;
     float* sfxVolume = nullptr;
+    GraphicsSettings* graphicsSettings = nullptr;
     float* donateMsgTimer = nullptr;
     bool* botDebug = nullptr;
     PerfLevel* perfLevel = nullptr;
@@ -94,6 +104,7 @@ struct FrameContext {
 
     std::function<void()> playMenuMusic;
     std::function<void()> applyAllMusicSettings;
+    std::function<void()> applyGraphicsSettings;
     std::function<void(const std::string&)> saveSettings;
     std::function<bool(const std::string&)> loadSettings;
     std::function<void()> startCountdownRound;

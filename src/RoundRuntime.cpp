@@ -97,12 +97,6 @@ void openDonateScreen(GameState& state, float& donateMsgTimer)
     donateMsgTimer = 0.f;
 }
 
-void pauseGameplay(GameState& state, bool haveIngameMusic, sf::Music& ingameMusic)
-{
-    state = GameState::PAUSED;
-    if(haveIngameMusic) ingameMusic.pause();
-}
-
 void resetPlayingRound(Player& p1,
                        Player& p2,
                        int& cd1,
@@ -111,18 +105,6 @@ void resetPlayingRound(Player& p1,
                        const std::function<void()>& resetRound)
 {
     resetRoundAndClearScores(p1, p2, cd1, cd2, powerupSpawnTimer, resetRound);
-}
-
-void resumeGameplay(GameState& state,
-                    bool haveIngameMusic,
-                    sf::Music& ingameMusic,
-                    const std::function<void(sf::Music&)>& applyAudioSettings)
-{
-    state = GameState::PLAYING;
-    if(haveIngameMusic){
-        applyAudioSettings(ingameMusic);
-        ingameMusic.play();
-    }
 }
 
 void rematchCountdownRound(Player& p1,

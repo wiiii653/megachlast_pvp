@@ -26,6 +26,7 @@ struct UpdateContext {
     float* shakeIntensity = nullptr;
     Player* p1 = nullptr;
     Player* p2 = nullptr;
+    std::function<void()> playMenuMusic;
     std::function<void()> playIngameMusic;
 };
 
@@ -35,7 +36,8 @@ void enforceSingleTrack(GameState state,
                         bool haveIngameMusic,
                         sf::Music& ingameMusic,
                         bool haveGetReady,
-                        sf::Music& getReady);
+                        sf::Music& getReady,
+                        const std::function<void()>& playMenuMusic);
 
 void updateStateAndTimers(UpdateContext& context);
 

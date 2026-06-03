@@ -46,3 +46,16 @@ BOT_DIFFICULTY=MEDIUM
 MUSIC_VOLUME=90
 SFX_VOLUME=90
 MUTE=0
+
+# Graphics defaults
+# Window scale controls the windowed resolution from the 640x400 internal render target:
+# 2=1280x800, 3=1920x1200, 4=2560x1600, 5=3200x2000, 6=3840x2400.
+# Fullscreen uses the desktop video mode instead.
+WINDOW_SCALE=4
+# Master cosmetic post-processing toggle. The --no-postfx CLI flag overrides this for a session.
+POSTFX_ENABLED=1
+# Individual cosmetic post-processing toggles.
+SCANLINES=1
+VIGNETTE=1
+CHROMATIC_ABERRATION=1
+COPPER_BARS=1

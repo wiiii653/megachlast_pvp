@@ -33,6 +33,7 @@ struct TextOverlayContext {
     const Config* cfg = nullptr;
     float musicVolume = 0.f;
     float sfxVolume = 0.f;
+    const GraphicsSettings* graphicsSettings = nullptr;
     std::function<void()> drawMenuTitle;
 };
 
@@ -70,7 +71,8 @@ void drawSettingsPanel(sf::RenderTarget& rt,
                        float musicVolume,
                        float sfxVolume,
                        bool botEnabled,
-                       BotDifficulty botDifficulty);
+                       BotDifficulty botDifficulty,
+                       const GraphicsSettings& graphicsSettings);
 void drawFragFloats(sf::RenderTarget& rt,
                     sf::Font& font,
                     const std::array<FragFloat, MAX_FRAG_FLOATS>& fragFloats);

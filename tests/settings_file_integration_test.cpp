@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -13,6 +14,7 @@ static BotDifficulty g_bot_difficulty = BotDifficulty::MEDIUM;
 static float g_music_volume = 90.f;
 static float g_sfx_volume = 90.f;
 static bool g_muted = false;
+static GraphicsSettings g_graphics{};
 static BotTuningOverrides g_bot_overrides{};
 
 namespace {
@@ -40,7 +42,9 @@ bool containsLine(const std::string& path, const std::string& needle)
 
 int main()
 {
-    const std::string path = "/tmp/opencode/settings_integration_test.cfg";
+    const std::filesystem::path tempPath =
+        std::filesystem::temp_directory_path() / "megachlast_settings_integration_test.cfg";
+    const std::string path = tempPath.string();
     std::remove(path.c_str());
 
     cfg.target_score = 13;
@@ -52,11 +56,19 @@ int main()
     g_music_volume = 47.f;
     g_sfx_volume = 63.f;
     g_muted = true;
+    g_graphics.window_scale = 3;
+    g_graphics.postfx_enabled = false;
+    g_graphics.scanlines_enabled = false;
+    g_graphics.vignette_enabled = true;
+    g_graphics.chromatic_enabled = false;
+    g_graphics.copper_bars_enabled = true;
 
     settings_io::saveSettingsFile(path, cfg, g_bot_enabled, g_bot_difficulty,
                                   g_music_volume, g_sfx_volume, g_muted,
+                                  g_graphics,
                                   g_bot_overrides);
     check(containsLine(path, "BOT_ENABLED=1"), "settings save writes BOT_ENABLED");
+    check(containsLine(path, "WINDOW_SCALE=3"), "settings save writes window scale");
 
     cfg.target_score = 1;
     cfg.p_speed = 20.f;
@@ -67,9 +79,11 @@ int main()
     g_music_volume = 10.f;
     g_sfx_volume = 10.f;
     g_muted = false;
+    g_graphics = {};
 
     check(settings_io::loadSettingsFile(path, cfg, g_bot_enabled, g_bot_difficulty,
                                         g_music_volume, g_sfx_volume, g_muted,
+                                        g_graphics,
                                         g_bot_overrides),
           "settings load succeeds for saved file");
     check(cfg.target_score == 13, "target score round-trips");
@@ -81,6 +95,12 @@ int main()
     check(std::fabs(g_music_volume - 47.f) < 0.0001f, "music volume round-trips");
     check(std::fabs(g_sfx_volume - 63.f) < 0.0001f, "sfx volume round-trips");
     check(g_muted, "mute flag round-trips");
+    check(g_graphics.window_scale == 3, "window scale round-trips");
+    check(!g_graphics.postfx_enabled, "postfx toggle round-trips");
+    check(!g_graphics.scanlines_enabled, "scanlines toggle round-trips");
+    check(g_graphics.vignette_enabled, "vignette toggle round-trips");
+    check(!g_graphics.chromatic_enabled, "chromatic toggle round-trips");
+    check(g_graphics.copper_bars_enabled, "copper bars toggle round-trips");
 
     {
         std::ofstream ofs(path, std::ios::trunc);
@@ -89,6 +109,7 @@ int main()
     g_bot_enabled = true;
     check(settings_io::loadSettingsFile(path, cfg, g_bot_enabled, g_bot_difficulty,
                                         g_music_volume, g_sfx_volume, g_muted,
+                                        g_graphics,
                                         g_bot_overrides),
           "settings load succeeds with invalid BOT_ENABLED value");
     check(g_bot_enabled, "invalid BOT_ENABLED does not overwrite previous value");
@@ -100,6 +121,7 @@ int main()
     g_bot_difficulty = BotDifficulty::HARD;
     check(settings_io::loadSettingsFile(path, cfg, g_bot_enabled, g_bot_difficulty,
                                         g_music_volume, g_sfx_volume, g_muted,
+                                        g_graphics,
                                         g_bot_overrides),
           "settings load succeeds with invalid BOT_DIFFICULTY value");
     check(g_bot_difficulty == BotDifficulty::HARD, "invalid BOT_DIFFICULTY does not overwrite previous value");

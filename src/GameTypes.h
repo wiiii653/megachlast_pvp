@@ -19,6 +19,15 @@ enum class BotDifficulty : uint8_t { EASY=0, MEDIUM=1, HARD=2 };
 enum class PerfLevel : uint8_t { HIGH=0, MEDIUM=1, LOW=2, ULTRA=3 };
 enum class GameState : uint8_t { MENU=0, PLAYING=1, PAUSED=2, GAME_OVER=3, COUNTDOWN=4, SETTINGS=5, DONATE=6 };
 
+struct GraphicsSettings {
+    int window_scale = SCALE;
+    bool postfx_enabled = true;
+    bool scanlines_enabled = true;
+    bool vignette_enabled = true;
+    bool chromatic_enabled = true;
+    bool copper_bars_enabled = true;
+};
+
 struct Bullet {
     float x=0, y=0;
     float vx=0, vy=0;

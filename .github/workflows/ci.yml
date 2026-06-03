@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install SFML
+        run: vcpkg install sfml
+
+      - name: Configure
+        shell: bash
+        run: cmake -S . -B build_sfml3 -DUSE_BUNDLED_SFML=OFF -DCMAKE_TOOLCHAIN_FILE="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+
+      - name: Build
+        run: cmake --build build_sfml3 --parallel
+
+      - name: Test
+        run: ctest --test-dir build_sfml3 --output-on-failure

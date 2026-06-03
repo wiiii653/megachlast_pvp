@@ -15,16 +15,16 @@ This document defines the minimum quality bar and release process for Early Acce
 3. Game launches from project root and can start a round.
 4. Core input works (move/fire/pause/menu/settings).
 5. Audio path is functional (music + SFX, mute/volume controls).
-6. Settings save/load works (`assets/settings.cfg`).
+6. Settings save/load works (`assets/settings.cfg`), including gameplay, audio, bot, and graphics settings.
 7. No known crash-on-launch issues on supported platforms.
 
 ## Pre-Release Checklist
 
 1. Run local sanity checks:
-   - `cmake -S . -B build_sfml3 -DUSE_BUNDLED_SFML=ON`
+   - `cmake -S . -B build_sfml3`
    - `cmake --build build_sfml3 -j`
    - `ctest --test-dir build_sfml3 --output-on-failure`
-2. Ensure cross-platform CI workflow is green.
+2. Ensure cross-platform CI workflow is green. CI uses vcpkg SFML 3 with `-DUSE_BUNDLED_SFML=OFF` on Linux, macOS, and Windows.
 3. Verify README setup/run commands are still accurate.
 4. Verify assets required by runtime are present in `assets/`.
 5. Confirm known issues list is up to date.
@@ -35,6 +35,7 @@ This document defines the minimum quality bar and release process for Early Acce
 - Gameplay tuning and balance are still in active iteration.
 - Save format (`assets/settings.cfg`) is not guaranteed stable between Early Access builds.
 - Some diagnostics and graphics profile options are primarily Linux-oriented.
+- Bundled SFML may be skipped on Linux when its audio runtime dependency does not match the host; system/vcpkg SFML 3 is the portable fallback.
 
 ## Player-Facing Notes Template
 

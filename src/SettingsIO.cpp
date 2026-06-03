@@ -16,6 +16,7 @@ void saveSettingsFile(const std::string& path,
                       float musicVolume,
                       float sfxVolume,
                       bool muted,
+                      const GraphicsSettings& graphics,
                       const BotTuningOverrides& botOverrides)
 {
     std::ofstream ofs(path);
@@ -33,7 +34,13 @@ void saveSettingsFile(const std::string& path,
         << "BOT_DIFFICULTY=" << botNames[static_cast<int>(botDifficulty)] << "\n"
         << "MUSIC_VOLUME="   << musicVolume << "\n"
         << "SFX_VOLUME="     << sfxVolume   << "\n"
-        << "MUTE="           << (muted ? 1 : 0)   << "\n";
+        << "MUTE="           << (muted ? 1 : 0)   << "\n"
+        << "WINDOW_SCALE="   << graphics.window_scale << "\n"
+        << "POSTFX_ENABLED=" << (graphics.postfx_enabled ? 1 : 0) << "\n"
+        << "SCANLINES="      << (graphics.scanlines_enabled ? 1 : 0) << "\n"
+        << "VIGNETTE="       << (graphics.vignette_enabled ? 1 : 0) << "\n"
+        << "CHROMATIC_ABERRATION=" << (graphics.chromatic_enabled ? 1 : 0) << "\n"
+        << "COPPER_BARS="    << (graphics.copper_bars_enabled ? 1 : 0) << "\n";
 
     auto writeOverride = [&](const char* key, float value){
         if(value >= 0.f) ofs << key << "=" << value << "\n";
@@ -61,6 +68,7 @@ bool loadSettingsFile(const std::string& path,
                       float& musicVolume,
                       float& sfxVolume,
                       bool& muted,
+                      GraphicsSettings& graphics,
                       BotTuningOverrides& botOverrides)
 {
     std::ifstream ifs(path);
@@ -134,6 +142,32 @@ bool loadSettingsFile(const std::string& path,
                 auto parsed = settings_parse::parseBool(val);
                 if(!parsed) throw std::invalid_argument("invalid bool");
                 muted = *parsed;
+            }
+            else if(key=="WINDOW_SCALE") graphics.window_scale = asInt(2, 6);
+            else if(key=="POSTFX_ENABLED"){
+                auto parsed = settings_parse::parseBool(val);
+                if(!parsed) throw std::invalid_argument("invalid bool");
+                graphics.postfx_enabled = *parsed;
+            }
+            else if(key=="SCANLINES"){
+                auto parsed = settings_parse::parseBool(val);
+                if(!parsed) throw std::invalid_argument("invalid bool");
+                graphics.scanlines_enabled = *parsed;
+            }
+            else if(key=="VIGNETTE"){
+                auto parsed = settings_parse::parseBool(val);
+                if(!parsed) throw std::invalid_argument("invalid bool");
+                graphics.vignette_enabled = *parsed;
+            }
+            else if(key=="CHROMATIC_ABERRATION"){
+                auto parsed = settings_parse::parseBool(val);
+                if(!parsed) throw std::invalid_argument("invalid bool");
+                graphics.chromatic_enabled = *parsed;
+            }
+            else if(key=="COPPER_BARS"){
+                auto parsed = settings_parse::parseBool(val);
+                if(!parsed) throw std::invalid_argument("invalid bool");
+                graphics.copper_bars_enabled = *parsed;
             }
         } catch(...) {
             std::fprintf(stderr, "Ignoring invalid setting %s=%s\n", key.c_str(), val.c_str());

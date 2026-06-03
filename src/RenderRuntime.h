@@ -32,8 +32,8 @@ struct IngameElementsContext {
 
 struct SceneOverlayContext {
     GameState state = GameState::MENU;
-    float menuAnim = 0.f;
     bool postfxDisabled = false;
+    bool vignetteEnabled = true;
     std::function<void()> drawMenuSpectStars;
 };
 
@@ -43,12 +43,16 @@ struct PostfxContext {
     GameState state = GameState::MENU;
     int fxLevel = 0;
     float menuAnim = 0.f;
+    bool scanlinesEnabled = true;
+    bool copperBarsEnabled = true;
     std::function<void()> drawScanlines;
 };
 
 struct CompositeContext {
     const sf::Texture* texture = nullptr;
     bool postfxDisabled = false;
+    bool vignetteEnabled = true;
+    bool chromaticEnabled = true;
     float shakeTimer = 0.f;
     float shakeDuration = 0.f;
     float shakeIntensity = 0.f;
@@ -82,7 +86,7 @@ void drawMenuTitle(sf::RenderTarget& rt, sf::Font& font, float t, int fxLevel);
 void drawPlasmaBg(sf::RenderTarget& rt, float t);
 void drawCopperBars(sf::RenderTarget& rt, float t);
 void drawIngameElements(sf::RenderTarget& rt, const IngameElementsContext& context);
-bool isPostfxDisabled(bool noPostfx, GameState state, int fxLevel);
+bool isPostfxDisabled(bool noPostfx, const GraphicsSettings& graphicsSettings, GameState state, int fxLevel);
 void drawPostfxOverlays(sf::RenderTarget& rt, const PostfxContext& context);
 void drawSceneOverlays(sf::RenderTarget& rt, const SceneOverlayContext& context);
 void compositeToWindow(sf::RenderWindow& win, const CompositeContext& context);

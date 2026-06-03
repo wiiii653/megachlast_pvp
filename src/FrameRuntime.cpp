@@ -4,24 +4,14 @@
 
 namespace frame_runtime {
 
-void updateCountdownAndFightFlash(GameState& state,
-                                  float& countdownTimer,
-                                  float& fightFlashTimer,
-                                  float dt,
-                                  const std::function<void()>& playIngameMusic);
-void updateScreenShake(float dt,
-                       float& shakeTimer,
-                       float& shakeDuration,
-                       float& shakeIntensity);
-void updatePlayerTimers(GameState state, Player& p1, Player& p2, float dt);
-
 void enforceSingleTrack(GameState state,
                         bool haveMusic,
                         sf::Music& music,
                         bool haveIngameMusic,
                         sf::Music& ingameMusic,
                         bool haveGetReady,
-                        sf::Music& getReady)
+                        sf::Music& getReady,
+                        const std::function<void()>& playMenuMusic)
 {
     if(state == GameState::MENU || state == GameState::SETTINGS){
         if(haveIngameMusic && ingameMusic.getStatus() != sf::Music::Status::Stopped){
@@ -33,6 +23,8 @@ void enforceSingleTrack(GameState state,
             getReady.setVolume(0);
             getReady.setLooping(false);
         }
+        if(haveMusic && music.getStatus() == sf::Music::Status::Stopped && playMenuMusic)
+            playMenuMusic();
     }
 
     if(state == GameState::PLAYING || state == GameState::PAUSED ||
@@ -52,7 +44,8 @@ void updateStateAndTimers(UpdateContext& context)
                        context.haveIngameMusic,
                        *context.ingameMusic,
                        context.haveGetReady,
-                       *context.getReady);
+                       *context.getReady,
+                       context.playMenuMusic);
     updateCountdownAndFightFlash(*context.state,
                                  *context.countdownTimer,
                                  *context.fightFlashTimer,

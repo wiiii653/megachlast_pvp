@@ -29,7 +29,20 @@ struct RuntimeState {
     float state_timer = 0.f;
 };
 
-void resetState(RuntimeState& rt);
+inline void resetState(RuntimeState& rt)
+{
+    rt.strafe_target = W * 0.5f;
+    rt.strafe_timer = 0.f;
+    rt.prev_p1_x = W * 0.5f;
+    rt.state = BotState::IDLE;
+    rt.state_timer = 0.f;
+    rt.debug_pred_impact_x = -1.f;
+    rt.debug_pred_intercept_x = -1.f;
+    rt.debug_best_pu_x = -1.f;
+    rt.debug_worst_tti = 1e9f;
+    rt.log_collect_cd = 0.f;
+    rt.log_bomb_cd = 0.f;
+}
 
 inline int computeFireCooldown(int baseFrames, float rapidTimer)
 {

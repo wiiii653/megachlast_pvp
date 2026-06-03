@@ -36,46 +36,60 @@ General:
 
 This project requires **SFML 3.x**.
 
-- If `SFML-3.0.1/` exists in the project root, CMake uses it by default.
+- If `SFML-3.0.1/` exists in the project root, CMake tries to use it by default.
+- On Linux, CMake falls back to system SFML if bundled SFML audio requires an unavailable FLAC runtime such as `libFLAC.so.12`.
 - To force system SFML, configure with `-DUSE_BUNDLED_SFML=OFF`.
 - CMake always uses `find_package(SFML 3 ...)`, either from bundled package config or system install.
 - Note: Ubuntu 24.04 default repositories provide SFML 2.6 (`libsfml-dev`), which is not sufficient.
+- CI builds Linux, macOS, and Windows with vcpkg-provided SFML 3 and `-DUSE_BUNDLED_SFML=OFF`.
 
 ```bash
-cd megachlast_PvP_clean
 cmake -S . -B build_sfml3
 cmake --build build_sfml3 -j
 ```
 
 ### Linux
 
-Install SFML 3 (or use bundled `SFML-3.0.1/`), then:
+Use bundled `SFML-3.0.1/` when its runtime dependencies match the host, or install/provide SFML 3 through a package manager such as vcpkg. If using vcpkg:
 
 ```bash
-cmake -S . -B build_sfml3 -DUSE_BUNDLED_SFML=ON
+vcpkg install sfml
+cmake -S . -B build_sfml3 -DUSE_BUNDLED_SFML=OFF \
+  -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
 cmake --build build_sfml3 -j
 ctest --test-dir build_sfml3 --output-on-failure
 ```
 
-### macOS
-
-Install SFML 3 (or keep bundled `SFML-3.0.1/`), then:
+If bundled SFML is usable on your machine, the default configure command also works:
 
 ```bash
-cmake -S . -B build_sfml3 -DUSE_BUNDLED_SFML=OFF
+cmake -S . -B build_sfml3
+```
+
+### macOS
+
+Install SFML 3, then build with bundled SFML disabled. vcpkg is the CI-tested route:
+
+```bash
+vcpkg install sfml
+cmake -S . -B build_sfml3 -DUSE_BUNDLED_SFML=OFF \
+  -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
 cmake --build build_sfml3 -j
 ctest --test-dir build_sfml3 --output-on-failure
 ```
 
 ### Windows 10/11 (MSVC)
 
-Use a VS Developer PowerShell and install SFML 3 (for example via vcpkg), then:
+Use a VS Developer PowerShell and install SFML 3 via vcpkg, then:
 
 ```powershell
+vcpkg install sfml:x64-windows
 cmake -S . -B build_sfml3 -DUSE_BUNDLED_SFML=OFF -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
 cmake --build build_sfml3 --config Release --parallel
 ctest --test-dir build_sfml3 --build-config Release --output-on-failure
 ```
+
+The executable links `Psapi` on Windows for perf logging support.
 
 ## Run
 
@@ -139,9 +153,18 @@ Keyboard shortcuts:
 - `K` — save current settings to `assets/settings.cfg`
 - `L` — load settings from `assets/settings.cfg` (in settings screen)
 
+Settings screen:
+
+- `Up` / `Down` — select a row.
+- `Left` / `Right` — change numeric settings, including windowed resolution scale.
+- `Enter` — toggle boolean settings or activate save/load rows.
+- Graphics rows control windowed resolution scale, post-processing master toggle, scanlines, edge/final vignette, chromatic aberration, and copper bars.
+- `WINDOW_SCALE` is a scale multiplier for the 640x400 internal render target. For example, `2` is 1280x800 and `3` is 1920x1200. Fullscreen still uses the desktop video mode.
+- `--no-postfx` overrides saved graphics settings and disables cosmetic post-processing for the session.
+
 Optional runtime overrides can be placed in `assets/settings.cfg` (copy and edit `assets/settings.cfg.example`).
-Persistent toggles include `BOT_ENABLED`, `BOT_DIFFICULTY`, `MUSIC_VOLUME`, `SFX_VOLUME`, and `MUTE`.
-Supported gameplay/audio keys include: `TARGET_SCORE`, `P_SPEED`, `BULLET_SPEED`, `BULLET_TTL`, `HIT_R`, `DAMAGE`, `FIRE_CD_P1_FRAMES`, `FIRE_CD_P2_FRAMES`, `BOT_ENABLED`, `BOT_DIFFICULTY`, `MUSIC_VOLUME`, `SFX_VOLUME`, `MUTE`.
+Persistent toggles include `BOT_ENABLED`, `BOT_DIFFICULTY`, `MUSIC_VOLUME`, `SFX_VOLUME`, `MUTE`, and graphics options.
+Supported gameplay/audio/graphics keys include: `TARGET_SCORE`, `P_SPEED`, `BULLET_SPEED`, `BULLET_TTL`, `HIT_R`, `DAMAGE`, `FIRE_CD_P1_FRAMES`, `FIRE_CD_P2_FRAMES`, `BOT_ENABLED`, `BOT_DIFFICULTY`, `MUSIC_VOLUME`, `SFX_VOLUME`, `MUTE`, `WINDOW_SCALE`, `POSTFX_ENABLED`, `SCANLINES`, `VIGNETTE`, `CHROMATIC_ABERRATION`, `COPPER_BARS`.
 Supported bot tuning overrides include: `BOT_DODGE_ZONE`, `BOT_DODGE_X_THR`, `BOT_ALIGN_TOL`, `BOT_FIRE_PROB`, `BOT_REACTION`, `BOT_POWERUP_INTEREST`, `BOT_STRAFE_LO`, `BOT_STRAFE_HI`, `BOT_BOMB_FEAR`, `BOT_AIM_LEAD_EASY`, `BOT_AIM_LEAD_MED`, `BOT_AIM_LEAD_HARD`.
 
 ## Assets

@@ -15,15 +15,16 @@ float clampf(float v, float lo, float hi)
 
 } // namespace
 
-bool isPostfxDisabled(bool noPostfx, GameState state, int fxLevel)
+bool isPostfxDisabled(bool noPostfx, const GraphicsSettings& graphicsSettings, GameState state, int fxLevel)
 {
-    return noPostfx || (state == GameState::PLAYING && fxLevel >= 3);
+    return noPostfx || !graphicsSettings.postfx_enabled || (state == GameState::PLAYING && fxLevel >= 3);
 }
 
 void drawPostfxOverlays(sf::RenderTarget& rt, const PostfxContext& context)
 {
-    if(!context.postfxDisabled) drawCopperBars(rt, context.menuAnim);
+    if(!context.postfxDisabled && context.copperBarsEnabled) drawCopperBars(rt, context.menuAnim);
     if(!context.postfxDisabled &&
+       context.scanlinesEnabled &&
        context.perfLevel != PerfLevel::ULTRA &&
        !(context.state == GameState::PLAYING && context.fxLevel >= 2))
         context.drawScanlines();
@@ -50,7 +51,7 @@ void drawSceneOverlays(sf::RenderTarget& rt, const SceneOverlayContext& context)
         context.drawMenuSpectStars();
     }
 
-    if(context.state != GameState::MENU && !context.postfxDisabled){
+    if(context.state != GameState::MENU && !context.postfxDisabled && context.vignetteEnabled){
         for(int i = 0; i < 12; ++i){
             uint8_t a = static_cast<uint8_t>((12 - i) * 3);
             sf::RectangleShape vig(sf::Vector2f(static_cast<float>(W), 1.f));
@@ -70,8 +71,6 @@ void drawSceneOverlays(sf::RenderTarget& rt, const SceneOverlayContext& context)
             rt.draw(vig);
         }
     }
-
-    (void)context.menuAnim;
 }
 
 void compositeToWindow(sf::RenderWindow& win, const CompositeContext& context)
@@ -95,7 +94,7 @@ void compositeToWindow(sf::RenderWindow& win, const CompositeContext& context)
         {static_cast<float>(win.getSize().x), static_cast<float>(win.getSize().y)}));
     win.setView(winView);
 
-    if(context.postfxDisabled){
+    if(context.postfxDisabled || (!context.chromaticEnabled && !context.vignetteEnabled)){
         sf::Sprite mainS(*context.texture);
         mainS.setScale(sf::Vector2f(scaleX, scaleY));
         mainS.setPosition(sf::Vector2f(ox, oy));
@@ -103,25 +102,29 @@ void compositeToWindow(sf::RenderWindow& win, const CompositeContext& context)
         return;
     }
 
-    float caStr = 2.0f + (context.shakeTimer > 0.f ? context.shakeIntensity * 0.4f : 0.f);
-    float caDx  = caStr * scaleX;
-
     sf::Sprite mainS(*context.texture);
     mainS.setScale(sf::Vector2f(scaleX, scaleY));
     mainS.setPosition(sf::Vector2f(ox, oy));
     win.draw(mainS);
 
-    sf::Sprite redS(*context.texture);
-    redS.setScale(sf::Vector2f(scaleX, scaleY));
-    redS.setPosition(sf::Vector2f(ox - caDx, oy));
-    redS.setColor(sf::Color(255, 0, 0, 60));
-    win.draw(redS, sf::RenderStates(sf::BlendAdd));
+    if(context.chromaticEnabled){
+        float caStr = 2.0f + (context.shakeTimer > 0.f ? context.shakeIntensity * 0.4f : 0.f);
+        float caDx  = caStr * scaleX;
 
-    sf::Sprite blueS(*context.texture);
-    blueS.setScale(sf::Vector2f(scaleX, scaleY));
-    blueS.setPosition(sf::Vector2f(ox + caDx, oy));
-    blueS.setColor(sf::Color(0, 0, 255, 60));
-    win.draw(blueS, sf::RenderStates(sf::BlendAdd));
+        sf::Sprite redS(*context.texture);
+        redS.setScale(sf::Vector2f(scaleX, scaleY));
+        redS.setPosition(sf::Vector2f(ox - caDx, oy));
+        redS.setColor(sf::Color(255, 0, 0, 60));
+        win.draw(redS, sf::RenderStates(sf::BlendAdd));
+
+        sf::Sprite blueS(*context.texture);
+        blueS.setScale(sf::Vector2f(scaleX, scaleY));
+        blueS.setPosition(sf::Vector2f(ox + caDx, oy));
+        blueS.setColor(sf::Color(0, 0, 255, 60));
+        win.draw(blueS, sf::RenderStates(sf::BlendAdd));
+    }
+
+    if(!context.vignetteEnabled) return;
 
     float WW = static_cast<float>(win.getSize().x);
     float WH = static_cast<float>(win.getSize().y);

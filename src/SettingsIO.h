@@ -14,6 +14,7 @@ void saveSettingsFile(const std::string& path,
                       float musicVolume,
                       float sfxVolume,
                       bool muted,
+                      const GraphicsSettings& graphics,
                       const BotTuningOverrides& botOverrides);
 
 bool loadSettingsFile(const std::string& path,
@@ -23,6 +24,7 @@ bool loadSettingsFile(const std::string& path,
                       float& musicVolume,
                       float& sfxVolume,
                       bool& muted,
+                      GraphicsSettings& graphics,
                       BotTuningOverrides& botOverrides);
 
 } // namespace settings_io

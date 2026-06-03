@@ -2,9 +2,11 @@
 
 #include "GameTypes.h"
 
-#include <SFML/Audio/Music.hpp>
-
 #include <functional>
+
+namespace sf {
+class Music;
+}
 
 namespace round_runtime {
 
