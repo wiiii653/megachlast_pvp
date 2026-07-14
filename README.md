@@ -15,6 +15,12 @@ Player 2 (top):
 - Left / Right arrows: move left/right
 - Right Ctrl or /: fire
 
+Controllers:
+
+- Each player can use a configured controller alongside their keyboard bindings.
+- Left stick or D-pad: move left/right; south button, L1, or R1: fire.
+- In Settings, select `P1 Controller` or `P2 Controller` and use Left/Right to choose `OFF` or joystick slot `Joy 1` through `Joy 8` (the first two slots are the defaults).
+
 General:
 
 - Space: pause/resume
@@ -163,8 +169,8 @@ Settings screen:
 - `--no-postfx` overrides saved graphics settings and disables cosmetic post-processing for the session.
 
 Optional runtime overrides can be placed in `assets/settings.cfg` (copy and edit `assets/settings.cfg.example`).
-Persistent toggles include `BOT_ENABLED`, `BOT_DIFFICULTY`, `MUSIC_VOLUME`, `SFX_VOLUME`, `MUTE`, and graphics options.
-Supported gameplay/audio/graphics keys include: `TARGET_SCORE`, `P_SPEED`, `BULLET_SPEED`, `BULLET_TTL`, `HIT_R`, `DAMAGE`, `FIRE_CD_P1_FRAMES`, `FIRE_CD_P2_FRAMES`, `BOT_ENABLED`, `BOT_DIFFICULTY`, `MUSIC_VOLUME`, `SFX_VOLUME`, `MUTE`, `WINDOW_SCALE`, `POSTFX_ENABLED`, `SCANLINES`, `VIGNETTE`, `CHROMATIC_ABERRATION`, `COPPER_BARS`.
+Persistent toggles include `BOT_ENABLED`, `BOT_DIFFICULTY`, `MUSIC_VOLUME`, `SFX_VOLUME`, `MUTE`, controller slots, and graphics options.
+Supported gameplay/audio/graphics keys include: `TARGET_SCORE`, `P_SPEED`, `BULLET_SPEED`, `BULLET_TTL`, `HIT_R`, `DAMAGE`, `FIRE_CD_P1_FRAMES`, `FIRE_CD_P2_FRAMES`, `BOT_ENABLED`, `BOT_DIFFICULTY`, `MUSIC_VOLUME`, `SFX_VOLUME`, `MUTE`, `P1_CONTROLLER`, `P2_CONTROLLER`, `WINDOW_SCALE`, `POSTFX_ENABLED`, `SCANLINES`, `VIGNETTE`, `CHROMATIC_ABERRATION`, `COPPER_BARS`.
 Supported bot tuning overrides include: `BOT_DODGE_ZONE`, `BOT_DODGE_X_THR`, `BOT_ALIGN_TOL`, `BOT_FIRE_PROB`, `BOT_REACTION`, `BOT_POWERUP_INTEREST`, `BOT_STRAFE_LO`, `BOT_STRAFE_HI`, `BOT_BOMB_FEAR`, `BOT_AIM_LEAD_EASY`, `BOT_AIM_LEAD_MED`, `BOT_AIM_LEAD_HARD`.
 
 ## Assets
@@ -173,8 +179,8 @@ Supported bot tuning overrides include: `BOT_DODGE_ZONE`, `BOT_DODGE_X_THR`, `BO
 - `assets/menu.mp3` — menu music
 - `assets/ingame.mp3` — in-game music
 - `assets/get_ready.mp3` — round-start jingle
-- `assets/pl1red.png` — Player 1 ship sprite
-- `assets/pl2blu.png` — Player 2 ship sprite
+- `assets/pl1blu.png` — Player 1 ship sprite
+- `assets/pl2red.png` — Player 2 ship sprite
 
 All sound effects (fire, hit, explosions, power-ups) are **procedurally generated** at runtime via `ProceduralSynth` — no `.wav` files needed.
 

@@ -15,6 +15,7 @@ static float g_music_volume = 90.f;
 static float g_sfx_volume = 90.f;
 static bool g_muted = false;
 static GraphicsSettings g_graphics{};
+static ControllerSettings g_controllers{};
 static BotTuningOverrides g_bot_overrides{};
 
 namespace {
@@ -62,13 +63,17 @@ int main()
     g_graphics.vignette_enabled = true;
     g_graphics.chromatic_enabled = false;
     g_graphics.copper_bars_enabled = true;
+    g_controllers.p1_joystick = 2;
+    g_controllers.p2_joystick = -1;
 
     settings_io::saveSettingsFile(path, cfg, g_bot_enabled, g_bot_difficulty,
                                   g_music_volume, g_sfx_volume, g_muted,
                                   g_graphics,
+                                  g_controllers,
                                   g_bot_overrides);
     check(containsLine(path, "BOT_ENABLED=1"), "settings save writes BOT_ENABLED");
     check(containsLine(path, "WINDOW_SCALE=3"), "settings save writes window scale");
+    check(containsLine(path, "P1_CONTROLLER=2"), "settings save writes P1 controller");
 
     cfg.target_score = 1;
     cfg.p_speed = 20.f;
@@ -80,10 +85,12 @@ int main()
     g_sfx_volume = 10.f;
     g_muted = false;
     g_graphics = {};
+    g_controllers = {};
 
     check(settings_io::loadSettingsFile(path, cfg, g_bot_enabled, g_bot_difficulty,
                                         g_music_volume, g_sfx_volume, g_muted,
                                         g_graphics,
+                                        g_controllers,
                                         g_bot_overrides),
           "settings load succeeds for saved file");
     check(cfg.target_score == 13, "target score round-trips");
@@ -101,6 +108,8 @@ int main()
     check(g_graphics.vignette_enabled, "vignette toggle round-trips");
     check(!g_graphics.chromatic_enabled, "chromatic toggle round-trips");
     check(g_graphics.copper_bars_enabled, "copper bars toggle round-trips");
+    check(g_controllers.p1_joystick == 2, "P1 controller round-trips");
+    check(g_controllers.p2_joystick == -1, "P2 controller round-trips");
 
     {
         std::ofstream ofs(path, std::ios::trunc);
@@ -110,6 +119,7 @@ int main()
     check(settings_io::loadSettingsFile(path, cfg, g_bot_enabled, g_bot_difficulty,
                                         g_music_volume, g_sfx_volume, g_muted,
                                         g_graphics,
+                                        g_controllers,
                                         g_bot_overrides),
           "settings load succeeds with invalid BOT_ENABLED value");
     check(g_bot_enabled, "invalid BOT_ENABLED does not overwrite previous value");
@@ -122,6 +132,7 @@ int main()
     check(settings_io::loadSettingsFile(path, cfg, g_bot_enabled, g_bot_difficulty,
                                         g_music_volume, g_sfx_volume, g_muted,
                                         g_graphics,
+                                        g_controllers,
                                         g_bot_overrides),
           "settings load succeeds with invalid BOT_DIFFICULTY value");
     check(g_bot_difficulty == BotDifficulty::HARD, "invalid BOT_DIFFICULTY does not overwrite previous value");

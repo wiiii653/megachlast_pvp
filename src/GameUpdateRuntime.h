@@ -28,6 +28,7 @@ using FireFn = void(*)(std::array<Bullet, MAX_BULLETS>&, const Player&, int);
 using SpawnThrusterFn = void(*)(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float, int);
 
 void syncPlayingKeyboard(InputState& in);
+void syncPlayingControllers(InputState& in, const ControllerSettings& controllers);
 
 void fireFromPlayer(std::array<Bullet, MAX_BULLETS>& bullets,
                     const Player& player,

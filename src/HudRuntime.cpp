@@ -403,7 +403,8 @@ void drawSettingsPanel(sf::RenderTarget& rt,
                        float sfxVolume,
                        bool botEnabled,
                        BotDifficulty botDifficulty,
-                       const GraphicsSettings& graphicsSettings)
+                       const GraphicsSettings& graphicsSettings,
+                       const ControllerSettings& controllers)
 {
     constexpr int OPT_MUSIC = 0;
     constexpr int OPT_SFX = 1;
@@ -420,10 +421,12 @@ void drawSettingsPanel(sf::RenderTarget& rt,
     constexpr int OPT_VIGNETTE = 12;
     constexpr int OPT_CHROMATIC = 13;
     constexpr int OPT_COPPER_BARS = 14;
-    constexpr int OPT_SAVE = 15;
-    constexpr int OPT_LOAD = 16;
+    constexpr int OPT_P1_CONTROLLER = 15;
+    constexpr int OPT_P2_CONTROLLER = 16;
+    constexpr int OPT_SAVE = 17;
+    constexpr int OPT_LOAD = 18;
 
-    float panelW = 278.f, panelH = 322.f;
+    float panelW = 278.f, panelH = 350.f;
     float px = W / 2.f - panelW / 2.f, py = H / 2.f - panelH / 2.f;
 
     sf::RectangleShape panel(sf::Vector2f(panelW, panelH));
@@ -544,6 +547,14 @@ void drawSettingsPanel(sf::RenderTarget& rt,
 
     std::snprintf(tmp, sizeof(tmp), "Copper Bars: %s", graphicsSettings.copper_bars_enabled ? "ON " : "OFF");
     drawOpt(OPT_COPPER_BARS, tmp);
+    ly += 14.f;
+
+    std::snprintf(tmp, sizeof(tmp), "P1 Controller: %s", controllers.p1_joystick < 0 ? "OFF" : ("Joy " + std::to_string(controllers.p1_joystick + 1)).c_str());
+    drawOpt(OPT_P1_CONTROLLER, tmp);
+    ly += 14.f;
+
+    std::snprintf(tmp, sizeof(tmp), "P2 Controller: %s", controllers.p2_joystick < 0 ? "OFF" : ("Joy " + std::to_string(controllers.p2_joystick + 1)).c_str());
+    drawOpt(OPT_P2_CONTROLLER, tmp);
     ly += 18.f;
 
     drawOpt(OPT_SAVE, "[ Save Settings ]");
@@ -552,7 +563,7 @@ void drawSettingsPanel(sf::RenderTarget& rt,
     ly += 20.f;
 
     sf::Text hint(font,
-        "Up/Down: select   Left/Right: size   Enter: toggle/save/load   Esc: back", 7);
+        "Up/Down: select   Left/Right: adjust   Enter: toggle/save/load   Esc: back", 7);
     hint.setFillColor(sf::Color(100, 100, 120));
     auto hb = hint.getLocalBounds();
     hint.setPosition(sf::Vector2f(px + panelW / 2.f - hb.size.x / 2.f, py + panelH - 14.f));
@@ -608,11 +619,11 @@ void drawTextOverlays(sf::RenderTarget& rt, sf::Font& font, const TextOverlayCon
     if(context.fightFlashTimer > 0.f && context.state == GameState::PLAYING)
         drawFightFlashOverlay(rt, font, context.fightFlashTimer);
 
-    if(context.state == GameState::SETTINGS && context.cfg && context.graphicsSettings)
+    if(context.state == GameState::SETTINGS && context.cfg && context.graphicsSettings && context.controllers)
         drawSettingsPanel(rt, font, context.menuAnim, context.settingsSel, *context.cfg,
                           context.musicVolume, context.sfxVolume,
                           context.botEnabled, context.botDifficulty,
-                          *context.graphicsSettings);
+                          *context.graphicsSettings, *context.controllers);
 }
 
 } // namespace hud_runtime

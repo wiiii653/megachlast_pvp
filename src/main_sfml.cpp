@@ -56,6 +56,7 @@ static app_runtime::RuntimeOptions g_runtime{};
 static app_runtime::BotRuntime g_bot_runtime{};
 static app_runtime::AudioSettings g_audio{};
 static GraphicsSettings g_graphics{};
+static ControllerSettings g_controllers{};
 
 static ProceduralSynth g_synth;
 
@@ -132,12 +133,14 @@ int main(int argc, char** argv){
         settings_io::saveSettingsFile(path, cfg, g_runtime.bot_enabled, g_runtime.bot_difficulty,
                                       g_audio.music_volume, g_audio.sfx_volume, g_audio.muted,
                                       g_graphics,
+                                      g_controllers,
                                       g_bot_runtime.overrides);
     };
     auto load_settings_file = [&](const std::string& path) -> bool {
         return settings_io::loadSettingsFile(path, cfg, g_runtime.bot_enabled, g_runtime.bot_difficulty,
                                              g_audio.music_volume, g_audio.sfx_volume, g_audio.muted,
                                              g_graphics,
+                                             g_controllers,
                                              g_bot_runtime.overrides);
     };
     if(!load_settings_file(cfgpath))
@@ -243,12 +246,12 @@ int main(int argc, char** argv){
     sf::Texture tex_p1, tex_p2;
     bool haveTex1 = false, haveTex2 = false;
     {
-        std::string p1path = asset_runtime::findAsset(g_runtime.assets_dir, "pl1red.png");
-        std::string p2path = asset_runtime::findAsset(g_runtime.assets_dir, "pl2blu.png");
+        std::string p1path = asset_runtime::findAsset(g_runtime.assets_dir, "pl1blu.png");
+        std::string p2path = asset_runtime::findAsset(g_runtime.assets_dir, "pl2red.png");
         if(!p1path.empty()) haveTex1 = tex_p1.loadFromFile(p1path);
         if(!p2path.empty()) haveTex2 = tex_p2.loadFromFile(p2path);
-        if(!haveTex1) fprintf(stderr, "Warning: pl1red.png not loaded\n");
-        if(!haveTex2) fprintf(stderr, "Warning: pl2blu.png not loaded\n");
+        if(!haveTex1) fprintf(stderr, "Warning: pl1blu.png not loaded\n");
+        if(!haveTex2) fprintf(stderr, "Warning: pl2red.png not loaded\n");
     }
 
     app_runtime::MusicRuntime musicRuntime{};
@@ -393,6 +396,7 @@ int main(int argc, char** argv){
     inputContext.musicVolume = &g_audio.music_volume;
     inputContext.sfxVolume = &g_audio.sfx_volume;
     inputContext.graphicsSettings = &g_graphics;
+    inputContext.controllers = &g_controllers;
     inputContext.donateMsgTimer = &donate_msg_timer;
     inputContext.botDebug = &g_bot_runtime.state.debug;
     inputContext.perfLevel = &g_runtime.perf_level;
@@ -633,6 +637,7 @@ int main(int argc, char** argv){
             hudCtx.musicVolume = g_audio.music_volume;
             hudCtx.sfxVolume = g_audio.sfx_volume;
             hudCtx.graphicsSettings = &g_graphics;
+            hudCtx.controllers = &g_controllers;
             hudCtx.drawMenuTitle = [&]{
                 render_runtime::drawMenuTitle(rt, font, menuAnim, g_fx_runtime.fx_level);
             };

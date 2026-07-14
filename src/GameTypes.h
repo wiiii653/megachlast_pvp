@@ -28,6 +28,12 @@ struct GraphicsSettings {
     bool copper_bars_enabled = true;
 };
 
+struct ControllerSettings {
+    // SFML joystick slots are zero-based. -1 leaves that player keyboard-only.
+    int p1_joystick = 0;
+    int p2_joystick = 1;
+};
+
 struct Bullet {
     float x=0, y=0;
     float vx=0, vy=0;

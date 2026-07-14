@@ -52,6 +52,7 @@ bool handleSettingsKeyPressed(const sf::Event::KeyPressed& kp,
                               float& musicVolume,
                               float& sfxVolume,
                               GraphicsSettings& graphicsSettings,
+                              ControllerSettings& controllers,
                               const std::string& cfgPath,
                               const std::function<void(const std::string&)>& saveSettings,
                               const std::function<bool(const std::string&)>& loadSettings,
@@ -78,6 +79,10 @@ bool handleSettingsKeyPressed(const sf::Event::KeyPressed& kp,
                 graphicsSettings.window_scale = std::max(2, graphicsSettings.window_scale - 1);
                 applyGraphicsSettings();
             }
+            else if(settingsSel == OPT_P1_CONTROLLER)
+                controllers.p1_joystick = std::max(-1, controllers.p1_joystick - 1);
+            else if(settingsSel == OPT_P2_CONTROLLER)
+                controllers.p2_joystick = std::max(-1, controllers.p2_joystick - 1);
             break;
         case sf::Keyboard::Scan::Right:
             if(settingsSel == OPT_MUSIC) musicVolume = std::min(100.f, musicVolume + 5.f);
@@ -93,6 +98,10 @@ bool handleSettingsKeyPressed(const sf::Event::KeyPressed& kp,
                 graphicsSettings.window_scale = std::min(6, graphicsSettings.window_scale + 1);
                 applyGraphicsSettings();
             }
+            else if(settingsSel == OPT_P1_CONTROLLER)
+                controllers.p1_joystick = std::min(7, controllers.p1_joystick + 1);
+            else if(settingsSel == OPT_P2_CONTROLLER)
+                controllers.p2_joystick = std::min(7, controllers.p2_joystick + 1);
             break;
         case sf::Keyboard::Scan::Enter:
             if(settingsSel == OPT_BOT_ENABLED) botEnabled = !botEnabled;
@@ -270,6 +279,7 @@ void handleKeyPressed(const sf::Event::KeyPressed& kp,
     float& musicVolume = *context.musicVolume;
     float& sfxVolume = *context.sfxVolume;
     GraphicsSettings& graphicsSettings = *context.graphicsSettings;
+    ControllerSettings& controllers = *context.controllers;
     float& donateMsgTimer = *context.donateMsgTimer;
     bool& botDebug = *context.botDebug;
     PerfLevel& perfLevel = *context.perfLevel;
@@ -290,6 +300,7 @@ void handleKeyPressed(const sf::Event::KeyPressed& kp,
                                  musicVolume,
                                  sfxVolume,
                                  graphicsSettings,
+                                 controllers,
                                  *context.cfgPath,
                                  context.saveSettings,
                                  context.loadSettings,
@@ -362,7 +373,10 @@ void updateInputForFrame(sf::RenderWindow& win, FrameContext& context)
             setMovementKeyReleased(kr.scancode, input);
         });
 
-    if(*context.state == GameState::PLAYING) game_update_runtime::syncPlayingKeyboard(input);
+    if(*context.state == GameState::PLAYING){
+        game_update_runtime::syncPlayingKeyboard(input);
+        game_update_runtime::syncPlayingControllers(input, *context.controllers);
+    }
 }
 
 } // namespace input_runtime

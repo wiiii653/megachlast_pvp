@@ -27,9 +27,11 @@ enum SettingsOption {
     OPT_VIGNETTE = 12,
     OPT_CHROMATIC = 13,
     OPT_COPPER_BARS = 14,
-    OPT_SAVE = 15,
-    OPT_LOAD = 16,
-    OPT_COUNT = 17,
+    OPT_P1_CONTROLLER = 15,
+    OPT_P2_CONTROLLER = 16,
+    OPT_SAVE = 17,
+    OPT_LOAD = 18,
+    OPT_COUNT = 19,
 };
 
 void setMovementKeyPressed(sf::Keyboard::Scancode sc, game_update_runtime::InputState& input);
@@ -44,6 +46,7 @@ bool handleSettingsKeyPressed(const sf::Event::KeyPressed& kp,
                               float& musicVolume,
                               float& sfxVolume,
                               GraphicsSettings& graphicsSettings,
+                              ControllerSettings& controllers,
                               const std::string& cfgPath,
                               const std::function<void(const std::string&)>& saveSettings,
                               const std::function<bool(const std::string&)>& loadSettings,
@@ -92,6 +95,7 @@ struct FrameContext {
     float* musicVolume = nullptr;
     float* sfxVolume = nullptr;
     GraphicsSettings* graphicsSettings = nullptr;
+    ControllerSettings* controllers = nullptr;
     float* donateMsgTimer = nullptr;
     bool* botDebug = nullptr;
     PerfLevel* perfLevel = nullptr;

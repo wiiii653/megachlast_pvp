@@ -17,6 +17,7 @@ void saveSettingsFile(const std::string& path,
                       float sfxVolume,
                       bool muted,
                       const GraphicsSettings& graphics,
+                      const ControllerSettings& controllers,
                       const BotTuningOverrides& botOverrides)
 {
     std::ofstream ofs(path);
@@ -40,7 +41,9 @@ void saveSettingsFile(const std::string& path,
         << "SCANLINES="      << (graphics.scanlines_enabled ? 1 : 0) << "\n"
         << "VIGNETTE="       << (graphics.vignette_enabled ? 1 : 0) << "\n"
         << "CHROMATIC_ABERRATION=" << (graphics.chromatic_enabled ? 1 : 0) << "\n"
-        << "COPPER_BARS="    << (graphics.copper_bars_enabled ? 1 : 0) << "\n";
+        << "COPPER_BARS="    << (graphics.copper_bars_enabled ? 1 : 0) << "\n"
+        << "P1_CONTROLLER=" << controllers.p1_joystick << "\n"
+        << "P2_CONTROLLER=" << controllers.p2_joystick << "\n";
 
     auto writeOverride = [&](const char* key, float value){
         if(value >= 0.f) ofs << key << "=" << value << "\n";
@@ -69,6 +72,7 @@ bool loadSettingsFile(const std::string& path,
                       float& sfxVolume,
                       bool& muted,
                       GraphicsSettings& graphics,
+                      ControllerSettings& controllers,
                       BotTuningOverrides& botOverrides)
 {
     std::ifstream ifs(path);
@@ -169,6 +173,8 @@ bool loadSettingsFile(const std::string& path,
                 if(!parsed) throw std::invalid_argument("invalid bool");
                 graphics.copper_bars_enabled = *parsed;
             }
+            else if(key=="P1_CONTROLLER") controllers.p1_joystick = asInt(-1, 7);
+            else if(key=="P2_CONTROLLER") controllers.p2_joystick = asInt(-1, 7);
         } catch(...) {
             std::fprintf(stderr, "Ignoring invalid setting %s=%s\n", key.c_str(), val.c_str());
         }

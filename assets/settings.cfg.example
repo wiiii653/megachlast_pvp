@@ -59,3 +59,8 @@ SCANLINES=1
 VIGNETTE=1
 CHROMATIC_ABERRATION=1
 COPPER_BARS=1
+
+# Controller setup: SFML joystick slots (0-7), or -1 for keyboard-only.
+# Defaults assign the first two connected controllers to P1 and P2.
+P1_CONTROLLER=0
+P2_CONTROLLER=1
