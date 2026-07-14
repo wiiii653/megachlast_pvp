@@ -13,7 +13,7 @@ void enforceSingleTrack(GameState state,
                         sf::Music& getReady,
                         const std::function<void()>& playMenuMusic)
 {
-    if(state == GameState::MENU || state == GameState::SETTINGS){
+    if(state == GameState::MENU || state == GameState::SETTINGS || state == GameState::MATCH_SETUP){
         if(haveIngameMusic && ingameMusic.getStatus() != sf::Music::Status::Stopped){
             ingameMusic.stop();
             ingameMusic.setVolume(0);
@@ -141,12 +141,14 @@ void updatePlayerTimers(GameState state, Player& p1, Player& p2, float dt)
     if(p1.spreadTimer > 0.f) p1.spreadTimer -= dt;
     if(p1.slowTimer > 0.f) p1.slowTimer -= dt;
     if(p1.reverseTimer > 0.f) p1.reverseTimer -= dt;
+    if(p1.overdriveTimer > 0.f) p1.overdriveTimer -= dt;
 
     if(p2.shieldTimer > 0.f) p2.shieldTimer -= dt;
     if(p2.rapidTimer > 0.f) p2.rapidTimer -= dt;
     if(p2.spreadTimer > 0.f) p2.spreadTimer -= dt;
     if(p2.slowTimer > 0.f) p2.slowTimer -= dt;
     if(p2.reverseTimer > 0.f) p2.reverseTimer -= dt;
+    if(p2.overdriveTimer > 0.f) p2.overdriveTimer -= dt;
 }
 
 } // namespace frame_runtime

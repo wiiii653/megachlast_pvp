@@ -10,17 +10,69 @@ struct Config {
     float bullet_ttl     = 3.5f;
     float hit_r          = 5.0f;
     float damage         = 10.0f;
-    int   target_score   = 8;
+    int   target_score   = 5;
+    int   rounds_to_win  = 2;
     int   fire_cd_p1_frames = 6;
     int   fire_cd_p2_frames = 6;
 };
 
 enum class BotDifficulty : uint8_t { EASY=0, MEDIUM=1, HARD=2 };
 enum class PerfLevel : uint8_t { HIGH=0, MEDIUM=1, LOW=2, ULTRA=3 };
-enum class GameState : uint8_t { MENU=0, PLAYING=1, PAUSED=2, GAME_OVER=3, COUNTDOWN=4, SETTINGS=5, DONATE=6 };
+enum class GameState : uint8_t { MENU=0, PLAYING=1, PAUSED=2, GAME_OVER=3, COUNTDOWN=4, SETTINGS=5, DONATE=6, MATCH_SETUP=7 };
+
+struct MatchState {
+    int p1_round_wins = 0;
+    int p2_round_wins = 0;
+};
+
+enum class RoundModifier : uint8_t { SHIELD, RAPID, SPREAD, OVERDRIVE, COUNT };
+enum class ArenaPreset : uint8_t { RANDOM, MIRROR_MAZE, FORTRESS, OPEN_REACTOR, COUNT };
+
+struct MatchSetup {
+    RoundModifier p1_modifier = RoundModifier::SHIELD;
+    RoundModifier p2_modifier = RoundModifier::RAPID;
+    ArenaPreset arena = ArenaPreset::MIRROR_MAZE;
+};
+
+inline const char* roundModifierName(RoundModifier modifier)
+{
+    switch(modifier){
+        case RoundModifier::SHIELD: return "SHIELD";
+        case RoundModifier::RAPID: return "RAPID FIRE";
+        case RoundModifier::SPREAD: return "SPREAD SHOT";
+        case RoundModifier::OVERDRIVE: return "OVERDRIVE";
+        case RoundModifier::COUNT: break;
+    }
+    return "UNKNOWN";
+}
+
+inline const char* arenaPresetName(ArenaPreset arena)
+{
+    switch(arena){
+        case ArenaPreset::RANDOM: return "RANDOM";
+        case ArenaPreset::MIRROR_MAZE: return "MIRROR MAZE";
+        case ArenaPreset::FORTRESS: return "FORTRESS";
+        case ArenaPreset::OPEN_REACTOR: return "OPEN REACTOR";
+        case ArenaPreset::COUNT: break;
+    }
+    return "UNKNOWN";
+}
+
+inline int arenaPresetLayoutPick(ArenaPreset arena)
+{
+    switch(arena){
+        case ArenaPreset::RANDOM: return -1;
+        case ArenaPreset::MIRROR_MAZE: return 3;
+        case ArenaPreset::FORTRESS: return 4;
+        case ArenaPreset::OPEN_REACTOR: return 5;
+        case ArenaPreset::COUNT: break;
+    }
+    return -1;
+}
 
 struct GraphicsSettings {
     int window_scale = SCALE;
+    ScreenAspect screen_aspect = ScreenAspect::Ratio16x10;
     bool postfx_enabled = true;
     bool scanlines_enabled = true;
     bool vignette_enabled = true;
@@ -55,6 +107,7 @@ struct Player {
     float spreadTimer  =0.f;
     float slowTimer    =0.f;
     float reverseTimer =0.f;
+    float overdriveTimer=0.f;
 };
 
 struct Mirror {

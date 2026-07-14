@@ -1,15 +1,26 @@
 #pragma once
 
-inline constexpr int W     = 640;
-inline constexpr int H     = 400;
+enum class ScreenAspect : unsigned char { Ratio16x10, Ratio16x9 };
+
+inline constexpr int CANVAS_W = 640;
+inline constexpr int H_16X10 = 400;
+inline constexpr int H_16X9  = 360;
+inline int W = CANVAS_W;
+inline int H = H_16X10;
 inline constexpr int SCALE = 4;
+
+inline void setCanvasAspect(ScreenAspect aspect)
+{
+    W = CANVAS_W;
+    H = (aspect == ScreenAspect::Ratio16x9) ? H_16X9 : H_16X10;
+}
 
 inline constexpr int   MAX_BULLETS    = 96;
 inline constexpr int   MIRROR_PAIRS   = 20;
 inline constexpr float MIRROR_R       = 7.0f;
 inline constexpr float MIRROR_PAD     = 12.0f;
 inline constexpr float PLAYER_SPAWN_TOP_Y = 58.f;
-inline constexpr float PLAYER_SPAWN_BOTTOM_Y = H - PLAYER_SPAWN_TOP_Y;
+inline float playerSpawnBottomY() { return H - PLAYER_SPAWN_TOP_Y; }
 inline constexpr float SPAWN_ROW_BOMB_EXCLUSION = 35.f;
 inline constexpr float SPAWN_INVULN   = 0.35f;
 inline constexpr float AFTERKILL_INVULN = 1.5f;

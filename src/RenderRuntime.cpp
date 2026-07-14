@@ -884,8 +884,8 @@ void drawMenuTitle(sf::RenderTarget& rt, sf::Font& font, float t, int fxLevel)
 void drawPlasmaBg(sf::RenderTarget& rt, float t)
 {
     constexpr int STEP = 40;
-    constexpr int GXN  = W / STEP + 2;
-    constexpr int GYN  = H / STEP + 2;
+    const int GXN = W / STEP + 2;
+    const int GYN = H / STEP + 2;
 
     auto evalPlasma = [](float wx, float wy, float t2) -> sf::Color {
         float v =   std::sin(wx * 0.013f + t2 * 1.1f)

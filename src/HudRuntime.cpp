@@ -93,7 +93,8 @@ void drawPlayerRows(sf::RenderTarget& rt, sf::Font& font, const Player& p1, cons
         float dotY = cy + (ROW_H - 4.f) * 0.5f;
         x = traitDot(x, dotY, p1.shieldTimer, sf::Color(60, 160, 255, 220));
         x = traitDot(x, dotY, p1.rapidTimer, sf::Color(255, 220, 40, 220));
-        traitDot(x, dotY, p1.spreadTimer, sf::Color(120, 255, 100, 220));
+        x = traitDot(x, dotY, p1.spreadTimer, sf::Color(120, 255, 100, 220));
+        traitDot(x, dotY, p1.overdriveTimer, sf::Color(255, 100, 255, 220));
     }
 
     {
@@ -110,7 +111,7 @@ void drawPlayerRows(sf::RenderTarget& rt, sf::Font& font, const Player& p1, cons
         rowW += ktMeasure.getLocalBounds().size.x + PAD;
         sf::Text ptMeasure(font, pbuf, 7);
         rowW += ptMeasure.getLocalBounds().size.x + PAD;
-        rowW += 3 * 5.f + 4.f;
+        rowW += 4 * 5.f + 4.f;
 
         float cx = W - rowW - 2.f;
 
@@ -119,6 +120,7 @@ void drawPlayerRows(sf::RenderTarget& rt, sf::Font& font, const Player& p1, cons
         x = traitDot(x, dotY, p2.shieldTimer, sf::Color(60, 160, 255, 220));
         x = traitDot(x, dotY, p2.rapidTimer, sf::Color(255, 220, 40, 220));
         x = traitDot(x, dotY, p2.spreadTimer, sf::Color(120, 255, 100, 220));
+        x = traitDot(x, dotY, p2.overdriveTimer, sf::Color(255, 100, 255, 220));
 
         sf::Text kt(font, kbuf, 7);
         kt.setFillColor(sf::Color(255, 100, 100, 210));
@@ -311,6 +313,8 @@ void drawGameOverOverlay(sf::RenderTarget& rt,
                          int winner,
                          int p1Score,
                          int p2Score,
+                         int p1RoundWins,
+                         int p2RoundWins,
                          bool showBlink)
 {
     sf::RectangleShape dim(sf::Vector2f((float)W, (float)H));
@@ -328,7 +332,8 @@ void drawGameOverOverlay(sf::RenderTarget& rt,
     wt.setPosition(sf::Vector2f(W / 2.f - wb.size.x / 2.f, H / 2.f - 20.f));
     rt.draw(wt);
 
-    std::string scoreLine = std::to_string(p1Score) + "  :  " + std::to_string(p2Score);
+    std::string scoreLine = "MATCH " + std::to_string(p1RoundWins) + " : " + std::to_string(p2RoundWins)
+                          + "   ROUND " + std::to_string(p1Score) + " : " + std::to_string(p2Score);
     sf::Text st(font, scoreLine, 14);
     st.setFillColor(sf::Color(220, 220, 220));
     auto stb = st.getLocalBounds();
@@ -341,6 +346,68 @@ void drawGameOverOverlay(sf::RenderTarget& rt,
     auto rb = rm.getLocalBounds();
     rm.setPosition(sf::Vector2f(W / 2.f - rb.size.x / 2.f, H / 2.f + 20.f));
     rt.draw(rm);
+}
+
+void drawMatchSetupOverlay(sf::RenderTarget& rt, sf::Font& font, const MatchSetup& setup)
+{
+    sf::RectangleShape dim(sf::Vector2f(static_cast<float>(W), static_cast<float>(H)));
+    dim.setFillColor(sf::Color(0, 0, 0, 170));
+    rt.draw(dim);
+
+    sf::Text title(font, "MATCH SETUP", 18);
+    title.setFillColor(sf::Color(220, 220, 255));
+    auto tb = title.getLocalBounds();
+    title.setPosition(sf::Vector2f(W * 0.5f - tb.size.x * 0.5f, H * 0.5f - 62.f));
+    rt.draw(title);
+
+    sf::Text p1(font, std::string("P1  < ") + roundModifierName(setup.p1_modifier) + " >", 12);
+    p1.setFillColor(sf::Color(80, 240, 255));
+    auto p1b = p1.getLocalBounds();
+    p1.setPosition(sf::Vector2f(W * 0.5f - p1b.size.x * 0.5f, H * 0.5f - 30.f));
+    rt.draw(p1);
+
+    sf::Text p2(font, std::string("P2  < ") + roundModifierName(setup.p2_modifier) + " >", 12);
+    p2.setFillColor(sf::Color(255, 110, 100));
+    auto p2b = p2.getLocalBounds();
+    p2.setPosition(sf::Vector2f(W * 0.5f - p2b.size.x * 0.5f, H * 0.5f - 10.f));
+    rt.draw(p2);
+
+    sf::Text arena(font, std::string("ARENA  < ") + arenaPresetName(setup.arena) + " >", 11);
+    arena.setFillColor(sf::Color(255, 220, 100));
+    auto ab = arena.getLocalBounds();
+    arena.setPosition(sf::Vector2f(W * 0.5f - ab.size.x * 0.5f, H * 0.5f + 10.f));
+    rt.draw(arena);
+
+    sf::Text hint(font, "Keys: P1 Left/Right, P2 A/D, Arena Q/E   Pad: stick, L1/R1, A", 7);
+    hint.setFillColor(sf::Color(180, 180, 205));
+    auto hb = hint.getLocalBounds();
+    hint.setPosition(sf::Vector2f(W * 0.5f - hb.size.x * 0.5f, H * 0.5f + 32.f));
+    rt.draw(hint);
+}
+
+void drawKnockoutOverlay(sf::RenderTarget& rt,
+                         sf::Font& font,
+                         float timer,
+                         int scorer,
+                         bool endsMatch)
+{
+    if(timer <= 0.f || scorer == 0) return;
+    float pulse = 0.75f + 0.25f * std::sin(timer * 18.f);
+    std::string text = endsMatch ? "MATCH POINT!" : "K.O.!";
+    sf::Text banner(font, text, endsMatch ? 24 : 30);
+    sf::Color color = scorer == 1
+        ? sf::Color(70, static_cast<uint8_t>(210 + 45 * pulse), 255)
+        : sf::Color(255, static_cast<uint8_t>(100 + 80 * pulse), 80);
+    banner.setFillColor(color);
+    auto bounds = banner.getLocalBounds();
+    banner.setPosition(sf::Vector2f(W * 0.5f - bounds.size.x * 0.5f, H * 0.5f - 48.f));
+    rt.draw(banner);
+
+    sf::Text scorerText(font, scorer == 1 ? "PLAYER 1 SCORES" : "PLAYER 2 SCORES", 10);
+    scorerText.setFillColor(sf::Color(240, 240, 250, static_cast<uint8_t>(180 + 75 * pulse)));
+    auto sb = scorerText.getLocalBounds();
+    scorerText.setPosition(sf::Vector2f(W * 0.5f - sb.size.x * 0.5f, H * 0.5f - 22.f));
+    rt.draw(scorerText);
 }
 
 void drawCountdownOverlay(sf::RenderTarget& rt,
@@ -416,15 +483,16 @@ void drawSettingsPanel(sf::RenderTarget& rt,
     constexpr int OPT_FIRE_CD_P2 = 7;
     constexpr int OPT_P_SPEED = 8;
     constexpr int OPT_WINDOW_SCALE = 9;
-    constexpr int OPT_POSTFX = 10;
-    constexpr int OPT_SCANLINES = 11;
-    constexpr int OPT_VIGNETTE = 12;
-    constexpr int OPT_CHROMATIC = 13;
-    constexpr int OPT_COPPER_BARS = 14;
-    constexpr int OPT_P1_CONTROLLER = 15;
-    constexpr int OPT_P2_CONTROLLER = 16;
-    constexpr int OPT_SAVE = 17;
-    constexpr int OPT_LOAD = 18;
+    constexpr int OPT_SCREEN_ASPECT = 10;
+    constexpr int OPT_POSTFX = 11;
+    constexpr int OPT_SCANLINES = 12;
+    constexpr int OPT_VIGNETTE = 13;
+    constexpr int OPT_CHROMATIC = 14;
+    constexpr int OPT_COPPER_BARS = 15;
+    constexpr int OPT_P1_CONTROLLER = 16;
+    constexpr int OPT_P2_CONTROLLER = 17;
+    constexpr int OPT_SAVE = 18;
+    constexpr int OPT_LOAD = 19;
 
     float panelW = 278.f, panelH = 350.f;
     float px = W / 2.f - panelW / 2.f, py = H / 2.f - panelH / 2.f;
@@ -523,10 +591,16 @@ void drawSettingsPanel(sf::RenderTarget& rt,
     drawOpt(OPT_P_SPEED, tmp);
     ly += 18.f;
 
+    int canvasH = graphicsSettings.screen_aspect == ScreenAspect::Ratio16x9 ? H_16X9 : H_16X10;
     std::snprintf(tmp, sizeof(tmp), "Resolution: %dx%d",
-                  W * graphicsSettings.window_scale,
-                  H * graphicsSettings.window_scale);
+                  CANVAS_W * graphicsSettings.window_scale,
+                  canvasH * graphicsSettings.window_scale);
     drawOpt(OPT_WINDOW_SCALE, tmp);
+    ly += 14.f;
+
+    std::snprintf(tmp, sizeof(tmp), "Aspect: %s (restart)",
+                  graphicsSettings.screen_aspect == ScreenAspect::Ratio16x9 ? "16:9" : "16:10");
+    drawOpt(OPT_SCREEN_ASPECT, tmp);
     ly += 14.f;
 
     std::snprintf(tmp, sizeof(tmp), "Post FX: %s", graphicsSettings.postfx_enabled ? "ON " : "OFF");
@@ -605,12 +679,16 @@ void drawTextOverlays(sf::RenderTarget& rt, sf::Font& font, const TextOverlayCon
         drawMenuInstructions(rt, font, context.menuAnim, context.showBlink);
     }
 
+    if(context.state == GameState::MATCH_SETUP && context.matchSetup)
+        drawMatchSetupOverlay(rt, font, *context.matchSetup);
+
     if(context.state == GameState::PAUSED)
         drawPausedOverlay(rt, font);
 
     if(context.state == GameState::GAME_OVER)
         drawGameOverOverlay(rt, font, context.menuAnim, context.winner,
-                            context.p1Score, context.p2Score, context.showBlink);
+                            context.p1Score, context.p2Score,
+                            context.p1RoundWins, context.p2RoundWins, context.showBlink);
 
     if(context.state == GameState::COUNTDOWN)
         drawCountdownOverlay(rt, font, context.countdownTimer, context.layoutColor,
@@ -624,6 +702,9 @@ void drawTextOverlays(sf::RenderTarget& rt, sf::Font& font, const TextOverlayCon
                           context.musicVolume, context.sfxVolume,
                           context.botEnabled, context.botDifficulty,
                           *context.graphicsSettings, *context.controllers);
+
+    drawKnockoutOverlay(rt, font, context.knockoutTimer,
+                        context.knockoutScorer, context.knockoutEndsMatch);
 }
 
 } // namespace hud_runtime

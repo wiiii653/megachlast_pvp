@@ -3,11 +3,81 @@
 #include "GameConstants.h"
 
 #include <SFML/Window/Clipboard.hpp>
+#include <SFML/Window/Joystick.hpp>
 
 #include <algorithm>
 #include <cstdio>
 
 namespace input_runtime {
+namespace {
+
+RoundModifier cycleModifier(RoundModifier modifier, int delta)
+{
+    int count = static_cast<int>(RoundModifier::COUNT);
+    int next = (static_cast<int>(modifier) + delta + count) % count;
+    return static_cast<RoundModifier>(next);
+}
+
+ArenaPreset cycleArena(ArenaPreset arena, int delta)
+{
+    int count = static_cast<int>(ArenaPreset::COUNT);
+    int next = (static_cast<int>(arena) + delta + count) % count;
+    return static_cast<ArenaPreset>(next);
+}
+
+struct SetupControllerState {
+    bool p1Left = false;
+    bool p1Right = false;
+    bool p1ArenaLeft = false;
+    bool p1ArenaRight = false;
+    bool p1Start = false;
+    bool p2Left = false;
+    bool p2Right = false;
+    bool p2Start = false;
+};
+
+void updateMatchSetupControllers(FrameContext& context)
+{
+    if(*context.state != GameState::MATCH_SETUP) return;
+
+    static SetupControllerState previous{};
+    auto poll = [](int joystick, bool& left, bool& right, bool& arenaLeft, bool& arenaRight, bool& start){
+        left = right = arenaLeft = arenaRight = start = false;
+        if(joystick < 0 || joystick >= static_cast<int>(sf::Joystick::Count) ||
+           !sf::Joystick::isConnected(static_cast<unsigned int>(joystick))) return;
+        unsigned int id = static_cast<unsigned int>(joystick);
+        float x = sf::Joystick::hasAxis(id, sf::Joystick::Axis::X)
+                    ? sf::Joystick::getAxisPosition(id, sf::Joystick::Axis::X) : 0.f;
+        if(sf::Joystick::hasAxis(id, sf::Joystick::Axis::PovX))
+            x += sf::Joystick::getAxisPosition(id, sf::Joystick::Axis::PovX);
+        left = x < -35.f;
+        right = x > 35.f;
+        arenaLeft = sf::Joystick::isButtonPressed(id, 4);
+        arenaRight = sf::Joystick::isButtonPressed(id, 5);
+        start = sf::Joystick::isButtonPressed(id, 0);
+    };
+
+    SetupControllerState current{};
+    bool p2ArenaLeft = false;
+    bool p2ArenaRight = false;
+    poll(context.controllers->p1_joystick, current.p1Left, current.p1Right,
+         current.p1ArenaLeft, current.p1ArenaRight, current.p1Start);
+    poll(context.controllers->p2_joystick, current.p2Left, current.p2Right,
+         p2ArenaLeft, p2ArenaRight, current.p2Start);
+
+    MatchSetup& setup = *context.matchSetup;
+    if(current.p1Left && !previous.p1Left) setup.p1_modifier = cycleModifier(setup.p1_modifier, -1);
+    if(current.p1Right && !previous.p1Right) setup.p1_modifier = cycleModifier(setup.p1_modifier, 1);
+    if(current.p2Left && !previous.p2Left) setup.p2_modifier = cycleModifier(setup.p2_modifier, -1);
+    if(current.p2Right && !previous.p2Right) setup.p2_modifier = cycleModifier(setup.p2_modifier, 1);
+    if(current.p1ArenaLeft && !previous.p1ArenaLeft) setup.arena = cycleArena(setup.arena, -1);
+    if(current.p1ArenaRight && !previous.p1ArenaRight) setup.arena = cycleArena(setup.arena, 1);
+    if((current.p1Start && !previous.p1Start) || (current.p2Start && !previous.p2Start))
+        context.startConfiguredMatch();
+    previous = current;
+}
+
+} // namespace
 
 void setMovementKeyPressed(sf::Keyboard::Scancode sc, game_update_runtime::InputState& input)
 {
@@ -41,6 +111,22 @@ void setMovementKeyReleased(sf::Keyboard::Scancode sc, game_update_runtime::Inpu
         case sf::Keyboard::Scan::RShift:   input.kRShift = false; break;
         default: break;
     }
+}
+
+bool handleMatchSetupKeyPressed(const sf::Event::KeyPressed& kp,
+                                GameState& state,
+                                MatchSetup& setup,
+                                const std::function<void()>& startMatch)
+{
+    if(kp.scancode == sf::Keyboard::Scan::Left) setup.p1_modifier = cycleModifier(setup.p1_modifier, -1);
+    if(kp.scancode == sf::Keyboard::Scan::Right) setup.p1_modifier = cycleModifier(setup.p1_modifier, 1);
+    if(kp.scancode == sf::Keyboard::Scan::A) setup.p2_modifier = cycleModifier(setup.p2_modifier, -1);
+    if(kp.scancode == sf::Keyboard::Scan::D) setup.p2_modifier = cycleModifier(setup.p2_modifier, 1);
+    if(kp.scancode == sf::Keyboard::Scan::Q) setup.arena = cycleArena(setup.arena, -1);
+    if(kp.scancode == sf::Keyboard::Scan::E) setup.arena = cycleArena(setup.arena, 1);
+    if(kp.scancode == sf::Keyboard::Scan::Enter) startMatch();
+    if(kp.code == sf::Keyboard::Key::Escape) state = GameState::MENU;
+    return true;
 }
 
 bool handleSettingsKeyPressed(const sf::Event::KeyPressed& kp,
@@ -79,6 +165,8 @@ bool handleSettingsKeyPressed(const sf::Event::KeyPressed& kp,
                 graphicsSettings.window_scale = std::max(2, graphicsSettings.window_scale - 1);
                 applyGraphicsSettings();
             }
+            else if(settingsSel == OPT_SCREEN_ASPECT)
+                graphicsSettings.screen_aspect = ScreenAspect::Ratio16x10;
             else if(settingsSel == OPT_P1_CONTROLLER)
                 controllers.p1_joystick = std::max(-1, controllers.p1_joystick - 1);
             else if(settingsSel == OPT_P2_CONTROLLER)
@@ -98,6 +186,8 @@ bool handleSettingsKeyPressed(const sf::Event::KeyPressed& kp,
                 graphicsSettings.window_scale = std::min(6, graphicsSettings.window_scale + 1);
                 applyGraphicsSettings();
             }
+            else if(settingsSel == OPT_SCREEN_ASPECT)
+                graphicsSettings.screen_aspect = ScreenAspect::Ratio16x9;
             else if(settingsSel == OPT_P1_CONTROLLER)
                 controllers.p1_joystick = std::min(7, controllers.p1_joystick + 1);
             else if(settingsSel == OPT_P2_CONTROLLER)
@@ -287,6 +377,11 @@ void handleKeyPressed(const sf::Event::KeyPressed& kp,
     bool& isFullscreen = *context.isFullscreen;
     game_update_runtime::InputState& input = *context.input;
 
+    if(state == GameState::MATCH_SETUP){
+        handleMatchSetupKeyPressed(kp, state, *context.matchSetup, context.startConfiguredMatch);
+        return;
+    }
+
     if(state == GameState::SETTINGS){
         float oldMusicVol = musicVolume;
         float oldSfxVol = sfxVolume;
@@ -372,6 +467,8 @@ void updateInputForFrame(sf::RenderWindow& win, FrameContext& context)
         [&](const sf::Event::KeyReleased& kr){
             setMovementKeyReleased(kr.scancode, input);
         });
+
+    updateMatchSetupControllers(context);
 
     if(*context.state == GameState::PLAYING){
         game_update_runtime::syncPlayingKeyboard(input);

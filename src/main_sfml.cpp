@@ -145,6 +145,7 @@ int main(int argc, char** argv){
     };
     if(!load_settings_file(cfgpath))
         std::fprintf(stderr, "No settings file at %s — using defaults\n", cfgpath.c_str());
+    setCanvasAspect(g_graphics.screen_aspect);
 
     // CLI takes precedence over settings file
     app_runtime::applyCliOptions(cli, g_runtime);
@@ -220,12 +221,17 @@ int main(int argc, char** argv){
     // ── State ─────────────────────────────────────────────────────────────────
     GameState state      = GameState::MENU;
     int       winner     = 0;
+    MatchState match{};
+    MatchSetup matchSetup{};
     bool      showBlink  = true;
     float     blinkTimer = 0.f;
     float     menuAnim   = 0.f;
     int  cd1=0, cd2=0;
     float countdownTimer = 0.f;
     float fightFlashTimer = 0.f;  // "FIGHT!" overlay after countdown
+    float knockoutTimer = 0.f;
+    int knockoutScorer = 0;
+    bool knockoutEndsMatch = false;
     float donate_msg_timer = 0.f; // short feedback when link copied
     std::array<FragFloat, MAX_FRAG_FLOATS> fragFloats{};
 
@@ -314,7 +320,19 @@ int main(int argc, char** argv){
                                     apply_audio_settings);
     };
 
+    auto applyRoundModifier = [](Player& player, RoundModifier modifier){
+        constexpr float duration = 12.f;
+        switch(modifier){
+            case RoundModifier::SHIELD: player.shieldTimer = duration; break;
+            case RoundModifier::RAPID: player.rapidTimer = duration; break;
+            case RoundModifier::SPREAD: player.spreadTimer = duration; break;
+            case RoundModifier::OVERDRIVE: player.overdriveTimer = duration; break;
+            case RoundModifier::COUNT: break;
+        }
+    };
+
     auto resetBoardRound = [&]{
+        g_board_state.forced_layout_pick = arenaPresetLayoutPick(matchSetup.arena);
         board_runtime::resetRound(g_board_state,
                                   p1,
                                   p2,
@@ -326,6 +344,8 @@ int main(int argc, char** argv){
                                   specialStars,
                                   g_bot_runtime.state,
                                   R);
+        applyRoundModifier(p1, matchSetup.p1_modifier);
+        applyRoundModifier(p2, matchSetup.p2_modifier);
     };
 
     auto applyFragTransition = [&](Player& victim, int scorer){
@@ -334,6 +354,7 @@ int main(int argc, char** argv){
                                            victim,
                                            scorer,
                                            cfg,
+                                           match,
                                            winner,
                                            state,
                                            cd1,
@@ -342,11 +363,15 @@ int main(int argc, char** argv){
                                            countdownTimer,
                                            resetBoardRound,
                                            playGetReady);
+        knockoutTimer = 1.15f;
+        knockoutScorer = scorer;
+        knockoutEndsMatch = (state == GameState::GAME_OVER);
     };
 
     auto startCountdownFromMenu = [&]{
         round_runtime::startCountdownFromMenu(p1,
                                               p2,
+                                              match,
                                               cd1,
                                               cd2,
                                               powerupSpawnTimer,
@@ -354,6 +379,10 @@ int main(int argc, char** argv){
                                               state,
                                               resetBoardRound,
                                               playGetReady);
+    };
+    auto openMatchSetup = [&]{
+        matchSetup = {};
+        state = GameState::MATCH_SETUP;
     };
     auto openSettingsMenu = [&]{
         round_runtime::openSettingsMenu(state, settings_sel);
@@ -367,6 +396,7 @@ int main(int argc, char** argv){
     auto resetPlayingRound = [&]{
         round_runtime::resetPlayingRound(p1,
                                          p2,
+                                         match,
                                          cd1,
                                          cd2,
                                          powerupSpawnTimer,
@@ -378,6 +408,7 @@ int main(int argc, char** argv){
     auto rematchCountdownRound = [&]{
         round_runtime::rematchCountdownRound(p1,
                                              p2,
+                                             match,
                                              cd1,
                                              cd2,
                                              powerupSpawnTimer,
@@ -397,6 +428,7 @@ int main(int argc, char** argv){
     inputContext.sfxVolume = &g_audio.sfx_volume;
     inputContext.graphicsSettings = &g_graphics;
     inputContext.controllers = &g_controllers;
+    inputContext.matchSetup = &matchSetup;
     inputContext.donateMsgTimer = &donate_msg_timer;
     inputContext.botDebug = &g_bot_runtime.state.debug;
     inputContext.perfLevel = &g_runtime.perf_level;
@@ -410,7 +442,8 @@ int main(int argc, char** argv){
     inputContext.applyGraphicsSettings = applyWindowedGraphicsSettings;
     inputContext.saveSettings = save_settings_file;
     inputContext.loadSettings = load_settings_file;
-    inputContext.startCountdownRound = startCountdownFromMenu;
+    inputContext.startCountdownRound = openMatchSetup;
+    inputContext.startConfiguredMatch = startCountdownFromMenu;
     inputContext.openSettings = openSettingsMenu;
     inputContext.openDonate = openDonateScreen;
     inputContext.pauseGameplay = pauseGameplay;
@@ -433,6 +466,7 @@ int main(int argc, char** argv){
     while(win.isOpen()){
         float dt = clock.restart().asSeconds();
         if(dt > 0.05f) dt = 0.05f;
+        if(knockoutTimer > 0.f) knockoutTimer = std::max(0.f, knockoutTimer - dt);
         updateFxGovernor(dt, state);
 
         audio_duck::update(g_audio.music_duck, dt);
@@ -627,6 +661,12 @@ int main(int argc, char** argv){
             hudCtx.winner = winner;
             hudCtx.p1Score = p1.score;
             hudCtx.p2Score = p2.score;
+            hudCtx.p1RoundWins = match.p1_round_wins;
+            hudCtx.p2RoundWins = match.p2_round_wins;
+            hudCtx.knockoutTimer = knockoutTimer;
+            hudCtx.knockoutScorer = knockoutScorer;
+            hudCtx.knockoutEndsMatch = knockoutEndsMatch;
+            hudCtx.matchSetup = &matchSetup;
             hudCtx.countdownTimer = countdownTimer;
             hudCtx.layoutColor = board_runtime::layoutAccentColor(g_board_state);
             hudCtx.layoutName = g_board_state.layout_name;

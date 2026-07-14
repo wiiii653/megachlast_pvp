@@ -87,7 +87,7 @@ void simulateProjectilesAndCollisions(std::array<Bullet, MAX_BULLETS>& bullets,
                                 float bx = rng.frand(50.f, W - 50.f);
                                 float by = rng.frand(H * 0.25f, H * 0.75f);
                                 if(std::abs(by - PLAYER_SPAWN_TOP_Y) < SPAWN_ROW_BOMB_EXCLUSION ||
-                                   std::abs(by - PLAYER_SPAWN_BOTTOM_Y) < SPAWN_ROW_BOMB_EXCLUSION) continue;
+                                   std::abs(by - playerSpawnBottomY()) < SPAWN_ROW_BOMB_EXCLUSION) continue;
                                 bool ok = true;
                                 for(const auto& m : mirrors){
                                     if(!m.alive) continue;
@@ -214,7 +214,7 @@ void simulateProjectilesAndCollisions(std::array<Bullet, MAX_BULLETS>& bullets,
                         if(hooks.spawnFragFloat) hooks.spawnFragFloat(fragFloats, tgt->x, tgt->y, scorerB);
                         synth.play(ProceduralSynth::SFX::EXPLOSION, scaledSfxVolume(muted, sfxVolume, 1.00f));
                         if(hooks.triggerMusicDuck) hooks.triggerMusicDuck(0.55f, 0.30f);
-                        if(hooks.triggerScreenShake) hooks.triggerScreenShake(0.45f, 7.0f);
+                        if(hooks.triggerScreenShake) hooks.triggerScreenShake(0.50f, 9.0f);
                         if(hooks.applyFragTransition) hooks.applyFragTransition(*tgt, scorerB);
                         roundTransitioned = true;
                         if(roundTransitioned) break;
@@ -304,7 +304,7 @@ void simulateProjectilesAndCollisions(std::array<Bullet, MAX_BULLETS>& bullets,
                 if(hooks.spawnFragFloat) hooks.spawnFragFloat(fragFloats, tgt->x, tgt->y, scorer);
                 synth.play(ProceduralSynth::SFX::EXPLOSION, scaledSfxVolume(muted, sfxVolume, 1.00f));
                 if(hooks.triggerMusicDuck) hooks.triggerMusicDuck(0.55f, 0.30f);
-                if(hooks.triggerScreenShake) hooks.triggerScreenShake(0.45f, 7.0f);
+                if(hooks.triggerScreenShake) hooks.triggerScreenShake(0.50f, 9.0f);
                 if(hooks.applyFragTransition) hooks.applyFragTransition(*tgt, scorer);
             }
             break;

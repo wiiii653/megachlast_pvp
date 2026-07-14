@@ -24,6 +24,7 @@ void saveSettingsFile(const std::string& path,
     if(!ofs){ std::fprintf(stderr, "Failed to open settings for write: %s\n", path.c_str()); return; }
     const char* botNames[] = {"EASY","MEDIUM","HARD"};
     ofs << "TARGET_SCORE="   << cfg.target_score   << "\n"
+        << "ROUNDS_TO_WIN=" << cfg.rounds_to_win  << "\n"
         << "P_SPEED="        << cfg.p_speed         << "\n"
         << "BULLET_SPEED="   << cfg.bullet_speed    << "\n"
         << "BULLET_TTL="     << cfg.bullet_ttl      << "\n"
@@ -37,6 +38,7 @@ void saveSettingsFile(const std::string& path,
         << "SFX_VOLUME="     << sfxVolume   << "\n"
         << "MUTE="           << (muted ? 1 : 0)   << "\n"
         << "WINDOW_SCALE="   << graphics.window_scale << "\n"
+        << "SCREEN_ASPECT="  << (graphics.screen_aspect == ScreenAspect::Ratio16x9 ? "16:9" : "16:10") << "\n"
         << "POSTFX_ENABLED=" << (graphics.postfx_enabled ? 1 : 0) << "\n"
         << "SCANLINES="      << (graphics.scanlines_enabled ? 1 : 0) << "\n"
         << "VIGNETTE="       << (graphics.vignette_enabled ? 1 : 0) << "\n"
@@ -103,6 +105,7 @@ bool loadSettingsFile(const std::string& path,
             };
 
             if     (key=="TARGET_SCORE"  ) cfg.target_score   = asInt(1, 99);
+            else if(key=="ROUNDS_TO_WIN" ) cfg.rounds_to_win  = asInt(1, 9);
             else if(key=="P_SPEED"       ) cfg.p_speed        = asFloat(20.f, 400.f);
             else if(key=="BULLET_SPEED"  ) cfg.bullet_speed   = asFloat(20.f, 600.f);
             else if(key=="BULLET_TTL"    ) cfg.bullet_ttl     = asFloat(0.1f, 10.f);
@@ -148,6 +151,11 @@ bool loadSettingsFile(const std::string& path,
                 muted = *parsed;
             }
             else if(key=="WINDOW_SCALE") graphics.window_scale = asInt(2, 6);
+            else if(key=="SCREEN_ASPECT"){
+                if(val == "16:10") graphics.screen_aspect = ScreenAspect::Ratio16x10;
+                else if(val == "16:9") graphics.screen_aspect = ScreenAspect::Ratio16x9;
+                else throw std::invalid_argument("invalid screen aspect");
+            }
             else if(key=="POSTFX_ENABLED"){
                 auto parsed = settings_parse::parseBool(val);
                 if(!parsed) throw std::invalid_argument("invalid bool");

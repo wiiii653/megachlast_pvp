@@ -24,6 +24,11 @@ struct TextOverlayContext {
     int winner = 0;
     int p1Score = 0;
     int p2Score = 0;
+    int p1RoundWins = 0;
+    int p2RoundWins = 0;
+    float knockoutTimer = 0.f;
+    int knockoutScorer = 0;
+    bool knockoutEndsMatch = false;
     float countdownTimer = 0.f;
     sf::Color layoutColor = sf::Color::White;
     const char* layoutName = "";
@@ -35,6 +40,7 @@ struct TextOverlayContext {
     float sfxVolume = 0.f;
     const GraphicsSettings* graphicsSettings = nullptr;
     const ControllerSettings* controllers = nullptr;
+    const MatchSetup* matchSetup = nullptr;
     std::function<void()> drawMenuTitle;
 };
 
@@ -56,7 +62,15 @@ void drawGameOverOverlay(sf::RenderTarget& rt,
                          int winner,
                          int p1Score,
                          int p2Score,
+                         int p1RoundWins,
+                         int p2RoundWins,
                          bool showBlink);
+void drawMatchSetupOverlay(sf::RenderTarget& rt, sf::Font& font, const MatchSetup& setup);
+void drawKnockoutOverlay(sf::RenderTarget& rt,
+                         sf::Font& font,
+                         float timer,
+                         int scorer,
+                         bool endsMatch);
 void drawCountdownOverlay(sf::RenderTarget& rt,
                           sf::Font& font,
                           float countdownTimer,

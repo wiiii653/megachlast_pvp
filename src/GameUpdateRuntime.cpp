@@ -119,6 +119,7 @@ void updateMovementAndFiring(InputState& in,
     float l1 = std::sqrt(d1.x * d1.x + d1.y * d1.y);
     if(l1 > 0.001f) d1 /= l1;
     float p1SpeedMult = (p1.slowTimer > 0.f) ? 0.5f : 1.f;
+    if(p1.overdriveTimer > 0.f) p1SpeedMult *= 1.3f;
     p1.x += d1.x * cfg.p_speed * p1SpeedMult * dt;
     spawnThrusterFn(particles, rng, p1.x, p1.y, 1);
 
@@ -141,6 +142,7 @@ void updateMovementAndFiring(InputState& in,
         float l2 = std::sqrt(d2.x * d2.x + d2.y * d2.y);
         if(l2 > 0.001f) d2 /= l2;
         float p2SpeedMult = (p2.slowTimer > 0.f) ? 0.5f : 1.f;
+        if(p2.overdriveTimer > 0.f) p2SpeedMult *= 1.3f;
         p2.x += d2.x * cfg.p_speed * p2SpeedMult * dt;
         spawnThrusterFn(particles, rng, p2.x, p2.y, 2);
 

@@ -64,6 +64,37 @@ int main()
     check(state.round_number == 2u, "second reset increments round number again");
     check(state.board_seed != firstSeed, "board seed changes between rounds");
 
+    setCanvasAspect(ScreenAspect::Ratio16x9);
+    board_runtime::resetRound(state,
+                              p1,
+                              p2,
+                              bullets,
+                              mirrors,
+                              powerups,
+                              bombs,
+                              barriers,
+                              specialStars,
+                              botRuntime,
+                              rng);
+    check(W == 640 && H == 360, "16:9 aspect selects a 640x360 arena");
+    check(p1.y == 302.f && p2.y == 58.f, "16:9 aspect uses matching player spawn rows");
+    setCanvasAspect(ScreenAspect::Ratio16x10);
+
+    state.forced_layout_pick = arenaPresetLayoutPick(ArenaPreset::FORTRESS);
+    board_runtime::resetRound(state,
+                              p1,
+                              p2,
+                              bullets,
+                              mirrors,
+                              powerups,
+                              bombs,
+                              barriers,
+                              specialStars,
+                              botRuntime,
+                              rng);
+    check(state.layout_kind == arena_layout::LayoutKind::FORTRESS,
+          "forced arena preset selects its intended layout");
+
     std::strcpy(state.layout_name, "VORTEX");
     auto vortex = board_runtime::layoutAccentColor(state);
     check(vortex.r == 255 && vortex.g == 240 && vortex.b == 40, "layout accent maps VORTEX color");

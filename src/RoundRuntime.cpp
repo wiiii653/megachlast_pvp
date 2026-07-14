@@ -7,6 +7,7 @@ namespace {
 
 void resetRoundAndClearScores(Player& p1,
                               Player& p2,
+                              MatchState& match,
                               int& cd1,
                               int& cd2,
                               float& powerupSpawnTimer,
@@ -14,10 +15,49 @@ void resetRoundAndClearScores(Player& p1,
 {
     p1.score = 0;
     p2.score = 0;
+    match = {};
     resetRound();
     cd1 = 0;
     cd2 = 0;
     powerupSpawnTimer = POWERUP_SPAWN_INTERVAL * POWERUP_FIRST_SPAWN_FACTOR;
+}
+
+void resetBoardKeepingRoundScores(Player& p1,
+                                  Player& p2,
+                                  const std::function<void()>& resetRound)
+{
+    int score1 = p1.score;
+    int score2 = p2.score;
+    int points1 = p1.points;
+    int points2 = p2.points;
+    resetRound();
+    p1.score = score1;
+    p2.score = score2;
+    p1.points = points1;
+    p2.points = points2;
+}
+
+void startNextRound(Player& p1,
+                    Player& p2,
+                    int& cd1,
+                    int& cd2,
+                    float& powerupSpawnTimer,
+                    float& countdownTimer,
+                    GameState& state,
+                    const std::function<void()>& resetRound,
+                    const std::function<void(bool)>& playGetReady)
+{
+    int points1 = p1.points;
+    int points2 = p2.points;
+    resetRound();
+    p1.score = p2.score = 0;
+    p1.points = points1;
+    p2.points = points2;
+    cd1 = cd2 = 0;
+    powerupSpawnTimer = POWERUP_SPAWN_INTERVAL * POWERUP_FIRST_SPAWN_FACTOR;
+    countdownTimer = 2.f;
+    state = GameState::COUNTDOWN;
+    playGetReady(false);
 }
 
 } // namespace
@@ -27,6 +67,7 @@ void applyFragTransition(Player& p1,
                          Player& victim,
                          int scorer,
                          const Config& cfg,
+                         MatchState& match,
                          int& winner,
                          GameState& state,
                          int& cd1,
@@ -45,21 +86,23 @@ void applyFragTransition(Player& p1,
     }
 
     if(p1.score >= cfg.target_score || p2.score >= cfg.target_score){
-        winner = (p1.score >= cfg.target_score) ? 1 : 2;
-        state = GameState::GAME_OVER;
-        playGetReady(true);
+        int roundWinner = (p1.score >= cfg.target_score) ? 1 : 2;
+        if(roundWinner == 1) ++match.p1_round_wins;
+        else ++match.p2_round_wins;
+
+        if(match.p1_round_wins >= cfg.rounds_to_win || match.p2_round_wins >= cfg.rounds_to_win){
+            winner = roundWinner;
+            state = GameState::GAME_OVER;
+            playGetReady(true);
+            return;
+        }
+
+        startNextRound(p1, p2, cd1, cd2, powerupSpawnTimer, countdownTimer,
+                       state, resetRound, playGetReady);
         return;
     }
 
-    int saved1 = p1.score;
-    int saved2 = p2.score;
-    int points1 = p1.points;
-    int points2 = p2.points;
-    resetRound();
-    p1.score = saved1;
-    p2.score = saved2;
-    p1.points = points1;
-    p2.points = points2;
+    resetBoardKeepingRoundScores(p1, p2, resetRound);
     victim.invulnTimer = AFTERKILL_INVULN;
     cd1 = 0;
     cd2 = 0;
@@ -71,6 +114,7 @@ void applyFragTransition(Player& p1,
 
 void startCountdownFromMenu(Player& p1,
                             Player& p2,
+                            MatchState& match,
                             int& cd1,
                             int& cd2,
                             float& powerupSpawnTimer,
@@ -79,7 +123,7 @@ void startCountdownFromMenu(Player& p1,
                             const std::function<void()>& resetRound,
                             const std::function<void(bool)>& playGetReady)
 {
-    resetRoundAndClearScores(p1, p2, cd1, cd2, powerupSpawnTimer, resetRound);
+    resetRoundAndClearScores(p1, p2, match, cd1, cd2, powerupSpawnTimer, resetRound);
     countdownTimer = 3.f;
     state = GameState::COUNTDOWN;
     playGetReady(false);
@@ -99,16 +143,18 @@ void openDonateScreen(GameState& state, float& donateMsgTimer)
 
 void resetPlayingRound(Player& p1,
                        Player& p2,
+                       MatchState& match,
                        int& cd1,
                        int& cd2,
                        float& powerupSpawnTimer,
                        const std::function<void()>& resetRound)
 {
-    resetRoundAndClearScores(p1, p2, cd1, cd2, powerupSpawnTimer, resetRound);
+    resetRoundAndClearScores(p1, p2, match, cd1, cd2, powerupSpawnTimer, resetRound);
 }
 
 void rematchCountdownRound(Player& p1,
                            Player& p2,
+                           MatchState& match,
                            int& cd1,
                            int& cd2,
                            float& powerupSpawnTimer,
@@ -119,6 +165,7 @@ void rematchCountdownRound(Player& p1,
 {
     startCountdownFromMenu(p1,
                            p2,
+                           match,
                            cd1,
                            cd2,
                            powerupSpawnTimer,

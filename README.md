@@ -29,6 +29,8 @@ General:
 - F11: toggle fullscreen
 - Escape: open menu from game screens (quit only when already in menu)
 
+Before each match, choose one 12-second round modifier: Shield, Rapid Fire, Spread Shot, or Overdrive. Choose a curated arena (Mirror Maze, Fortress, or Open Reactor) with Q/E. In match setup, P1 uses Left/Right, P2 uses A/D, and Enter starts the match.
+
 ## Rules
 
 - Each player has ENERGY (0..100).
@@ -36,7 +38,7 @@ General:
 - When ENERGY hits 0: the shooter scores +1 and victim respawns with a brief invulnerability window.
 - Mirror blocks reflect bullets and rotate on hit.
 - Being hit also applies a brief SLOWED debuff (half movement speed for up to 2 s, stacks per hit).
-- First to 8 frags wins (configurable via `TARGET_SCORE` in settings).
+- First to 5 frags wins a round; the first player to win two rounds wins the match (configurable via `TARGET_SCORE` and `ROUNDS_TO_WIN` in settings).
 
 ## Build (SFML 3)
 
@@ -164,13 +166,13 @@ Settings screen:
 - `Up` / `Down` — select a row.
 - `Left` / `Right` — change numeric settings, including windowed resolution scale.
 - `Enter` — toggle boolean settings or activate save/load rows.
-- Graphics rows control windowed resolution scale, post-processing master toggle, scanlines, edge/final vignette, chromatic aberration, and copper bars.
-- `WINDOW_SCALE` is a scale multiplier for the 640x400 internal render target. For example, `2` is 1280x800 and `3` is 1920x1200. Fullscreen still uses the desktop video mode.
+- Graphics rows control windowed resolution scale, 16:10/16:9 canvas aspect ratio, post-processing master toggle, scanlines, edge/final vignette, chromatic aberration, and copper bars.
+- `WINDOW_SCALE` is a scale multiplier for the internal render target. `SCREEN_ASPECT=16:10` uses 640x400 (for example, scale `3` is 1920x1200); `SCREEN_ASPECT=16:9` uses a true 640x360 arena (scale `3` is 1920x1080). Aspect-ratio changes apply after restarting the game. Fullscreen still uses the desktop video mode.
 - `--no-postfx` overrides saved graphics settings and disables cosmetic post-processing for the session.
 
 Optional runtime overrides can be placed in `assets/settings.cfg` (copy and edit `assets/settings.cfg.example`).
 Persistent toggles include `BOT_ENABLED`, `BOT_DIFFICULTY`, `MUSIC_VOLUME`, `SFX_VOLUME`, `MUTE`, controller slots, and graphics options.
-Supported gameplay/audio/graphics keys include: `TARGET_SCORE`, `P_SPEED`, `BULLET_SPEED`, `BULLET_TTL`, `HIT_R`, `DAMAGE`, `FIRE_CD_P1_FRAMES`, `FIRE_CD_P2_FRAMES`, `BOT_ENABLED`, `BOT_DIFFICULTY`, `MUSIC_VOLUME`, `SFX_VOLUME`, `MUTE`, `P1_CONTROLLER`, `P2_CONTROLLER`, `WINDOW_SCALE`, `POSTFX_ENABLED`, `SCANLINES`, `VIGNETTE`, `CHROMATIC_ABERRATION`, `COPPER_BARS`.
+Supported gameplay/audio/graphics keys include: `TARGET_SCORE`, `P_SPEED`, `BULLET_SPEED`, `BULLET_TTL`, `HIT_R`, `DAMAGE`, `FIRE_CD_P1_FRAMES`, `FIRE_CD_P2_FRAMES`, `BOT_ENABLED`, `BOT_DIFFICULTY`, `MUSIC_VOLUME`, `SFX_VOLUME`, `MUTE`, `P1_CONTROLLER`, `P2_CONTROLLER`, `WINDOW_SCALE`, `SCREEN_ASPECT`, `POSTFX_ENABLED`, `SCANLINES`, `VIGNETTE`, `CHROMATIC_ABERRATION`, `COPPER_BARS`.
 Supported bot tuning overrides include: `BOT_DODGE_ZONE`, `BOT_DODGE_X_THR`, `BOT_ALIGN_TOL`, `BOT_FIRE_PROB`, `BOT_REACTION`, `BOT_POWERUP_INTEREST`, `BOT_STRAFE_LO`, `BOT_STRAFE_HI`, `BOT_BOMB_FEAR`, `BOT_AIM_LEAD_EASY`, `BOT_AIM_LEAD_MED`, `BOT_AIM_LEAD_HARD`.
 
 ## Assets

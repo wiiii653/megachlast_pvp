@@ -36,6 +36,7 @@ int main()
         p2.points = 50;
         Config cfg{};
         cfg.target_score = 3;
+        MatchState match{};
         int winner = 0;
         GameState state = GameState::PLAYING;
         int cd1 = 7;
@@ -61,6 +62,7 @@ int main()
                                            p2,
                                            1,
                                            cfg,
+                                           match,
                                            winner,
                                            state,
                                            cd1,
@@ -80,6 +82,8 @@ int main()
         checkClose(countdownTimer, 2.f, "frag transition starts short countdown");
         check(state == GameState::COUNTDOWN, "frag transition enters countdown");
         check(winner == 0, "non-winning frag leaves winner unset");
+        check(match.p1_round_wins == 0 && match.p2_round_wins == 0,
+              "non-winning frag leaves match wins unchanged");
         check(!getReadyLoop, "non-winning frag plays non-looping get-ready track");
     }
 
@@ -89,6 +93,8 @@ int main()
         p1.score = 2;
         Config cfg{};
         cfg.target_score = 3;
+        cfg.rounds_to_win = 2;
+        MatchState match{};
         int winner = 0;
         GameState state = GameState::PLAYING;
         int cd1 = 3;
@@ -103,6 +109,7 @@ int main()
                                            p2,
                                            1,
                                            cfg,
+                                           match,
                                            winner,
                                            state,
                                            cd1,
@@ -112,13 +119,37 @@ int main()
                                            [&]{ ++resetCount; },
                                            [&](bool loop){ getReadyLoop = loop; });
 
-        check(resetCount == 0, "winning frag does not reset the board");
-        check(p1.score == 3, "winning frag increments score");
+        check(resetCount == 1, "round-winning frag resets the board for the next round");
+        check(p1.score == 0 && p2.score == 0, "round-winning frag clears round scores");
         check(p1.points == 100, "winning frag increments points");
-        check(winner == 1, "winning frag sets winner");
-        check(state == GameState::GAME_OVER, "winning frag enters game over");
-        check(getReadyLoop, "game over plays looping get-ready track");
-        check(cd1 == 3 && cd2 == 4, "winning frag leaves cooldowns untouched");
+        check(match.p1_round_wins == 1 && match.p2_round_wins == 0, "round win updates match score");
+        check(winner == 0, "round win does not end a best-of-three match");
+        check(state == GameState::COUNTDOWN, "round win enters next-round countdown");
+        check(!getReadyLoop, "round win plays non-looping get-ready track");
+        check(cd1 == 0 && cd2 == 0, "round win clears cooldowns");
+    }
+
+    {
+        Player p1{};
+        Player p2{};
+        p1.score = 2;
+        Config cfg{};
+        cfg.target_score = 3;
+        cfg.rounds_to_win = 2;
+        MatchState match{1, 0};
+        int winner = 0;
+        GameState state = GameState::PLAYING;
+        int cd1 = 0;
+        int cd2 = 0;
+        float powerupSpawnTimer = 0.f;
+        float countdownTimer = 0.f;
+
+        round_runtime::applyFragTransition(p1, p2, p2, 1, cfg, match, winner, state,
+                                           cd1, cd2, powerupSpawnTimer, countdownTimer,
+                                           []{}, [](bool){});
+
+        check(match.p1_round_wins == 2, "final round win completes the match");
+        check(winner == 1 && state == GameState::GAME_OVER, "final round win enters game over");
     }
 
     {
@@ -129,12 +160,14 @@ int main()
         int cd1 = 2;
         int cd2 = 3;
         float powerupSpawnTimer = 12.f;
+        MatchState match{1, 1};
         int resetCount = 0;
 
-        round_runtime::resetPlayingRound(p1, p2, cd1, cd2, powerupSpawnTimer, [&]{ ++resetCount; });
+        round_runtime::resetPlayingRound(p1, p2, match, cd1, cd2, powerupSpawnTimer, [&]{ ++resetCount; });
 
         check(resetCount == 1, "manual reset invokes reset callback");
         check(p1.score == 0 && p2.score == 0, "manual reset clears scores");
+        check(match.p1_round_wins == 0 && match.p2_round_wins == 0, "manual reset clears match wins");
         check(cd1 == 0 && cd2 == 0, "manual reset clears cooldowns");
         checkClose(powerupSpawnTimer, POWERUP_SPAWN_INTERVAL * POWERUP_FIRST_SPAWN_FACTOR,
                    "manual reset resets powerup spawn timer");

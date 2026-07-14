@@ -9,7 +9,7 @@ void respawn(Player& p, int id)
 {
     p.energy = 100.f;
     p.x = W * 0.5f;
-    p.y = (id == 1) ? PLAYER_SPAWN_BOTTOM_Y : PLAYER_SPAWN_TOP_Y;
+    p.y = (id == 1) ? playerSpawnBottomY() : PLAYER_SPAWN_TOP_Y;
     p.flashTimer = 0.f;
     p.invulnTimer = SPAWN_INVULN;
     p.shieldTimer = 0.f;
@@ -17,6 +17,7 @@ void respawn(Player& p, int id)
     p.spreadTimer = 0.f;
     p.slowTimer = 0.f;
     p.reverseTimer = 0.f;
+    p.overdriveTimer = 0.f;
 }
 
 } // namespace
@@ -59,6 +60,10 @@ void resetRound(State& state,
 
     ++state.round_number;
     state.board_seed = arena_layout::deriveBoardSeed(state.world_seed, state.round_number);
+    if(state.forced_layout_pick >= 0){
+        while(((state.board_seed >> 5) % 12u) != static_cast<uint32_t>(state.forced_layout_pick))
+            state.board_seed += (1u << 5);
+    }
     arena_layout::genMirrorsSeeded(mirrors, state.board_seed, state.layout_kind, state.layout_name);
     arena_layout::genBarriers(barriers);
     arena_layout::placeBombsForLayout(bombs, mirrors, state.layout_kind, rng);

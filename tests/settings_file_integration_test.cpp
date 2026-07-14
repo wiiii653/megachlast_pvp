@@ -49,6 +49,7 @@ int main()
     std::remove(path.c_str());
 
     cfg.target_score = 13;
+    cfg.rounds_to_win = 3;
     cfg.p_speed = 177.f;
     cfg.fire_cd_p1_frames = 9;
     cfg.fire_cd_p2_frames = 11;
@@ -58,6 +59,7 @@ int main()
     g_sfx_volume = 63.f;
     g_muted = true;
     g_graphics.window_scale = 3;
+    g_graphics.screen_aspect = ScreenAspect::Ratio16x9;
     g_graphics.postfx_enabled = false;
     g_graphics.scanlines_enabled = false;
     g_graphics.vignette_enabled = true;
@@ -72,10 +74,13 @@ int main()
                                   g_controllers,
                                   g_bot_overrides);
     check(containsLine(path, "BOT_ENABLED=1"), "settings save writes BOT_ENABLED");
+    check(containsLine(path, "ROUNDS_TO_WIN=3"), "settings save writes match rounds to win");
     check(containsLine(path, "WINDOW_SCALE=3"), "settings save writes window scale");
+    check(containsLine(path, "SCREEN_ASPECT=16:9"), "settings save writes screen aspect");
     check(containsLine(path, "P1_CONTROLLER=2"), "settings save writes P1 controller");
 
     cfg.target_score = 1;
+    cfg.rounds_to_win = 1;
     cfg.p_speed = 20.f;
     cfg.fire_cd_p1_frames = 1;
     cfg.fire_cd_p2_frames = 1;
@@ -94,6 +99,7 @@ int main()
                                         g_bot_overrides),
           "settings load succeeds for saved file");
     check(cfg.target_score == 13, "target score round-trips");
+    check(cfg.rounds_to_win == 3, "match rounds to win round-trips");
     check(std::fabs(cfg.p_speed - 177.f) < 0.0001f, "speed round-trips");
     check(cfg.fire_cd_p1_frames == 9, "p1 fire cooldown round-trips");
     check(cfg.fire_cd_p2_frames == 11, "p2 fire cooldown round-trips");
@@ -103,6 +109,7 @@ int main()
     check(std::fabs(g_sfx_volume - 63.f) < 0.0001f, "sfx volume round-trips");
     check(g_muted, "mute flag round-trips");
     check(g_graphics.window_scale == 3, "window scale round-trips");
+    check(g_graphics.screen_aspect == ScreenAspect::Ratio16x9, "screen aspect round-trips");
     check(!g_graphics.postfx_enabled, "postfx toggle round-trips");
     check(!g_graphics.scanlines_enabled, "scanlines toggle round-trips");
     check(g_graphics.vignette_enabled, "vignette toggle round-trips");

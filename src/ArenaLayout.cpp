@@ -40,7 +40,7 @@ void genMirrorsSeeded(std::array<Mirror, MIRROR_PAIRS * 2>& mirrors,
     const float xMin  = 40.f,  xMax  = W - 40.f;  // 40..600
     // Each half occupies [0, H/2) and [H/2, H).  Spawn clearance is ±15 px from rows 58 (P2) and H-58 (P1).
     const float spawnTopY = PLAYER_SPAWN_TOP_Y;
-    const float spawnBotY = PLAYER_SPAWN_BOTTOM_Y;
+    const float spawnBotY = playerSpawnBottomY();
     const float clearR    = MIRROR_R + 8.f;       // 15
     const float minSep    = MIRROR_PAD;           // 12
 
@@ -525,7 +525,7 @@ void genBarriers(std::array<BarrierBrick, BARRIER_BRICKS * 2>& barriers)
 {
     float totalW = BARRIER_BRICKS * BRICK_W + (BARRIER_BRICKS - 1) * BRICK_GAP;
     float startX = (W - totalW) * 0.5f;
-    float yP1 = PLAYER_SPAWN_BOTTOM_Y - BARRIER_Y_OFFSET;
+    float yP1 = playerSpawnBottomY() - BARRIER_Y_OFFSET;
     float yP2 = PLAYER_SPAWN_TOP_Y + BARRIER_Y_OFFSET;
 
     for(int i = 0; i < BARRIER_BRICKS; ++i){
@@ -584,7 +584,7 @@ void placeBombsForLayout(std::array<Bomb, MAX_BOMBS>& bombs,
             float bx = rng.frand(bxMin, bxMax);
             float by = rng.frand(byMin, byMax);
             if(std::abs(by - PLAYER_SPAWN_TOP_Y) < SPAWN_ROW_BOMB_EXCLUSION ||
-               std::abs(by - PLAYER_SPAWN_BOTTOM_Y) < SPAWN_ROW_BOMB_EXCLUSION) continue;
+               std::abs(by - playerSpawnBottomY()) < SPAWN_ROW_BOMB_EXCLUSION) continue;
 
             bool ok = true;
             for(const auto& m : mirrors){

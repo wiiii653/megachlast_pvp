@@ -15,6 +15,7 @@ struct State {
     uint32_t world_seed = 0;
     uint32_t board_seed = 0;
     uint32_t round_number = 0;
+    int forced_layout_pick = -1;
     arena_layout::LayoutKind layout_kind = arena_layout::LayoutKind::RANDOM;
     char layout_name[24] = "RANDOM";
 };
