@@ -47,7 +47,10 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: megachlast-${{ matrix.platform }}
-          path: release/*.zip
+          path: |
+            release/*.tar.gz
+            release/*.dmg
+            release/*.zip
           if-no-files-found: error
   sanitizers:
     runs-on: ubuntu-24.04
@@ -80,8 +83,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          test "$(find release-assets -name '*.zip' | wc -l)" -eq 3
-          (cd release-assets && sha256sum *.zip > SHA256SUMS.txt)
+          test -s release-assets/megachlast-Linux-x86_64.tar.gz
+          test -s release-assets/megachlast-macOS-arm64.dmg
+          test -s release-assets/megachlast-Windows-x86_64.zip
+          (cd release-assets && sha256sum *.tar.gz *.dmg *.zip > SHA256SUMS.txt)
           release_flags=()
           if [[ "$GITHUB_REF_NAME" == *-* ]]; then
             release_flags+=(--prerelease)
@@ -89,5 +94,5 @@ jobs:
           gh release create "$GITHUB_REF_NAME" release-assets/* \
             --repo "$GITHUB_REPOSITORY" --verify-tag \
             --title "Megachlast PvP $GITHUB_REF_NAME" \
-            --notes "Extract the ZIP matching your platform. Linux: Ubuntu 24.04 or newer, launch play.sh. macOS: Apple Silicon, launch play.command (not notarized). Windows: x64, launch play.bat. SFML, non-system runtime dependencies, assets and license notices are included. See SHA256SUMS.txt for checksums." \
+            --notes "Linux x86_64 (Ubuntu 24.04+): extract the tar.gz and launch play.sh. macOS Apple Silicon: open the DMG, copy the game folder to a writable location, eject the image, then launch play.command (not notarized). Windows x64: extract the ZIP and launch play.bat. Runtime dependencies, assets and license notices are included. See SHA256SUMS.txt for checksums." \
             "${release_flags[@]}"

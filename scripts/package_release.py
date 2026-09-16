@@ -6,6 +6,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 
 
 def run(*args, **kwargs):
@@ -93,5 +94,23 @@ for key in ('LD_LIBRARY_PATH', 'DYLD_LIBRARY_PATH', 'DYLD_FALLBACK_LIBRARY_PATH'
     environment.pop(key, None)
 run(str(target), '--smoke-test', cwd=package, env=environment)
 run(str(target), '--help', cwd=package, env=environment)
-shutil.make_archive(str(package), 'zip', package.parent, package.name)
-print('Packaged:', str(package) + '.zip')
+if sys.platform == 'darwin':
+    # Keep the game folder intact when copied out of the read-only disk image.
+    disk_root = package.parent / 'dmg-content'
+    disk_root.mkdir()
+    shutil.copytree(package, disk_root / package.name)
+    output = str(package) + '.dmg'
+    run('hdiutil', 'create', '-volname', 'Megachlast PvP', '-srcfolder',
+        str(disk_root), '-format', 'UDZO', output)
+    run('hdiutil', 'verify', output)
+    with tempfile.TemporaryDirectory() as mount:
+        run('hdiutil', 'attach', '-readonly', '-nobrowse', '-mountpoint', mount, output)
+        try:
+            mounted = Path(mount) / package.name
+            run(str(mounted / exe_name), '--smoke-test', cwd=mounted, env=environment)
+        finally:
+            run('hdiutil', 'detach', mount)
+else:
+    archive_format = 'zip' if windows else 'gztar'
+    output = shutil.make_archive(str(package), archive_format, package.parent, package.name)
+print('Packaged:', output)

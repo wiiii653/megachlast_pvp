@@ -73,9 +73,13 @@ Push a version tag such as `v0.1.0` to run the multiplatform release workflow.
 It builds and smoke-checks Linux, macOS, and Windows, then attaches the
 platform archives to a GitHub Release automatically. The repository's GitHub
 Actions workflow requires write access to repository contents for this step.
-Tags with a suffix, such as `v0.1.0-rc.2`, produce prereleases. Download the ZIP
-for Linux x86_64 (Ubuntu 24.04+), macOS Apple Silicon, or Windows x64, extract it,
-and use `play.sh`, `play.command`, or `play.bat`. macOS builds are not notarized.
+Tags with a suffix, such as `v0.1.0-rc.3`, produce prereleases.
+
+- Linux x86_64 (Ubuntu 24.04+): extract the `.tar.gz` and run `play.sh`.
+- Windows x64: extract the `.zip` and run `play.bat`.
+- macOS Apple Silicon: open the `.dmg`, copy the game folder to a writable
+  location, eject the image, and run `play.command`. Builds are not notarized.
+
 Release archives include assets, runtime dependencies and license notices;
 `SHA256SUMS.txt` provides checksums. Packaging uses `scripts/package_release.py`
 with a `FETCH` build, not the basic CPack layout above.
