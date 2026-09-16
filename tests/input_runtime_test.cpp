@@ -63,11 +63,11 @@ int main()
             [&]{ menuAction = 0; }, [&]{ menuAction = 1; }, [&]{ menuAction = 2; },
             []{}, []{}, []{}, []{});
     };
-    menuPress(sf::Keyboard::Scan::Down);
-    check(menuSel == 1, "menu Down selects Settings");
+    menuPress(sf::Keyboard::Scan::Right);
+    check(menuSel == 1, "menu Right selects Settings");
     menuPress(sf::Keyboard::Scan::Enter);
     check(menuAction == 1, "menu Enter accepts the selected item");
-    menuPress(sf::Keyboard::Scan::Down);
+    menuPress(sf::Keyboard::Scan::Right);
     menuPress(sf::Keyboard::Scan::Enter);
     check(menuSel == 2 && menuAction == 2, "menu selection reaches Donate");
     return failures == 0 ? 0 : 1;

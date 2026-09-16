@@ -49,24 +49,23 @@ Before each match, choose one 12-second round modifier: Shield, Rapid Fire, Spre
 This project requires **SFML 3.x**.
 
 - SFML is an external dependency and is never stored in this repository.
-- CMake finds an installed SFML 3 package via `find_package(SFML 3 ...)`; provide `SFML_DIR`, `CMAKE_PREFIX_PATH`, or a package-manager toolchain when needed.
+- CMake uses an installed SFML 3 package, or automatically downloads pinned SFML 3.0.1. Use `-DSFML_PROVIDER=FETCH` to force the download or `SYSTEM` to require an installed package.
 - Note: Ubuntu 24.04 default repositories provide SFML 2.6 (`libsfml-dev`), which is not sufficient.
-- Cross Platform CI downloads SFML 3.0.1 from upstream on Linux/macOS and from vcpkg on Windows. The separate CI workflow uses vcpkg on all three platforms; see [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for current CI blockers.
+- Cross Platform CI builds static SFML from the same upstream revision on all three platforms.
 
 ```bash
 cmake -S . -B build_sfml3
 cmake --build build_sfml3 -j
 ```
 
-To create a self-contained project package layout (the SFML runtime remains an
-external platform dependency), use:
+For a basic install layout (without runtime dependency bundling), use:
 
 ```bash
 cmake --install build_sfml3 --prefix release/megachlast_pvp
-cd release/megachlast_pvp && cpack
+cpack --config build_sfml3/CPackConfig.cmake
 ```
 
-On Windows, use `--config Release` with both `cmake --install` and `cpack`.
+On Windows, use `--config Release` with `cmake --install` and `-C Release` with `cpack`.
 
 ## GitHub Releases
 
@@ -74,6 +73,12 @@ Push a version tag such as `v0.1.0` to run the multiplatform release workflow.
 It builds and smoke-checks Linux, macOS, and Windows, then attaches the
 platform archives to a GitHub Release automatically. The repository's GitHub
 Actions workflow requires write access to repository contents for this step.
+Tags with a suffix, such as `v0.1.0-rc.2`, produce prereleases. Download the ZIP
+for Linux x86_64 (Ubuntu 24.04+), macOS Apple Silicon, or Windows x64, extract it,
+and use `play.sh`, `play.command`, or `play.bat`. macOS builds are not notarized.
+Release archives include assets, runtime dependencies and license notices;
+`SHA256SUMS.txt` provides checksums. Packaging uses `scripts/package_release.py`
+with a `FETCH` build, not the basic CPack layout above.
 
 ### Linux
 
@@ -95,7 +100,7 @@ cmake -S . -B build_sfml3
 
 ### macOS
 
-Install SFML 3, then configure CMake to find that external installation. vcpkg is the CI-tested route:
+The default configure command downloads SFML when needed. Alternatively, use vcpkg:
 
 ```bash
 vcpkg install sfml
@@ -107,7 +112,7 @@ ctest --test-dir build_sfml3 --output-on-failure
 
 ### Windows 10/11 (MSVC)
 
-Use a VS Developer PowerShell and install SFML 3 via vcpkg, then:
+Use a VS Developer PowerShell; CMake can download SFML automatically. Alternatively, with vcpkg:
 
 ```powershell
 vcpkg install sfml:x64-windows

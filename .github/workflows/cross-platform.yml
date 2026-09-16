@@ -1,181 +1,93 @@
 name: Cross Platform CI
-
 on:
   push:
   pull_request:
-
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   build-test:
-    name: ${{ matrix.os }} / ${{ matrix.compiler }} / ${{ matrix.build_type }}
+    name: ${{ matrix.platform }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            compiler: gcc
-            cc: gcc
-            cxx: g++
-            build_type: Release
-          - os: ubuntu-latest
-            compiler: clang
-            cc: clang
-            cxx: clang++
-            build_type: Release
-          - os: macos-latest
-            compiler: clang
-            cc: clang
-            cxx: clang++
-            build_type: Release
+          - os: ubuntu-24.04
+            platform: Linux-x86_64
+          - os: macos-14
+            platform: macOS-arm64
           - os: windows-latest
-            compiler: msvc
-            build_type: Release
-
+            platform: Windows-x86_64
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install SFML (Linux)
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Linux build dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libxrandr-dev libxcursor-dev libxi-dev libudev-dev libopenal-dev libflac-dev libvorbis-dev libgl1-mesa-dev libfreetype-dev
-          git clone --depth 1 --branch 3.0.1 https://github.com/SFML/SFML.git /tmp/sfml
-          cmake -S /tmp/sfml -B /tmp/sfml-build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DSFML_BUILD_EXAMPLES=OFF -DSFML_BUILD_DOC=OFF -DSFML_BUILD_TEST_SUITE=OFF
-          cmake --build /tmp/sfml-build --config Release --parallel
-          sudo cmake --install /tmp/sfml-build --prefix /usr/local
-
-      - name: Install SFML (macOS)
+          sudo apt-get install -y libxrandr-dev libxcursor-dev libxi-dev libudev-dev libflac-dev libvorbis-dev libgl1-mesa-dev libfreetype-dev xvfb patchelf
+      - name: macOS packaging tools
         if: runner.os == 'macOS'
-        run: |
-          git clone --depth 1 --branch 3.0.1 https://github.com/SFML/SFML.git /tmp/sfml
-          cmake -S /tmp/sfml -B /tmp/sfml-build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DSFML_BUILD_EXAMPLES=OFF -DSFML_BUILD_DOC=OFF -DSFML_BUILD_TEST_SUITE=OFF
-          cmake --build /tmp/sfml-build --config Release --parallel
-          sudo cmake --install /tmp/sfml-build --prefix /usr/local
-
-      - name: Install SFML (Windows, vcpkg)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          git clone https://github.com/microsoft/vcpkg.git C:\\vcpkg
-          C:\\vcpkg\\bootstrap-vcpkg.bat
-          C:\\vcpkg\\vcpkg install sfml:x64-windows
-
-      - name: Configure (Linux/macOS)
-        if: runner.os != 'Windows'
-        env:
-          CC: ${{ matrix.cc }}
-          CXX: ${{ matrix.cxx }}
-        run: cmake -S . -B build_sfml3 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-
-      - name: Configure (Windows)
-        if: runner.os == 'Windows'
-        run: cmake -S . -B build_sfml3 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
-
+        run: brew install dylibbundler
+      - name: Configure with automatic SFML download
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DSFML_PROVIDER=FETCH -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DSFML_USE_STATIC_STD_LIBS=ON
       - name: Build
-        run: cmake --build build_sfml3 --config ${{ matrix.build_type }} --parallel
-
-      - name: Test
-        run: ctest --test-dir build_sfml3 --build-config ${{ matrix.build_type }} --output-on-failure
-
-      - name: Headless smoke test (Linux/macOS)
-        if: runner.os != 'Windows'
-        run: ./build_sfml3/megablast_pvp_sfml --smoke-test --assets-dir assets
-
-      - name: Headless smoke test (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: ./build_sfml3/${{ matrix.build_type }}/megablast_pvp_sfml.exe --smoke-test --assets-dir assets
-
-      - name: Package artifact (Linux/macOS)
-        if: runner.os != 'Windows'
-        run: |
-          PKG_DIR="release/megachlast_pvp_${{ runner.os }}_${{ matrix.compiler }}_${{ matrix.build_type }}"
-          mkdir -p "$PKG_DIR"
-          cp build_sfml3/megablast_pvp_sfml "$PKG_DIR/"
-          cp -r assets "$PKG_DIR/"
-          cp README.md EARLY_ACCESS.md CHANGELOG.md KNOWN_ISSUES.md "$PKG_DIR/"
-          tar -czf "${PKG_DIR}.tar.gz" -C release "$(basename "$PKG_DIR")"
-
-      - name: Package artifact (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $pkgDir = "release/megachlast_pvp_${{ runner.os }}_${{ matrix.compiler }}_${{ matrix.build_type }}"
-          New-Item -ItemType Directory -Force -Path $pkgDir | Out-Null
-          Copy-Item "build_sfml3/Release/megablast_pvp_sfml.exe" "$pkgDir/" -Force
-          Copy-Item "assets" "$pkgDir/assets" -Recurse -Force
-          Copy-Item "README.md","EARLY_ACCESS.md","CHANGELOG.md","KNOWN_ISSUES.md" $pkgDir -Force
-          Compress-Archive -Path "$pkgDir/*" -DestinationPath "$pkgDir.zip" -Force
-
-      - name: Upload artifact (Linux/macOS)
-        if: runner.os != 'Windows'
-        uses: actions/upload-artifact@v4
+        run: cmake --build build --config Release --parallel 3
+      - name: Linux tests
+        if: runner.os == 'Linux'
+        run: xvfb-run -a ctest --test-dir build -C Release --output-on-failure
+      - name: Windows and macOS tests
+        if: runner.os != 'Linux'
+        run: ctest --test-dir build -C Release --output-on-failure
+      - name: Package and verify runtime dependencies
+        run: python scripts/package_release.py --build build --platform ${{ matrix.platform }}
+      - uses: actions/upload-artifact@v4
         with:
-          name: megachlast_pvp_${{ runner.os }}_${{ matrix.compiler }}_${{ matrix.build_type }}
-          path: release/*.tar.gz
-          if-no-files-found: error
-
-      - name: Upload artifact (Windows)
-        if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v4
-        with:
-          name: megachlast_pvp_${{ runner.os }}_${{ matrix.compiler }}_${{ matrix.build_type }}
+          name: megachlast-${{ matrix.platform }}
           path: release/*.zip
           if-no-files-found: error
-
-  linux-sanitizers:
-    name: ubuntu-latest / sanitizers
-    runs-on: ubuntu-latest
+  sanitizers:
+    runs-on: ubuntu-24.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install deps and SFML 3.0.1
+      - uses: actions/checkout@v4
+      - name: Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang libxrandr-dev libxcursor-dev libxi-dev libudev-dev libopenal-dev libflac-dev libvorbis-dev libgl1-mesa-dev libfreetype-dev
-          git clone --depth 1 --branch 3.0.1 https://github.com/SFML/SFML.git /tmp/sfml
-          cmake -S /tmp/sfml -B /tmp/sfml-build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DSFML_BUILD_EXAMPLES=OFF -DSFML_BUILD_DOC=OFF -DSFML_BUILD_TEST_SUITE=OFF
-          cmake --build /tmp/sfml-build --config Release --parallel
-          sudo cmake --install /tmp/sfml-build --prefix /usr/local
-
-      - name: Configure (ASan+UBSan)
-        env:
-          CC: clang
-          CXX: clang++
-        run: cmake -S . -B build_san -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SANITIZERS=ON
-
-      - name: Build (ASan+UBSan)
-        run: cmake --build build_san --parallel
-
-      - name: Test (ASan+UBSan)
-        run: ctest --test-dir build_san --output-on-failure
-
+          sudo apt-get install -y libxrandr-dev libxcursor-dev libxi-dev libudev-dev libflac-dev libvorbis-dev libgl1-mesa-dev libfreetype-dev xvfb
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DSFML_PROVIDER=FETCH -DENABLE_SANITIZERS=ON -DCMAKE_CXX_COMPILER=clang++
+      - name: Build
+        run: cmake --build build --parallel 3
+      - name: Test
+        run: xvfb-run -a ctest --test-dir build --output-on-failure
   publish-release:
-    name: Publish tagged release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: build-test
+    needs: [build-test, sanitizers]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Download platform packages
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           path: release-assets
-          pattern: megachlast_pvp_*
+          pattern: megachlast-*
           merge-multiple: true
-
-      - name: Publish GitHub Release
+      - name: Publish verified archives
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
+          test "$(find release-assets -name '*.zip' | wc -l)" -eq 3
+          (cd release-assets && sha256sum *.zip > SHA256SUMS.txt)
           release_flags=()
-          if [[ "${GITHUB_REF_NAME}" == *-* ]]; then
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
             release_flags+=(--prerelease)
           fi
-          gh release create "${GITHUB_REF_NAME}" release-assets/* \
-            --repo "${GITHUB_REPOSITORY}" \
-            --title "Megachlast PvP ${GITHUB_REF_NAME}" \
-            --generate-notes "${release_flags[@]}"
+          gh release create "$GITHUB_REF_NAME" release-assets/* \
+            --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "Megachlast PvP $GITHUB_REF_NAME" \
+            --notes "Extract the ZIP matching your platform. Linux: Ubuntu 24.04 or newer, launch play.sh. macOS: Apple Silicon, launch play.command (not notarized). Windows: x64, launch play.bat. SFML, non-system runtime dependencies, assets and license notices are included. See SHA256SUMS.txt for checksums." \
+            "${release_flags[@]}"
