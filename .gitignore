@@ -14,6 +14,7 @@ compile_commands.json
 install_manifest.txt
 
 # --- Native build artifacts ---
+SFML-3.0.1/
 megablast_pvp_sfml
 *.o
 *.obj

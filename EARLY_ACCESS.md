@@ -24,7 +24,7 @@ This document defines the minimum quality bar and release process for Early Acce
    - `cmake -S . -B build_sfml3`
    - `cmake --build build_sfml3 -j`
    - `ctest --test-dir build_sfml3 --output-on-failure`
-2. Ensure cross-platform CI workflow is green. Cross Platform CI builds SFML 3.0.1 from source on Linux/macOS and uses vcpkg on Windows, with `-DUSE_BUNDLED_SFML=OFF` everywhere. Check [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for outstanding failures.
+2. Ensure cross-platform CI workflow is green. Cross Platform CI obtains SFML 3.0.1 externally from upstream on Linux/macOS and vcpkg on Windows. Check [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for outstanding failures.
 3. Verify README setup/run commands are still accurate.
 4. Verify assets required by runtime are present in `assets/`.
 5. Confirm known issues list is up to date.
@@ -35,7 +35,7 @@ This document defines the minimum quality bar and release process for Early Acce
 - Gameplay tuning and balance are still in active iteration.
 - Save format (`assets/settings.cfg`) is not guaranteed stable between Early Access builds.
 - Some diagnostics and graphics profile options are primarily Linux-oriented.
-- Bundled SFML may be skipped on Linux when its audio runtime dependency does not match the host; system/vcpkg SFML 3 is the portable fallback.
+- SFML is not vendored in the repository; builds require an external system, upstream, or vcpkg SFML 3 installation.
 
 ## Player-Facing Notes Template
 

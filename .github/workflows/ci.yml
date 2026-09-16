@@ -23,7 +23,7 @@ jobs:
 
       - name: Configure
         shell: bash
-        run: cmake -S . -B build_sfml3 -DCMAKE_BUILD_TYPE=Release -DUSE_BUNDLED_SFML=OFF -DCMAKE_TOOLCHAIN_FILE="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+        run: cmake -S . -B build_sfml3 -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build
         run: cmake --build build_sfml3 --config Release --parallel

@@ -3,14 +3,14 @@
 ## Cross-platform
 
 - Cross Platform CI for `fd91ea4` failed due to missing FreeType development files on Linux, a static/shared SFML mismatch on macOS, and missing propagated SFML include paths plus `<algorithm>` on Windows. See [run 29322261325](https://github.com/wiiii653/megachlast_pvp/actions/runs/29322261325). Fixes are included in the working tree; a successful run on all supported platforms is still required before release.
-- Cross Platform CI builds SFML 3.0.1 from source on Linux/macOS and uses vcpkg on Windows. The separate CI workflow uses vcpkg on all three platforms. Both disable bundled SFML; local builds may use it when runtime dependencies match the host.
+- Cross Platform CI obtains SFML 3.0.1 externally from upstream on Linux/macOS and vcpkg on Windows. The separate CI workflow uses vcpkg on all three platforms. SFML is not vendored in this repository.
 - Audio output device handling can differ by OS and driver stack.
 
 ## Linux
 
 - OpenGL driver stacks can vary significantly; `--gl-profile` fallbacks may be required on some systems.
 - Wayland/XWayland combinations can show different fullscreen behavior depending on compositor.
-- If bundled SFML audio depends on an unavailable FLAC runtime such as `libFLAC.so.12`, CMake falls back to system SFML when available.
+- Linux builds require an external SFML installation whose audio dependencies, including FLAC support, are available on the host.
 
 ## macOS
 

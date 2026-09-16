@@ -45,12 +45,10 @@ Before each match, choose one 12-second round modifier: Shield, Rapid Fire, Spre
 
 This project requires **SFML 3.x**.
 
-- If `SFML-3.0.1/` exists in the project root, CMake tries to use it by default.
-- On Linux, CMake falls back to system SFML if bundled SFML audio requires an unavailable FLAC runtime such as `libFLAC.so.12`.
-- To force system SFML, configure with `-DUSE_BUNDLED_SFML=OFF`.
-- CMake always uses `find_package(SFML 3 ...)`, either from bundled package config or system install.
+- SFML is an external dependency and is never stored in this repository.
+- CMake finds an installed SFML 3 package via `find_package(SFML 3 ...)`; provide `SFML_DIR`, `CMAKE_PREFIX_PATH`, or a package-manager toolchain when needed.
 - Note: Ubuntu 24.04 default repositories provide SFML 2.6 (`libsfml-dev`), which is not sufficient.
-- Cross Platform CI builds SFML 3.0.1 from source on Linux/macOS and uses vcpkg on Windows. The separate CI workflow uses vcpkg on all three platforms. Both use `-DUSE_BUNDLED_SFML=OFF`; see [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for current CI blockers.
+- Cross Platform CI downloads SFML 3.0.1 from upstream on Linux/macOS and from vcpkg on Windows. The separate CI workflow uses vcpkg on all three platforms; see [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for current CI blockers.
 
 ```bash
 cmake -S . -B build_sfml3
@@ -59,17 +57,17 @@ cmake --build build_sfml3 -j
 
 ### Linux
 
-Use bundled `SFML-3.0.1/` when its runtime dependencies match the host, or install/provide SFML 3 through a package manager such as vcpkg. If using vcpkg:
+Install/provide SFML 3 through a package manager such as vcpkg. If using vcpkg:
 
 ```bash
 vcpkg install sfml
-cmake -S . -B build_sfml3 -DUSE_BUNDLED_SFML=OFF \
+cmake -S . -B build_sfml3 \
   -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
 cmake --build build_sfml3 -j
 ctest --test-dir build_sfml3 --output-on-failure
 ```
 
-If bundled SFML is usable on your machine, the default configure command also works:
+If SFML is installed in a standard system prefix, the default configure command also works:
 
 ```bash
 cmake -S . -B build_sfml3
@@ -77,11 +75,11 @@ cmake -S . -B build_sfml3
 
 ### macOS
 
-Install SFML 3, then build with bundled SFML disabled. vcpkg is the CI-tested route:
+Install SFML 3, then configure CMake to find that external installation. vcpkg is the CI-tested route:
 
 ```bash
 vcpkg install sfml
-cmake -S . -B build_sfml3 -DUSE_BUNDLED_SFML=OFF \
+cmake -S . -B build_sfml3 \
   -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
 cmake --build build_sfml3 -j
 ctest --test-dir build_sfml3 --output-on-failure
@@ -93,7 +91,7 @@ Use a VS Developer PowerShell and install SFML 3 via vcpkg, then:
 
 ```powershell
 vcpkg install sfml:x64-windows
-cmake -S . -B build_sfml3 -DUSE_BUNDLED_SFML=OFF -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake -S . -B build_sfml3 -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
 cmake --build build_sfml3 --config Release --parallel
 ctest --test-dir build_sfml3 --build-config Release --output-on-failure
 ```

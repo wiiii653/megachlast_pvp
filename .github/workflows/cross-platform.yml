@@ -66,11 +66,11 @@ jobs:
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
-        run: cmake -S . -B build_sfml3 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DUSE_BUNDLED_SFML=OFF
+        run: cmake -S . -B build_sfml3 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
       - name: Configure (Windows)
         if: runner.os == 'Windows'
-        run: cmake -S . -B build_sfml3 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DUSE_BUNDLED_SFML=OFF -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+        run: cmake -S . -B build_sfml3 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
 
       - name: Build
         run: cmake --build build_sfml3 --config ${{ matrix.build_type }} --parallel
@@ -135,7 +135,7 @@ jobs:
         env:
           CC: clang
           CXX: clang++
-        run: cmake -S . -B build_san -DCMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_BUNDLED_SFML=OFF -DENABLE_SANITIZERS=ON
+        run: cmake -S . -B build_san -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SANITIZERS=ON
 
       - name: Build (ASan+UBSan)
         run: cmake --build build_san --parallel

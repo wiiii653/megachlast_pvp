@@ -6,8 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(ENABLE_SANITIZERS "Enable Address/UndefinedBehavior sanitizers" OFF)
-option(USE_BUNDLED_SFML "Prefer bundled SFML at ./SFML-3.0.1 when available" ON)
-
 set(APP_VERSION "EA-0.1.0")
 set(APP_GIT_HASH "nogit")
 find_package(Git QUIET)
@@ -111,29 +109,7 @@ add_project_test_executable(fx_runtime tests/fx_runtime_test.cpp src/FxRuntime.c
 add_project_test_executable(effects_runtime tests/effects_runtime_test.cpp src/EffectsRuntime.cpp)
 add_project_test_executable(audio_runtime tests/audio_runtime_test.cpp src/AssetRuntime.cpp)
 
-set(LOCAL_SFML_DIR "${CMAKE_SOURCE_DIR}/SFML-3.0.1")
-set(USE_LOCAL_SFML OFF)
-set(LOCAL_SFML_USABLE OFF)
-if(EXISTS "${LOCAL_SFML_DIR}/lib/cmake/SFML/SFMLConfig.cmake")
-    set(LOCAL_SFML_USABLE ON)
-    if(UNIX AND NOT APPLE AND EXISTS "${LOCAL_SFML_DIR}/lib/libsfml-audio.so.3.0.1")
-        find_library(LOCAL_SFML_FLAC12 NAMES libFLAC.so.12)
-        if(NOT LOCAL_SFML_FLAC12)
-            set(LOCAL_SFML_USABLE OFF)
-            message(STATUS "Bundled SFML audio requires libFLAC.so.12, which was not found; falling back to system SFML.")
-        endif()
-    endif()
-endif()
-
-if(USE_BUNDLED_SFML AND LOCAL_SFML_USABLE)
-    message(STATUS "Using local SFML package: ${LOCAL_SFML_DIR}")
-    list(PREPEND CMAKE_PREFIX_PATH "${LOCAL_SFML_DIR}")
-    set(USE_LOCAL_SFML ON)
-elseif(USE_BUNDLED_SFML)
-    message(STATUS "Bundled SFML requested but not usable at ${LOCAL_SFML_DIR}; falling back to system SFML.")
-endif()
-
-if(NOT USE_LOCAL_SFML AND NOT DEFINED SFML_DIR)
+if(NOT DEFINED SFML_DIR)
     set(_SYSTEM_ARCH_SFML_DIR "/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/cmake/SFML")
     if(CMAKE_LIBRARY_ARCHITECTURE AND EXISTS "${_SYSTEM_ARCH_SFML_DIR}/SFMLConfig.cmake")
         set(SFML_DIR "${_SYSTEM_ARCH_SFML_DIR}" CACHE PATH "Path to SFML package config" FORCE)
@@ -168,65 +144,16 @@ target_include_directories(audio_runtime PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(bot_controller PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(render_runtime PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-if(USE_LOCAL_SFML)
-    set_target_properties(megablast_pvp_sfml PROPERTIES
-        BUILD_RPATH   "${LOCAL_SFML_DIR}/lib"
-        INSTALL_RPATH "${LOCAL_SFML_DIR}/lib")
-endif()
-
 add_test(NAME cli_help COMMAND megablast_pvp_sfml --help)
 add_test(NAME cli_invalid_flag COMMAND megablast_pvp_sfml --bad-flag)
 set_tests_properties(cli_invalid_flag PROPERTIES WILL_FAIL TRUE)
 add_test(NAME cli_missing_perf_value COMMAND megablast_pvp_sfml --perf)
 set_tests_properties(cli_missing_perf_value PROPERTIES WILL_FAIL TRUE)
 
-if(USE_LOCAL_SFML)
-    if(WIN32)
-        set(_LOCAL_SFML_TEST_ENV "PATH=${LOCAL_SFML_DIR}/lib;$ENV{PATH}")
-    elseif(APPLE)
-        set(_LOCAL_SFML_TEST_ENV "DYLD_LIBRARY_PATH=${LOCAL_SFML_DIR}/lib")
-    elseif(UNIX)
-        set(_LOCAL_SFML_TEST_ENV "LD_LIBRARY_PATH=${LOCAL_SFML_DIR}/lib")
-    endif()
-
-    if(DEFINED _LOCAL_SFML_TEST_ENV)
-        set_tests_properties(board_runtime PROPERTIES
-            ENVIRONMENT "${_LOCAL_SFML_TEST_ENV}")
-        set_tests_properties(audio_runtime PROPERTIES
-            ENVIRONMENT "${_LOCAL_SFML_TEST_ENV}")
-    endif()
-endif()
-
 # Convenience run target (launches from project root so assets/ is found)
-if(USE_LOCAL_SFML)
-    if(WIN32)
-        set(_LOCAL_SFML_RUN_ENV "PATH=${LOCAL_SFML_DIR}/lib;$ENV{PATH}")
-    elseif(APPLE)
-        set(_LOCAL_SFML_RUN_ENV "DYLD_LIBRARY_PATH=${LOCAL_SFML_DIR}/lib")
-    elseif(UNIX)
-        set(_LOCAL_SFML_RUN_ENV "LD_LIBRARY_PATH=${LOCAL_SFML_DIR}/lib")
-    endif()
-
-    if(DEFINED _LOCAL_SFML_RUN_ENV)
-        add_custom_target(run
-            COMMAND ${CMAKE_COMMAND} -E env "${_LOCAL_SFML_RUN_ENV}" $<TARGET_FILE:megablast_pvp_sfml>
-            DEPENDS megablast_pvp_sfml
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-            COMMENT "Running Megachlast PvP..."
-        )
-    else()
-        add_custom_target(run
-            COMMAND $<TARGET_FILE:megablast_pvp_sfml>
-            DEPENDS megablast_pvp_sfml
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-            COMMENT "Running Megachlast PvP..."
-        )
-    endif()
-else()
-    add_custom_target(run
-        COMMAND $<TARGET_FILE:megablast_pvp_sfml>
-        DEPENDS megablast_pvp_sfml
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMENT "Running Megachlast PvP..."
-    )
-endif()
+add_custom_target(run
+    COMMAND $<TARGET_FILE:megablast_pvp_sfml>
+    DEPENDS megablast_pvp_sfml
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running Megachlast PvP..."
+)
