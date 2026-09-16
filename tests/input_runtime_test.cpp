@@ -52,5 +52,23 @@ int main()
           "PS5 controllers are identified");
     check(controller_input::familyForName("Wireless Controller (PS4)") == controller_input::Family::PlayStation,
           "PS4 controllers are identified");
+
+    int menuSel = 0;
+    int menuAction = -1;
+    auto menuPress = [&](sf::Keyboard::Scancode scancode){
+        sf::Event::KeyPressed event{};
+        event.scancode = scancode;
+        input_runtime::handleStateTransitionKeyPressed(
+            event, GameState::MENU, menuSel,
+            [&]{ menuAction = 0; }, [&]{ menuAction = 1; }, [&]{ menuAction = 2; },
+            []{}, []{}, []{}, []{});
+    };
+    menuPress(sf::Keyboard::Scan::Down);
+    check(menuSel == 1, "menu Down selects Settings");
+    menuPress(sf::Keyboard::Scan::Enter);
+    check(menuAction == 1, "menu Enter accepts the selected item");
+    menuPress(sf::Keyboard::Scan::Down);
+    menuPress(sf::Keyboard::Scan::Enter);
+    check(menuSel == 2 && menuAction == 2, "menu selection reaches Donate");
     return failures == 0 ? 0 : 1;
 }

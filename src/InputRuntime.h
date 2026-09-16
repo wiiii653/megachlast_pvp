@@ -64,6 +64,7 @@ bool handleDonateKeyPressed(const sf::Event::KeyPressed& kp,
 
 void handleStateTransitionKeyPressed(const sf::Event::KeyPressed& kp,
                                      GameState state,
+                                     int& menuSel,
                                      const std::function<void()>& startCountdownRound,
                                      const std::function<void()>& openSettings,
                                      const std::function<void()>& openDonate,
@@ -94,6 +95,7 @@ void handleGlobalControlKeyPressed(const sf::Event::KeyPressed& kp,
 
 struct FrameContext {
     GameState* state = nullptr;
+    int* menuSel = nullptr;
     int* settingsSel = nullptr;
     Config* cfg = nullptr;
     bool* botEnabled = nullptr;

@@ -185,7 +185,7 @@ void drawPersistentInfo(sf::RenderTarget& rt,
     }
 }
 
-void drawMenuInstructions(sf::RenderTarget& rt, sf::Font& font, float menuAnim, bool showBlink)
+void drawMenuInstructions(sf::RenderTarget& rt, sf::Font& font, float menuAnim, bool showBlink, int menuSel)
 {
     struct MenuLine { const char* txt; sf::Color col; };
     const MenuLine lines[] = {
@@ -240,17 +240,35 @@ void drawMenuInstructions(sf::RenderTarget& rt, sf::Font& font, float menuAnim, 
         ly += INFO_LINE_HEIGHT;
     }
 
-    if(!showBlink) return;
-
     float sp = 0.6f + 0.4f * std::sin(menuAnim * 4.f);
-    sf::Text start(font, ">> PRESS  ENTER  TO  PLAY <<", 12);
-    start.setFillColor(sf::Color(
+    const char* const menuItems[] = {"PLAY", "SETTINGS", "DONATE"};
+    const float itemGap = 12.f;
+    float itemWidths[3]{};
+    float totalWidth = 0.f;
+    for(int i = 0; i < 3; ++i){
+        sf::Text item(font, menuItems[i], 12);
+        itemWidths[i] = item.getLocalBounds().size.x;
+        totalWidth += itemWidths[i];
+    }
+    totalWidth += itemGap * 2.f;
+    float itemX = W / 2.f - totalWidth / 2.f;
+    for(int i = 0; i < 3; ++i){
+        sf::Text item(font, menuItems[i], 12);
+        item.setPosition(sf::Vector2f(itemX, H - 58.f));
+        const bool selected = i == menuSel;
+        item.setFillColor(selected && showBlink ? sf::Color(
         static_cast<uint8_t>(200 + 55 * sp),
         static_cast<uint8_t>(200 + 55 * sp),
-        static_cast<uint8_t>(100 + 80 * sp)));
-    auto sb2 = start.getLocalBounds();
-    start.setPosition(sf::Vector2f(W / 2.f - sb2.size.x / 2.f, H - 54.f));
-    rt.draw(start);
+        static_cast<uint8_t>(100 + 80 * sp)) : sf::Color(170, 170, 190));
+        rt.draw(item);
+        itemX += itemWidths[i] + itemGap;
+    }
+
+    sf::Text hint(font, "UP/DOWN SELECT   ENTER / X ACCEPT   ESC / O BACK", 8);
+    hint.setFillColor(sf::Color(180, 180, 200));
+    const auto hb = hint.getLocalBounds();
+    hint.setPosition(sf::Vector2f(W / 2.f - hb.size.x / 2.f, H - 35.f));
+    rt.draw(hint);
 }
 
 void drawDonateOverlay(sf::RenderTarget& rt, sf::Font& font, float& donateMsgTimer, float dt)
@@ -681,7 +699,7 @@ void drawTextOverlays(sf::RenderTarget& rt, sf::Font& font, const TextOverlayCon
 
     if(context.state == GameState::MENU){
         if(context.drawMenuTitle) context.drawMenuTitle();
-        drawMenuInstructions(rt, font, context.menuAnim, context.showBlink);
+        drawMenuInstructions(rt, font, context.menuAnim, context.showBlink, context.menuSel);
     }
 
     if(context.state == GameState::MATCH_SETUP && context.matchSetup)

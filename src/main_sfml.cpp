@@ -226,6 +226,7 @@ int main(int argc, char** argv){
     bool      showBlink  = true;
     float     blinkTimer = 0.f;
     float     menuAnim   = 0.f;
+    int       menu_sel   = 0;
     int  cd1=0, cd2=0;
     float countdownTimer = 0.f;
     float fightFlashTimer = 0.f;  // "FIGHT!" overlay after countdown
@@ -420,6 +421,7 @@ int main(int argc, char** argv){
 
     input_runtime::FrameContext inputContext{};
     inputContext.state = &state;
+    inputContext.menuSel = &menu_sel;
     inputContext.settingsSel = &settings_sel;
     inputContext.cfg = &cfg;
     inputContext.botEnabled = &g_runtime.bot_enabled;
@@ -651,6 +653,7 @@ int main(int argc, char** argv){
             hudCtx.state = state;
             hudCtx.dt = dt;
             hudCtx.menuAnim = menuAnim;
+            hudCtx.menuSel = menu_sel;
             hudCtx.showBlink = showBlink;
             hudCtx.donateMsgTimer = &donate_msg_timer;
             hudCtx.perfLevel = g_runtime.perf_level;

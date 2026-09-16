@@ -107,12 +107,12 @@ void updateControllerActions(sf::RenderWindow& win, FrameContext& context)
     if(state != previousState) previous = {};
 
     if(state == GameState::MENU){
+        if(rose(current.up, previous.up))
+            emitControllerKey(sf::Keyboard::Scan::Up, sf::Keyboard::Key::Unknown, win, context);
+        if(rose(current.down, previous.down))
+            emitControllerKey(sf::Keyboard::Scan::Down, sf::Keyboard::Key::Unknown, win, context);
         if(rose(current.south, previous.south))
             emitControllerKey(sf::Keyboard::Scan::Enter, sf::Keyboard::Key::Enter, win, context);
-        if(rose(current.north, previous.north))
-            emitControllerKey(sf::Keyboard::Scan::O, sf::Keyboard::Key::O, win, context);
-        if(rose(current.west, previous.west))
-            emitControllerKey(sf::Keyboard::Scan::D, sf::Keyboard::Key::D, win, context);
         if(rose(current.east, previous.east))
             emitControllerKey(sf::Keyboard::Scan::Escape, sf::Keyboard::Key::Escape, win, context);
     } else if(state == GameState::MATCH_SETUP){
@@ -361,6 +361,7 @@ bool handleDonateKeyPressed(const sf::Event::KeyPressed& kp,
 
 void handleStateTransitionKeyPressed(const sf::Event::KeyPressed& kp,
                                      GameState state,
+                                     int& menuSel,
                                      const std::function<void()>& startCountdownRound,
                                      const std::function<void()>& openSettings,
                                      const std::function<void()>& openDonate,
@@ -370,7 +371,15 @@ void handleStateTransitionKeyPressed(const sf::Event::KeyPressed& kp,
                                      const std::function<void()>& rematchCountdownRound)
 {
     if(state == GameState::MENU){
-        if(kp.scancode == sf::Keyboard::Scan::Enter) startCountdownRound();
+        if(kp.scancode == sf::Keyboard::Scan::Up)
+            menuSel = (menuSel + 2) % 3;
+        if(kp.scancode == sf::Keyboard::Scan::Down)
+            menuSel = (menuSel + 1) % 3;
+        if(kp.scancode == sf::Keyboard::Scan::Enter){
+            if(menuSel == 0) startCountdownRound();
+            else if(menuSel == 1) openSettings();
+            else if(menuSel == 2) openDonate();
+        }
         if(kp.scancode == sf::Keyboard::Scan::O) openSettings();
         if(kp.scancode == sf::Keyboard::Scan::D) openDonate();
         return;
@@ -553,6 +562,7 @@ void handleKeyPressed(const sf::Event::KeyPressed& kp,
                                   context.saveSettings);
     handleStateTransitionKeyPressed(kp,
                                     state,
+                                    *context.menuSel,
                                     context.startCountdownRound,
                                     context.openSettings,
                                     context.openDonate,

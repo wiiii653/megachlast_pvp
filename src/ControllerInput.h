@@ -40,33 +40,32 @@ inline bool isButtonPressed(unsigned int joystick, unsigned int button)
 
 inline bool firePressed(unsigned int joystick)
 {
-    // SFML reports raw joystick buttons. Xbox/XInput layouts put A at 0, while
-    // common DualShock/DualSense layouts put Cross at 1.
-    const Family family = familyForJoystick(joystick);
-    const unsigned int south = family == Family::PlayStation ? 1u : 0u;
+    // SFML reports raw joystick buttons. Xbox/XInput layouts put A at 0, and
+    // the PlayStation layouts used by SFML put Cross at 0.
+    const unsigned int south = 0u;
     return isButtonPressed(joystick, south) ||
            isButtonPressed(joystick, 4) || // L1/LB
            isButtonPressed(joystick, 5);   // R1/RB
 }
 
-inline unsigned int southButton(unsigned int joystick)
+inline unsigned int southButton(unsigned int /*joystick*/)
 {
-    return familyForJoystick(joystick) == Family::PlayStation ? 1u : 0u;
+    return 0u;
 }
 
 inline unsigned int eastButton(unsigned int joystick)
 {
-    return familyForJoystick(joystick) == Family::PlayStation ? 2u : 1u;
+    return familyForJoystick(joystick) == Family::PlayStation ? 1u : 1u;
 }
 
 inline unsigned int northButton(unsigned int joystick)
 {
-    return familyForJoystick(joystick) == Family::PlayStation ? 3u : 3u;
+    return familyForJoystick(joystick) == Family::PlayStation ? 2u : 3u;
 }
 
 inline unsigned int westButton(unsigned int joystick)
 {
-    return familyForJoystick(joystick) == Family::PlayStation ? 0u : 2u;
+    return familyForJoystick(joystick) == Family::PlayStation ? 3u : 2u;
 }
 
 inline unsigned int startButton(unsigned int joystick)
