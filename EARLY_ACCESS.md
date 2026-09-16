@@ -24,7 +24,7 @@ This document defines the minimum quality bar and release process for Early Acce
    - `cmake -S . -B build_sfml3`
    - `cmake --build build_sfml3 -j`
    - `ctest --test-dir build_sfml3 --output-on-failure`
-2. Ensure cross-platform CI workflow is green. CI uses vcpkg SFML 3 with `-DUSE_BUNDLED_SFML=OFF` on Linux, macOS, and Windows.
+2. Ensure cross-platform CI workflow is green. Cross Platform CI builds SFML 3.0.1 from source on Linux/macOS and uses vcpkg on Windows, with `-DUSE_BUNDLED_SFML=OFF` everywhere. Check [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for outstanding failures.
 3. Verify README setup/run commands are still accurate.
 4. Verify assets required by runtime are present in `assets/`.
 5. Confirm known issues list is up to date.

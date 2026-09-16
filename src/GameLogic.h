@@ -2,6 +2,7 @@
 
 #include "GameTypes.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace game_logic {

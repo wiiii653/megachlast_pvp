@@ -29,7 +29,7 @@ General:
 - F11: toggle fullscreen
 - Escape: open menu from game screens (quit only when already in menu)
 
-Before each match, choose one 12-second round modifier: Shield, Rapid Fire, Spread Shot, or Overdrive. Choose a curated arena (Mirror Maze, Fortress, or Open Reactor) with Q/E. In match setup, P1 uses Left/Right, P2 uses A/D, and Enter starts the match.
+Before each match, choose one 12-second round modifier: Shield, Rapid Fire, Spread Shot, or Overdrive. Choose a curated arena (Mirror Maze, Fortress, or Open Reactor) with Q/E. In match setup, P1 uses A/D, P2 uses Left/Right, and Enter starts the match. Escape returns to the menu. Controllers use the stick or D-pad to choose modifiers, P1's L1/R1 to choose the arena, and either controller's south button to start.
 
 ## Rules
 
@@ -38,7 +38,8 @@ Before each match, choose one 12-second round modifier: Shield, Rapid Fire, Spre
 - When ENERGY hits 0: the shooter scores +1 and victim respawns with a brief invulnerability window.
 - Mirror blocks reflect bullets and rotate on hit.
 - Being hit also applies a brief SLOWED debuff (half movement speed for up to 2 s, stacks per hit).
-- First to 5 frags wins a round; the first player to win two rounds wins the match (configurable via `TARGET_SCORE` and `ROUNDS_TO_WIN` in settings).
+- First to 5 frags wins a round; the first player to win two rounds wins the match (configurable via `TARGET_SCORE` and `ROUNDS_TO_WIN` in `assets/settings.cfg`).
+- After a match, Enter starts a rematch with the same arena and modifiers.
 
 ## Build (SFML 3)
 
@@ -49,7 +50,7 @@ This project requires **SFML 3.x**.
 - To force system SFML, configure with `-DUSE_BUNDLED_SFML=OFF`.
 - CMake always uses `find_package(SFML 3 ...)`, either from bundled package config or system install.
 - Note: Ubuntu 24.04 default repositories provide SFML 2.6 (`libsfml-dev`), which is not sufficient.
-- CI builds Linux, macOS, and Windows with vcpkg-provided SFML 3 and `-DUSE_BUNDLED_SFML=OFF`.
+- Cross Platform CI builds SFML 3.0.1 from source on Linux/macOS and uses vcpkg on Windows. The separate CI workflow uses vcpkg on all three platforms. Both use `-DUSE_BUNDLED_SFML=OFF`; see [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for current CI blockers.
 
 ```bash
 cmake -S . -B build_sfml3

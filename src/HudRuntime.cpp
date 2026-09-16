@@ -378,11 +378,16 @@ void drawMatchSetupOverlay(sf::RenderTarget& rt, sf::Font& font, const MatchSetu
     arena.setPosition(sf::Vector2f(W * 0.5f - ab.size.x * 0.5f, H * 0.5f + 10.f));
     rt.draw(arena);
 
-    sf::Text hint(font, "Keys: P1 Left/Right, P2 A/D, Arena Q/E   Pad: stick, L1/R1, A", 7);
+    sf::Text hint(font, "Keys: P1 A/D, P2 Left/Right, Arena Q/E   Pad: stick, P1 L1/R1", 7);
     hint.setFillColor(sf::Color(180, 180, 205));
     auto hb = hint.getLocalBounds();
     hint.setPosition(sf::Vector2f(W * 0.5f - hb.size.x * 0.5f, H * 0.5f + 32.f));
     rt.draw(hint);
+    sf::Text startHint(font, "ENTER / Pad A - Start    ESC - Back", 8);
+    startHint.setFillColor(sf::Color(180, 180, 205));
+    auto sb = startHint.getLocalBounds();
+    startHint.setPosition(sf::Vector2f(W * 0.5f - sb.size.x * 0.5f, H * 0.5f + 46.f));
+    rt.draw(startHint);
 }
 
 void drawKnockoutOverlay(sf::RenderTarget& rt,

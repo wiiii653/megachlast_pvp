@@ -15,6 +15,8 @@ void resetRoundAndClearScores(Player& p1,
 {
     p1.score = 0;
     p2.score = 0;
+    p1.points = 0;
+    p2.points = 0;
     match = {};
     resetRound();
     cd1 = 0;

@@ -173,5 +173,29 @@ int main()
                    "manual reset resets powerup spawn timer");
     }
 
+    {
+        Player p1{}, p2{};
+        p1.score = 5;
+        p2.score = 3;
+        p1.points = 700;
+        p2.points = 400;
+        MatchState match{2, 1};
+        int cd1 = 8, cd2 = 9;
+        float powerupSpawnTimer = 99.f, countdownTimer = 0.f;
+        GameState state = GameState::GAME_OVER;
+        int resets = 0;
+        bool loop = true;
+        round_runtime::rematchCountdownRound(p1, p2, match, cd1, cd2,
+                                             powerupSpawnTimer, countdownTimer, state,
+                                             [&]{ ++resets; }, [&](bool value){ loop = value; });
+        check(resets == 1, "rematch resets the board once");
+        check(p1.score == 0 && p2.score == 0 && p1.points == 0 && p2.points == 0,
+              "rematch clears scores and points");
+        check(match.p1_round_wins == 0 && match.p2_round_wins == 0, "rematch clears round wins");
+        check(cd1 == 0 && cd2 == 0, "rematch clears cooldowns");
+        check(state == GameState::COUNTDOWN && !loop, "rematch enters countdown with non-looping audio");
+        checkClose(countdownTimer, 3.f, "rematch starts a full countdown");
+    }
+
     return failures == 0 ? 0 : 1;
 }

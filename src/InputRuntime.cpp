@@ -118,10 +118,10 @@ bool handleMatchSetupKeyPressed(const sf::Event::KeyPressed& kp,
                                 MatchSetup& setup,
                                 const std::function<void()>& startMatch)
 {
-    if(kp.scancode == sf::Keyboard::Scan::Left) setup.p1_modifier = cycleModifier(setup.p1_modifier, -1);
-    if(kp.scancode == sf::Keyboard::Scan::Right) setup.p1_modifier = cycleModifier(setup.p1_modifier, 1);
-    if(kp.scancode == sf::Keyboard::Scan::A) setup.p2_modifier = cycleModifier(setup.p2_modifier, -1);
-    if(kp.scancode == sf::Keyboard::Scan::D) setup.p2_modifier = cycleModifier(setup.p2_modifier, 1);
+    if(kp.scancode == sf::Keyboard::Scan::A) setup.p1_modifier = cycleModifier(setup.p1_modifier, -1);
+    if(kp.scancode == sf::Keyboard::Scan::D) setup.p1_modifier = cycleModifier(setup.p1_modifier, 1);
+    if(kp.scancode == sf::Keyboard::Scan::Left) setup.p2_modifier = cycleModifier(setup.p2_modifier, -1);
+    if(kp.scancode == sf::Keyboard::Scan::Right) setup.p2_modifier = cycleModifier(setup.p2_modifier, 1);
     if(kp.scancode == sf::Keyboard::Scan::Q) setup.arena = cycleArena(setup.arena, -1);
     if(kp.scancode == sf::Keyboard::Scan::E) setup.arena = cycleArena(setup.arena, 1);
     if(kp.scancode == sf::Keyboard::Scan::Enter) startMatch();
