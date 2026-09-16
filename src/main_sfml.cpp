@@ -110,6 +110,42 @@ static void beginParticleSpawnFrame()
                                         g_fx_runtime.particle_spawns_this_frame);
 }
 
+static bool runSmokeTest(const std::string& assetsDir)
+{
+    constexpr std::array<const char*, 7> requiredAssets = {
+        "sansation.ttf", "press_start_2p.ttf", "pl1blu.png", "pl2red.png",
+        "menu.mp3", "ingame.mp3", "get_ready.mp3"
+    };
+    for(const char* asset : requiredAssets){
+        if(asset_runtime::findAsset(assetsDir, asset).empty()){
+            std::fprintf(stderr, "Smoke test failed: missing asset %s in %s\n", asset, assetsDir.c_str());
+            return false;
+        }
+    }
+
+    board_runtime::State board{};
+    board.world_seed = 0x4D454741u;
+    Player p1{}, p2{};
+    std::array<Bullet, MAX_BULLETS> bullets{};
+    std::array<Mirror, MIRROR_PAIRS * 2> mirrors{};
+    std::array<PowerUp, MAX_POWERUPS> powerups{};
+    std::array<Bomb, MAX_BOMBS> bombs{};
+    std::array<BarrierBrick, BARRIER_BRICKS * 2> barriers{};
+    std::array<SpecialStar, MAX_SPECIAL_STARS> specialStars{};
+    bot_controller::RuntimeState botRuntime{};
+    RNG rng(0x534D4F4Bu);
+    board_runtime::resetRound(board, p1, p2, bullets, mirrors, powerups, bombs,
+                              barriers, specialStars, botRuntime, rng);
+    if(board.round_number != 1 || board.layout_name[0] == '\0' ||
+       p1.energy != 100.f || p2.energy != 100.f){
+        std::fprintf(stderr, "Smoke test failed: invalid initial game state\n");
+        return false;
+    }
+
+    std::fprintf(stderr, "Smoke test passed: assets and initial game state verified\n");
+    return true;
+}
+
 // =============================================================================
 // MAIN
 // =============================================================================
@@ -150,6 +186,8 @@ int main(int argc, char** argv){
     // CLI takes precedence over settings file
     app_runtime::applyCliOptions(cli, g_runtime);
 
+    if(cli.smokeTest) return runSmokeTest(g_runtime.assets_dir) ? 0 : 1;
+
     graphics_runtime::applyGlProfile(cli.glProfile, g_runtime.verbose);
     if(cli.glInfo) graphics_runtime::printStartupDiagnostics(stderr);
 
@@ -185,6 +223,7 @@ int main(int argc, char** argv){
         std::fprintf(stderr, "Failed to create %dx%d render texture\n", W, H);
         return 1;
     }
+    rt.setSmooth(false);
 
     // ── Game objects ──────────────────────────────────────────────────────────
     RNG R;
@@ -239,14 +278,25 @@ int main(int argc, char** argv){
     int settings_sel = 0;
 
     game_update_runtime::InputState input{};
+    effects_runtime::Context effectsContext{};
+    effectsContext.particleSpawnBudget = &g_fx_runtime.particle_spawn_budget;
+    effectsContext.particleSpawnsThisFrame = &g_fx_runtime.particle_spawns_this_frame;
 
     // ── Assets ────────────────────────────────────────────────────────────────
     sf::Font font;
+    sf::Font retroTitleFont;
     bool haveFont = false;
+    bool haveRetroTitleFont = false;
     {
         std::string fp = asset_runtime::findAsset(g_runtime.assets_dir, "sansation.ttf");
         if(!fp.empty()) haveFont = font.openFromFile(fp);
+        if(haveFont) font.setSmooth(false);
         if(!haveFont) fprintf(stderr, "Font not loaded\n");
+
+        std::string retroFp = asset_runtime::findAsset(g_runtime.assets_dir, "press_start_2p.ttf");
+        if(!retroFp.empty()) haveRetroTitleFont = retroTitleFont.openFromFile(retroFp);
+        if(haveRetroTitleFont) retroTitleFont.setSmooth(false);
+        if(!haveRetroTitleFont) fprintf(stderr, "Retro title font not loaded; using default font\n");
     }
 
     // ── Ship sprites ──────────────────────────────────────────────────────────
@@ -479,10 +529,8 @@ int main(int argc, char** argv){
                                        apply_active_music_settings);
 
         beginParticleSpawnFrame();
-        effects_runtime::setFrameContext(g_runtime.perf_level,
-                                         g_fx_runtime.fx_level,
-                                         g_fx_runtime.particle_spawn_budget,
-                                         g_fx_runtime.particle_spawns_this_frame);
+        effectsContext.perfLevel = g_runtime.perf_level;
+        effectsContext.fxLevel = g_fx_runtime.fx_level;
         total_run_time += dt;
 
         perf_log::updateFps(dt, g_runtime.verbose, g_runtime.perf_level, fps_acc, fps_frames, fps_display);
@@ -545,10 +593,18 @@ int main(int argc, char** argv){
         render_runtime::updateSpectStars(spectStars, dt, R, static_cast<int>(state));
 
         projectile_runtime::Hooks projectileHooks = simulation_runtime::buildProjectileHooks(
-            effects_runtime::spawnExplosion,
-            effects_runtime::spawnShipDisintegration,
-            effects_runtime::spawnSpark,
-            effects_runtime::spawnHitSpark,
+            [&](auto& parts, RNG& rng, float x, float y, int hue){
+                effects_runtime::spawnExplosion(effectsContext, parts, rng, x, y, hue);
+            },
+            [&](auto& parts, RNG& rng, float x, float y, int victimId){
+                effects_runtime::spawnShipDisintegration(effectsContext, parts, rng, x, y, victimId);
+            },
+            [&](auto& parts, RNG& rng, float x, float y){
+                effects_runtime::spawnSpark(effectsContext, parts, rng, x, y);
+            },
+            [&](auto& parts, RNG& rng, float x, float y, int owner){
+                effects_runtime::spawnHitSpark(effectsContext, parts, rng, x, y, owner);
+            },
             effects_runtime::spawnFragFloat,
             triggerMusicDuck,
             triggerScreenShake,
@@ -581,7 +637,9 @@ int main(int argc, char** argv){
         simCtx.dt = dt;
         simCtx.powerupSpawnTimer = &powerupSpawnTimer;
         simCtx.fireFn = fire;
-        simCtx.spawnThrusterFn = effects_runtime::spawnThruster;
+        simCtx.spawnThrusterFn = [&](auto& parts, RNG& rng, float x, float y, int id){
+            effects_runtime::spawnThruster(effectsContext, parts, rng, x, y, id);
+        };
         simCtx.projectileHooks = &projectileHooks;
         simulation_runtime::simulatePlayingFrame(simCtx);
 
@@ -591,7 +649,9 @@ int main(int argc, char** argv){
         particleCtx.fragFloats = &fragFloats;
         particleCtx.rng = &R;
         particleCtx.dt = dt;
-        particleCtx.spawnTrailFn = effects_runtime::spawnTrail;
+        particleCtx.spawnTrailFn = [&](auto& parts, RNG& rng, float x, float y, int owner){
+            effects_runtime::spawnTrail(effectsContext, parts, rng, x, y, owner);
+        };
         simulation_runtime::updateParticlesAndTrails(particleCtx);
 
         // =====================================================================
@@ -600,7 +660,7 @@ int main(int argc, char** argv){
         rt.clear(sf::Color(0,0,0,255));
 
         // Animated plasma background
-        render_runtime::drawPlasmaBg(rt, menuAnim);
+        render_runtime::drawPlasmaBg(rt, menuAnim, state == GameState::MENU);
 
         render_runtime::drawStars(rt, stars, starBright);
 
@@ -682,7 +742,10 @@ int main(int argc, char** argv){
             hudCtx.graphicsSettings = &g_graphics;
             hudCtx.controllers = &g_controllers;
             hudCtx.drawMenuTitle = [&]{
-                render_runtime::drawMenuTitle(rt, font, menuAnim, g_fx_runtime.fx_level);
+                render_runtime::drawMenuTitle(rt,
+                                              haveRetroTitleFont ? retroTitleFont : font,
+                                              menuAnim,
+                                              g_fx_runtime.fx_level);
             };
             hud_runtime::drawTextOverlays(rt, font, hudCtx);
         }
@@ -693,7 +756,7 @@ int main(int argc, char** argv){
         compositeCtx.texture = &rt.getTexture();
         compositeCtx.postfxDisabled = postfxDisabled;
         compositeCtx.vignetteEnabled = g_graphics.vignette_enabled;
-        compositeCtx.chromaticEnabled = g_graphics.chromatic_enabled;
+        compositeCtx.chromaticEnabled = g_graphics.chromatic_enabled && state == GameState::PLAYING;
         compositeCtx.shakeTimer = g_shake_timer;
         compositeCtx.shakeDuration = g_shake_duration;
         compositeCtx.shakeIntensity = g_shake_intensity;

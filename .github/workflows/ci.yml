@@ -30,3 +30,7 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build_sfml3 --build-config Release --output-on-failure
+
+      - name: Headless smoke test
+        if: runner.os == 'Linux'
+        run: ./build_sfml3/megablast_pvp_sfml --smoke-test --assets-dir assets

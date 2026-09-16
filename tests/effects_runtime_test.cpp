@@ -24,9 +24,9 @@ int main()
 
     int budget = 256;
     int used = 0;
-    effects_runtime::setFrameContext(PerfLevel::HIGH, 0, budget, used);
+    effects_runtime::Context context{PerfLevel::HIGH, 0, &budget, &used};
 
-    effects_runtime::spawnTrail(particles, rng, 100.f, 100.f, 1);
+    effects_runtime::spawnTrail(context, particles, rng, 100.f, 100.f, 1);
     check(used == 1, "spawnTrail consumes one particle slot");
 
     bool anyAlive = false;
@@ -40,8 +40,8 @@ int main()
     std::array<Particle, MAX_PARTICLES> blockedParticles{};
     int zeroBudget = 0;
     int zeroUsed = 0;
-    effects_runtime::setFrameContext(PerfLevel::HIGH, 0, zeroBudget, zeroUsed);
-    effects_runtime::spawnSpark(blockedParticles, rng, 10.f, 20.f);
+    effects_runtime::Context blockedContext{PerfLevel::HIGH, 0, &zeroBudget, &zeroUsed};
+    effects_runtime::spawnSpark(blockedContext, blockedParticles, rng, 10.f, 20.f);
     bool blockedAlive = false;
     for(const auto& p : blockedParticles) if(p.alive){ blockedAlive = true; break; }
     check(!blockedAlive, "zero budget blocks spark spawn");

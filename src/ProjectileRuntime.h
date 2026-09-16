@@ -11,13 +11,13 @@ class ProceduralSynth;
 namespace projectile_runtime {
 
 struct Hooks {
-    void (*spawnExplosion)(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float, int) = nullptr;
-    void (*spawnShipDisintegration)(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float, int) = nullptr;
-    void (*spawnSpark)(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float) = nullptr;
-    void (*spawnHitSpark)(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float, int) = nullptr;
-    void (*spawnFragFloat)(std::array<FragFloat, MAX_FRAG_FLOATS>&, float, float, int) = nullptr;
-    void (*triggerMusicDuck)(float, float) = nullptr;
-    void (*triggerScreenShake)(float, float) = nullptr;
+    std::function<void(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float, int)> spawnExplosion;
+    std::function<void(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float, int)> spawnShipDisintegration;
+    std::function<void(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float)> spawnSpark;
+    std::function<void(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float, int)> spawnHitSpark;
+    std::function<void(std::array<FragFloat, MAX_FRAG_FLOATS>&, float, float, int)> spawnFragFloat;
+    std::function<void(float, float)> triggerMusicDuck;
+    std::function<void(float, float)> triggerScreenShake;
     std::function<void(Player&, int)> applyFragTransition;
 };
 

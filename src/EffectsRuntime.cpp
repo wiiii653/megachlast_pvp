@@ -10,18 +10,9 @@
 namespace effects_runtime {
 namespace {
 
-struct Context {
-    PerfLevel perfLevel = PerfLevel::MEDIUM;
-    int fxLevel = 0;
-    int* budget = nullptr;
-    int* used = nullptr;
-};
-
-Context g_ctx{};
-
-int spawnCount(int high, int med, int low, int ultra)
+int spawnCount(const Context& context, int high, int med, int low, int ultra)
 {
-    switch(g_ctx.perfLevel){
+    switch(context.perfLevel){
         case PerfLevel::HIGH: return high;
         case PerfLevel::MEDIUM: return med;
         case PerfLevel::LOW: return low;
@@ -30,37 +21,26 @@ int spawnCount(int high, int med, int low, int ultra)
     return med;
 }
 
-float fxLevelScale()
+float fxLevelScale(const Context& context)
 {
-    return fx_governor::levelScale(g_ctx.fxLevel);
+    return fx_governor::levelScale(context.fxLevel);
 }
 
-int claimParticleSlots(int wanted)
+int claimParticleSlots(Context& context, int wanted)
 {
-    if(!g_ctx.budget || !g_ctx.used) return std::max(0, wanted);
-    int remaining = std::max(0, *g_ctx.budget - *g_ctx.used);
+    if(!context.particleSpawnBudget || !context.particleSpawnsThisFrame) return std::max(0, wanted);
+    int remaining = std::max(0, *context.particleSpawnBudget - *context.particleSpawnsThisFrame);
     int granted = std::max(0, std::min(wanted, remaining));
-    *g_ctx.used += granted;
+    *context.particleSpawnsThisFrame += granted;
     return granted;
 }
 
 } // namespace
 
-void setFrameContext(PerfLevel perfLevel,
-                     int fxLevel,
-                     int& particleSpawnBudget,
-                     int& particleSpawnsThisFrame)
-{
-    g_ctx.perfLevel = perfLevel;
-    g_ctx.fxLevel = fxLevel;
-    g_ctx.budget = &particleSpawnBudget;
-    g_ctx.used = &particleSpawnsThisFrame;
-}
-
-void spawnExplosion(std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
+void spawnExplosion(Context& context, std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
                     float x, float y, int colorHue)
 {
-    int n = claimParticleSlots(spawnCount(28, 18, 10, 5));
+    int n = claimParticleSlots(context, spawnCount(context, 28, 18, 10, 5));
     for(int i = 0; i < n; i++) {
         Particle* p = particles::alloc(parts);
         float ang = rng.frand(0.f, 2.f * PI);
@@ -78,7 +58,7 @@ void spawnExplosion(std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
         p->a = 255;
         p->alive = true;
     }
-    int ring = claimParticleSlots(spawnCount(8, 6, 4, 2));
+    int ring = claimParticleSlots(context, spawnCount(context, 8, 6, 4, 2));
     for(int i = 0; i < ring; i++){
         Particle* p = particles::alloc(parts);
         float ang = (2.f * PI * i) / ring;
@@ -98,14 +78,14 @@ void spawnExplosion(std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
     }
 }
 
-void spawnShipDisintegration(std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
+void spawnShipDisintegration(Context& context, std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
                              float x, float y, int victimId)
 {
     uint8_t baseR, baseG, baseB;
     if(victimId == 1){ baseR = 0; baseG = 220; baseB = 255; }
     else { baseR = 255; baseG = 60; baseB = 50; }
 
-    int chunks = claimParticleSlots(spawnCount(24, 16, 10, 6));
+    int chunks = claimParticleSlots(context, spawnCount(context, 24, 16, 10, 6));
     for(int i = 0; i < chunks; i++){
         Particle* p = particles::alloc(parts);
         float ang = rng.frand(0.f, 2.f * PI);
@@ -125,7 +105,7 @@ void spawnShipDisintegration(std::array<Particle, MAX_PARTICLES>& parts, RNG& rn
         p->alive = true;
     }
 
-    int flash = claimParticleSlots(spawnCount(12, 8, 5, 3));
+    int flash = claimParticleSlots(context, spawnCount(context, 12, 8, 5, 3));
     for(int i = 0; i < flash; i++){
         Particle* p = particles::alloc(parts);
         float ang = rng.frand(0.f, 2.f * PI);
@@ -144,7 +124,7 @@ void spawnShipDisintegration(std::array<Particle, MAX_PARTICLES>& parts, RNG& rn
         p->alive = true;
     }
 
-    int shrap = claimParticleSlots(spawnCount(16, 12, 8, 4));
+    int shrap = claimParticleSlots(context, spawnCount(context, 16, 12, 8, 4));
     for(int i = 0; i < shrap; i++){
         Particle* p = particles::alloc(parts);
         float ang = (2.f * PI * i) / shrap + rng.frand(-0.15f, 0.15f);
@@ -163,10 +143,10 @@ void spawnShipDisintegration(std::array<Particle, MAX_PARTICLES>& parts, RNG& rn
     }
 }
 
-void spawnSpark(std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
+void spawnSpark(Context& context, std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
                 float x, float y)
 {
-    int n = claimParticleSlots(spawnCount(6, 4, 2, 1));
+    int n = claimParticleSlots(context, spawnCount(context, 6, 4, 2, 1));
     for(int i = 0; i < n; i++){
         Particle* p = particles::alloc(parts);
         float ang = rng.frand(0.f, 2.f * PI);
@@ -186,20 +166,20 @@ void spawnSpark(std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
     }
 }
 
-void spawnTrail(std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
+void spawnTrail(Context& context, std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
                 float x, float y, int owner)
 {
     float keepProb;
-    switch(g_ctx.perfLevel){
+    switch(context.perfLevel){
         case PerfLevel::HIGH: keepProb = 1.00f; break;
         case PerfLevel::MEDIUM: keepProb = 0.70f; break;
         case PerfLevel::LOW: keepProb = 0.30f; break;
         case PerfLevel::ULTRA: keepProb = 0.12f; break;
         default: keepProb = 0.70f; break;
     }
-    keepProb *= fxLevelScale();
+    keepProb *= fxLevelScale(context);
     if(rng.frand(0.f, 1.f) > keepProb) return;
-    if(claimParticleSlots(1) == 0) return;
+    if(claimParticleSlots(context, 1) == 0) return;
     Particle* p = particles::alloc(parts);
     p->x = x;
     p->y = y;
@@ -214,11 +194,11 @@ void spawnTrail(std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
     p->alive = true;
 }
 
-void spawnThruster(std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
+void spawnThruster(Context& context, std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
                    float x, float y, int id)
 {
     float dirY = (id == 1) ? 1.f : -1.f;
-    int thrusters = claimParticleSlots(2);
+    int thrusters = claimParticleSlots(context, 2);
     if(thrusters == 0) return;
 
     for(int i = 0; i < thrusters; ++i){
@@ -246,10 +226,10 @@ void spawnThruster(std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
     }
 }
 
-void spawnHitSpark(std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
+void spawnHitSpark(Context& context, std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
                    float x, float y, int hitOwner)
 {
-    int n = claimParticleSlots(spawnCount(8, 5, 3, 1));
+    int n = claimParticleSlots(context, spawnCount(context, 8, 5, 3, 1));
     for(int i = 0; i < n; i++){
         Particle* p = particles::alloc(parts);
         float ang = rng.frand(0.f, 2.f * PI);

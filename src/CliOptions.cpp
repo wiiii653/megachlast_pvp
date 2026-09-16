@@ -14,7 +14,7 @@ void printUsage(const char* argv0)
                 " [--perf high|medium|low|ultra] [--log-perf PATH]"
                 " [--log-interval N] [--log-duration N]"
                 " [--gl-profile default|clean|nvidia|dri3-off|software]"
-                " [--gl-info] [--verbose]\n", argv0);
+                " [--gl-info] [--smoke-test] [--verbose]\n", argv0);
 }
 
 ParseResult parse(int argc, char** argv, Parsed& out)
@@ -33,6 +33,8 @@ ParseResult parse(int argc, char** argv, Parsed& out)
             out.verbose = true;
         } else if(a == "--gl-info"){
             out.glInfo = true;
+        } else if(a == "--smoke-test"){
+            out.smokeTest = true;
         } else if(a == "--bot-difficulty"){
             if(i + 1 >= argc){
                 std::fprintf(stderr, "Missing value for %s\n", a.c_str());

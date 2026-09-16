@@ -22,6 +22,7 @@ float clampf(float v, float lo, float hi)
 
 void syncPlayingKeyboard(InputState& in)
 {
+    if(!in.focused) return;
     in.kA = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::A);
     in.kD = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::D);
     in.kLCtrl = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::LControl);
@@ -53,6 +54,15 @@ void syncPlayingControllers(InputState& in, const ControllerSettings& controller
 
     applyController(controllers.p1_joystick, in.kA, in.kD, in.kLCtrl);
     applyController(controllers.p2_joystick, in.kLeft, in.kRight, in.kRCtrl);
+}
+
+void setFocus(InputState& in, bool focused)
+{
+    in.focused = focused;
+    if(!focused){
+        in.kA = in.kD = in.kLCtrl = in.kZ = in.kLShift = false;
+        in.kLeft = in.kRight = in.kRCtrl = in.kSlash = in.kRShift = false;
+    }
 }
 
 void fireFromPlayer(std::array<Bullet, MAX_BULLETS>& bullets,

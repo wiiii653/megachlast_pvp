@@ -14,7 +14,7 @@ class ProceduralSynth;
 
 namespace simulation_runtime {
 
-using SpawnTrailFn = void(*)(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float, int);
+using SpawnTrailFn = std::function<void(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float, int)>;
 
 struct FrameContext {
     GameState state = GameState::MENU;
@@ -57,13 +57,13 @@ struct ParticleFrameContext {
 };
 
 projectile_runtime::Hooks buildProjectileHooks(
-    void (*spawnExplosion)(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float, int),
-    void (*spawnShipDisintegration)(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float, int),
-    void (*spawnSpark)(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float),
-    void (*spawnHitSpark)(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float, int),
-    void (*spawnFragFloat)(std::array<FragFloat, MAX_FRAG_FLOATS>&, float, float, int),
-    void (*triggerMusicDuck)(float, float),
-    void (*triggerScreenShake)(float, float),
+    decltype(projectile_runtime::Hooks::spawnExplosion) spawnExplosion,
+    decltype(projectile_runtime::Hooks::spawnShipDisintegration) spawnShipDisintegration,
+    decltype(projectile_runtime::Hooks::spawnSpark) spawnSpark,
+    decltype(projectile_runtime::Hooks::spawnHitSpark) spawnHitSpark,
+    decltype(projectile_runtime::Hooks::spawnFragFloat) spawnFragFloat,
+    decltype(projectile_runtime::Hooks::triggerMusicDuck) triggerMusicDuck,
+    decltype(projectile_runtime::Hooks::triggerScreenShake) triggerScreenShake,
     const std::function<void(Player&, int)>& applyFragTransition);
 
 void simulatePlayingFrame(FrameContext& context);

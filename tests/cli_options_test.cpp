@@ -31,6 +31,7 @@ int main()
             "--log-duration", "30",
             "--verbose",
             "--gl-info",
+            "--smoke-test",
             "--gl-profile", "dri3-off",
             "--no-postfx",
             "--no-music",
@@ -51,6 +52,7 @@ int main()
         check(parsed.perfLog.duration == 30, "--log-duration is parsed");
         check(parsed.verbose, "--verbose enables verbose flag");
         check(parsed.glInfo, "--gl-info enables graphics diagnostics");
+        check(parsed.smokeTest, "--smoke-test enables the headless smoke path");
         check(parsed.glProfile == graphics_profile::GlProfile::Dri3Off,
               "--gl-profile dri3-off is parsed");
         check(parsed.noPostfx, "--no-postfx enables postfx flag");

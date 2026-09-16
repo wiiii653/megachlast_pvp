@@ -189,38 +189,14 @@ void drawMenuInstructions(sf::RenderTarget& rt, sf::Font& font, float menuAnim, 
 {
     struct MenuLine { const char* txt; sf::Color col; };
     const MenuLine lines[] = {
-        {"--- PLAYER 1 (bottom) ---", sf::Color(0, 200, 200)},
-        {"Move:  A  D (left/right)", sf::Color(150, 235, 235)},
-        {"Fire:  Left Ctrl / Z / LShift", sf::Color(150, 235, 235)},
-        {"", sf::Color::White},
-        {"--- PLAYER 2 (top) ---", sf::Color(255, 100, 100)},
-        {"Move:  Left/Right Arrows", sf::Color(255, 160, 160)},
-        {"Fire:  Right Ctrl / Slash / RShift", sf::Color(255, 160, 160)},
-        {"", sf::Color::White},
-        {"Space - Pause      B - Bot", sf::Color(160, 160, 180)},
-        {"R     - Reset      V - Diff", sf::Color(160, 160, 180)},
-        {"F11   - Fullscreen M - Mute", sf::Color(160, 160, 180)},
-        {"O     - Settings  Esc - Quit", sf::Color(160, 160, 180)},
-        {"D     - Donate", sf::Color(200, 200, 120)},
+        {"SELECT AN OPTION", sf::Color(150, 170, 210)},
     };
 
-    const unsigned INFO_FONT_SIZE = 14u;
+    const unsigned INFO_FONT_SIZE = 9u;
     const float INFO_LINE_HEIGHT = static_cast<float>(INFO_FONT_SIZE) + 3.f;
     const float INFO_BLANK_GAP = 8.f;
 
-    float ly = 80.f;
-    float totalH = 0.f;
-    for(const auto& l : lines){
-        if(l.txt[0] == '\0'){
-            totalH += INFO_BLANK_GAP;
-            continue;
-        }
-        totalH += INFO_LINE_HEIGHT;
-    }
-    float availTop = 55.f;
-    float availBot = H - 28.f;
-    ly = availTop + (availBot - availTop - totalH) * 0.5f - INFO_LINE_HEIGHT * 2.f;
-
+    float ly = H - 92.f;
     for(const auto& l : lines){
         if(l.txt[0] == '\0'){
             ly += INFO_BLANK_GAP;
@@ -264,7 +240,7 @@ void drawMenuInstructions(sf::RenderTarget& rt, sf::Font& font, float menuAnim, 
         itemX += itemWidths[i] + itemGap;
     }
 
-    sf::Text hint(font, "UP/DOWN SELECT   ENTER / X ACCEPT   ESC / O BACK", 8);
+    sf::Text hint(font, "LEFT/RIGHT SELECT   ENTER / X ACCEPT", 8);
     hint.setFillColor(sf::Color(180, 180, 200));
     const auto hb = hint.getLocalBounds();
     hint.setPosition(sf::Vector2f(W / 2.f - hb.size.x / 2.f, H - 35.f));
@@ -540,6 +516,33 @@ void drawSettingsPanel(sf::RenderTarget& rt,
     auto ttl = titleT.getLocalBounds();
     titleT.setPosition(sf::Vector2f(px + panelW / 2.f - ttl.size.x / 2.f, py + 3.f));
     rt.draw(titleT);
+
+    // Keep the title screen clean; the in-game keyboard legend lives here with
+    // the controller assignment controls.
+    const float cardW = 154.f;
+    const float cardH = 132.f;
+    const float cardX = px - cardW - 10.f;
+    const float cardY = py + 36.f;
+    sf::RectangleShape controlsCard(sf::Vector2f(cardW, cardH));
+    controlsCard.setPosition(sf::Vector2f(cardX, cardY));
+    controlsCard.setFillColor(sf::Color(6, 6, 18, 220));
+    controlsCard.setOutlineThickness(1.f);
+    controlsCard.setOutlineColor(sf::Color(35, 45, 80));
+    rt.draw(controlsCard);
+
+    auto drawCardText = [&](const char* text, float x, float y, sf::Color color, unsigned size){
+        sf::Text t(font, text, size);
+        t.setFillColor(color);
+        t.setPosition(sf::Vector2f(x, y));
+        rt.draw(t);
+    };
+    drawCardText("CONTROLS", cardX + 10.f, cardY + 8.f, sf::Color(200, 200, 255), 10);
+    drawCardText("P1  MOVE   A / D", cardX + 10.f, cardY + 28.f, sf::Color(150, 235, 235), 8);
+    drawCardText("P1  FIRE   CTRL / Z", cardX + 10.f, cardY + 41.f, sf::Color(150, 235, 235), 8);
+    drawCardText("P2  MOVE   LEFT / RIGHT", cardX + 10.f, cardY + 61.f, sf::Color(255, 160, 160), 8);
+    drawCardText("P2  FIRE   RCTRL / /", cardX + 10.f, cardY + 74.f, sf::Color(255, 160, 160), 8);
+    drawCardText("Controller slots below", cardX + 10.f, cardY + 96.f, sf::Color(150, 150, 180), 7);
+    drawCardText("Left/Right edits", cardX + 10.f, cardY + 108.f, sf::Color(150, 150, 180), 7);
 
     float ly = py + 28.f;
     char tmp[72];

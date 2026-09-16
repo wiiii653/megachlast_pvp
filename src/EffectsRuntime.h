@@ -7,22 +7,24 @@
 
 namespace effects_runtime {
 
-void setFrameContext(PerfLevel perfLevel,
-                     int fxLevel,
-                     int& particleSpawnBudget,
-                     int& particleSpawnsThisFrame);
+struct Context {
+    PerfLevel perfLevel = PerfLevel::MEDIUM;
+    int fxLevel = 0;
+    int* particleSpawnBudget = nullptr;
+    int* particleSpawnsThisFrame = nullptr;
+};
 
-void spawnExplosion(std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
+void spawnExplosion(Context& context, std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
                     float x, float y, int colorHue);
-void spawnShipDisintegration(std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
+void spawnShipDisintegration(Context& context, std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
                              float x, float y, int victimId);
-void spawnSpark(std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
+void spawnSpark(Context& context, std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
                 float x, float y);
-void spawnTrail(std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
+void spawnTrail(Context& context, std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
                 float x, float y, int owner);
-void spawnThruster(std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
+void spawnThruster(Context& context, std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
                    float x, float y, int id);
-void spawnHitSpark(std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
+void spawnHitSpark(Context& context, std::array<Particle, MAX_PARTICLES>& parts, RNG& rng,
                    float x, float y, int hitOwner);
 void spawnFragFloat(std::array<FragFloat, MAX_FRAG_FLOATS>& ff,
                     float x, float y, int scorer);

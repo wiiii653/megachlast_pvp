@@ -835,13 +835,15 @@ void drawMenuTitle(sf::RenderTarget& rt, sf::Font& font, float t, int fxLevel)
         titleSweepShaderInit = titleSweepShader.loadFromMemory(kTitleSweepFrag, sf::Shader::Type::Fragment);
     }
 
-    sf::Text title(font, "MEGACHLAST PvP", 20);
+    sf::Text title(font, "MEGACHLAST PvP", 29);
+    title.setStyle(sf::Text::Bold);
     sf::Text sub(font, "// ONE SCREEN DUEL //", 9);
 
     auto tb = title.getLocalBounds();
     auto sb = sub.getLocalBounds();
     float spacing = 6.f;
-    float baseY = 12.f;
+    float blockH = tb.size.y + spacing + sb.size.y;
+    float baseY = H * 0.5f - blockH * 0.5f - 27.f;
     float bob = std::sin(t * 1.6f) * 1.4f;
     float cx = W/2.f - tb.size.x * 0.5f;
     float titleY = baseY + bob;
@@ -852,6 +854,10 @@ void drawMenuTitle(sf::RenderTarget& rt, sf::Font& font, float t, int fxLevel)
         static_cast<uint8_t>(80  + 175*pulse),
         static_cast<uint8_t>(80  + 120*pulse*cpulse),
         255));
+    sf::Text titleShadow = title;
+    titleShadow.setFillColor(sf::Color(0, 0, 0, 180));
+    titleShadow.setPosition(sf::Vector2f(cx + 3.f, titleY + 3.f));
+    rt.draw(titleShadow);
     title.setPosition(sf::Vector2f(cx, titleY));
     rt.draw(title);
 
@@ -877,26 +883,30 @@ void drawMenuTitle(sf::RenderTarget& rt, sf::Font& font, float t, int fxLevel)
         static_cast<uint8_t>(60  + 80*spulse),
         static_cast<uint8_t>(60  + 80*spulse),
         static_cast<uint8_t>(160 + 95*spulse)));
-    sub.setPosition(sf::Vector2f(W/2.f - sb.size.x/2.f, titleY + tb.size.y + spacing + bob * 0.25f));
+    constexpr float subtitleRow = 9.f;
+    sub.setPosition(sf::Vector2f(W/2.f - sb.size.x/2.f,
+                                 titleY + tb.size.y + spacing + subtitleRow + bob * 0.25f));
     rt.draw(sub);
+
 }
 
-void drawPlasmaBg(sf::RenderTarget& rt, float t)
+void drawPlasmaBg(sf::RenderTarget& rt, float t, bool titleMode)
 {
     constexpr int STEP = 40;
     const int GXN = W / STEP + 2;
     const int GYN = H / STEP + 2;
 
-    auto evalPlasma = [](float wx, float wy, float t2) -> sf::Color {
+    auto evalPlasma = [titleMode](float wx, float wy, float t2) -> sf::Color {
         float v =   std::sin(wx * 0.013f + t2 * 1.1f)
                   + std::sin(wy * 0.016f - t2 * 0.7f)
                   + std::sin((wx - wy) * 0.0085f + t2 * 0.5f)
                   + std::sin(std::sqrt(wx*wx + wy*wy) * 0.005f - t2 * 0.9f);
         v = v * 0.125f + 0.5f;
+        const float lift = titleMode ? 1.f : 0.f;
         return sf::Color(
-            static_cast<uint8_t>(6  + v * 28),
-            static_cast<uint8_t>(6  + v * 14),
-            static_cast<uint8_t>(14 + v * 56));
+            static_cast<uint8_t>(6  + lift * 8.f  + v * (28.f + lift * 18.f)),
+            static_cast<uint8_t>(6  + lift * 8.f  + v * (14.f + lift * 12.f)),
+            static_cast<uint8_t>(14 + lift * 18.f + v * (56.f + lift * 34.f)));
     };
 
     static sf::VertexArray va(sf::PrimitiveType::Triangles,

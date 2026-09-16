@@ -58,6 +58,16 @@ cmake -S . -B build_sfml3
 cmake --build build_sfml3 -j
 ```
 
+To create a self-contained project package layout (the SFML runtime remains an
+external platform dependency), use:
+
+```bash
+cmake --install build_sfml3 --prefix release/megachlast_pvp
+cd release/megachlast_pvp && cpack
+```
+
+On Windows, use `--config Release` with both `cmake --install` and `cpack`.
+
 ### Linux
 
 Install/provide SFML 3 through a package manager such as vcpkg. If using vcpkg:
@@ -131,6 +141,7 @@ Release notes and active issue tracking are in [CHANGELOG.md](CHANGELOG.md) and 
 - `--log-interval N` — perf log interval in seconds.
 - `--log-duration N` — auto-exit after N seconds (useful with perf logging).
 - `--gl-info` — print graphics environment and active OpenGL context diagnostics at startup.
+- `--smoke-test` — verify required assets and initial game state without opening a window.
 - `--gl-profile <default|clean|nvidia|dri3-off|software>` — choose a graphics loader profile before SFML creates the window.
 
 Perf CSV columns: `time,perf,fx_level,fps,alive_particles,alive_bullets,spawn_budget,spawn_used,vm_rss_kb`.
@@ -180,6 +191,8 @@ Supported bot tuning overrides include: `BOT_DODGE_ZONE`, `BOT_DODGE_X_THR`, `BO
 ## Assets
 
 - `assets/sansation.ttf` — font
+- `assets/press_start_2p.ttf` — Press Start 2P title font (SIL OFL 1.1)
+- `assets/press_start_2p.OFL.txt` — Press Start 2P license
 - `assets/menu.mp3` — menu music
 - `assets/ingame.mp3` — in-game music
 - `assets/get_ready.mp3` — round-start jingle

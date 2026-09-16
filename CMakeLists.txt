@@ -108,6 +108,8 @@ add_project_test_executable(render_runtime tests/render_runtime_test.cpp)
 add_project_test_executable(fx_runtime tests/fx_runtime_test.cpp src/FxRuntime.cpp)
 add_project_test_executable(effects_runtime tests/effects_runtime_test.cpp src/EffectsRuntime.cpp)
 add_project_test_executable(audio_runtime tests/audio_runtime_test.cpp src/AssetRuntime.cpp)
+add_project_test_executable(projectile_runtime tests/projectile_runtime_test.cpp src/ProjectileRuntime.cpp)
+add_project_test_executable(input_state tests/input_state_test.cpp src/GameUpdateRuntime.cpp)
 
 if(NOT DEFINED SFML_DIR)
     set(_SYSTEM_ARCH_SFML_DIR "/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/cmake/SFML")
@@ -126,6 +128,8 @@ target_link_libraries(board_runtime_test PRIVATE arena_layout SFML::Graphics)
 target_link_libraries(input_runtime_test PRIVATE bot_controller SFML::Graphics SFML::Audio)
 target_link_libraries(effects_runtime_test PRIVATE particles)
 target_link_libraries(audio_runtime_test PRIVATE audio_runtime)
+target_link_libraries(projectile_runtime_test PRIVATE arena_layout particles procedural_synth SFML::Audio)
+target_link_libraries(input_state_test PRIVATE bot_controller procedural_synth SFML::Audio SFML::Window)
 target_link_libraries(frame_runtime_test PRIVATE SFML::Audio)
 target_link_libraries(render_runtime_test PRIVATE render_runtime)
 target_link_libraries(bot_controller PRIVATE procedural_synth)
@@ -149,6 +153,7 @@ add_test(NAME cli_invalid_flag COMMAND megablast_pvp_sfml --bad-flag)
 set_tests_properties(cli_invalid_flag PROPERTIES WILL_FAIL TRUE)
 add_test(NAME cli_missing_perf_value COMMAND megablast_pvp_sfml --perf)
 set_tests_properties(cli_missing_perf_value PROPERTIES WILL_FAIL TRUE)
+add_test(NAME smoke_test COMMAND megablast_pvp_sfml --smoke-test --assets-dir ${CMAKE_SOURCE_DIR}/assets)
 
 # Convenience run target (launches from project root so assets/ is found)
 add_custom_target(run
@@ -157,3 +162,21 @@ add_custom_target(run
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Running Megachlast PvP..."
 )
+
+# Portable install/package layout: executable and assets share one directory
+# so the runtime's default relative assets path works on every platform.
+include(GNUInstallDirs)
+install(TARGETS megablast_pvp_sfml
+    RUNTIME DESTINATION .
+    BUNDLE DESTINATION .)
+install(DIRECTORY assets/ DESTINATION assets
+        PATTERN "settings.cfg" EXCLUDE)
+install(FILES README.md LICENSE EARLY_ACCESS.md CHANGELOG.md KNOWN_ISSUES.md
+        DESTINATION .)
+
+set(CPACK_PACKAGE_NAME "megachlast_pvp")
+set(CPACK_PACKAGE_VENDOR "Megachlast PvP")
+set(CPACK_PACKAGE_VERSION "0.1.0")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Megachlast PvP one-screen duel shooter")
+set(CPACK_GENERATOR "TGZ;ZIP")
+include(CPack)

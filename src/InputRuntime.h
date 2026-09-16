@@ -133,6 +133,7 @@ struct FrameContext {
 void processEvents(sf::RenderWindow& win,
                    const std::function<void()>& onClosed,
                    const std::function<void()>& onFocusLost,
+                   const std::function<void()>& onFocusGained,
                    const std::function<void(const sf::Event::KeyPressed&)>& onKeyPressed,
                    const std::function<void(const sf::Event::KeyReleased&)>& onKeyReleased);
 

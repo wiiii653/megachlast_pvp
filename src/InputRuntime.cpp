@@ -107,10 +107,10 @@ void updateControllerActions(sf::RenderWindow& win, FrameContext& context)
     if(state != previousState) previous = {};
 
     if(state == GameState::MENU){
-        if(rose(current.up, previous.up))
-            emitControllerKey(sf::Keyboard::Scan::Up, sf::Keyboard::Key::Unknown, win, context);
-        if(rose(current.down, previous.down))
-            emitControllerKey(sf::Keyboard::Scan::Down, sf::Keyboard::Key::Unknown, win, context);
+        if(rose(current.left, previous.left))
+            emitControllerKey(sf::Keyboard::Scan::Left, sf::Keyboard::Key::Unknown, win, context);
+        if(rose(current.right, previous.right))
+            emitControllerKey(sf::Keyboard::Scan::Right, sf::Keyboard::Key::Unknown, win, context);
         if(rose(current.south, previous.south))
             emitControllerKey(sf::Keyboard::Scan::Enter, sf::Keyboard::Key::Enter, win, context);
         if(rose(current.east, previous.east))
@@ -371,9 +371,9 @@ void handleStateTransitionKeyPressed(const sf::Event::KeyPressed& kp,
                                      const std::function<void()>& rematchCountdownRound)
 {
     if(state == GameState::MENU){
-        if(kp.scancode == sf::Keyboard::Scan::Up)
+        if(kp.scancode == sf::Keyboard::Scan::Left)
             menuSel = (menuSel + 2) % 3;
-        if(kp.scancode == sf::Keyboard::Scan::Down)
+        if(kp.scancode == sf::Keyboard::Scan::Right)
             menuSel = (menuSel + 1) % 3;
         if(kp.scancode == sf::Keyboard::Scan::Enter){
             if(menuSel == 0) startCountdownRound();
@@ -575,6 +575,7 @@ void handleKeyPressed(const sf::Event::KeyPressed& kp,
 void processEvents(sf::RenderWindow& win,
                    const std::function<void()>& onClosed,
                    const std::function<void()>& onFocusLost,
+                   const std::function<void()>& onFocusGained,
                    const std::function<void(const sf::Event::KeyPressed&)>& onKeyPressed,
                    const std::function<void(const sf::Event::KeyReleased&)>& onKeyReleased)
 {
@@ -585,6 +586,7 @@ void processEvents(sf::RenderWindow& win,
 
         if(e.is<sf::Event::Closed>()) onClosed();
         if(e.is<sf::Event::FocusLost>()) onFocusLost();
+        if(e.is<sf::Event::FocusGained>()) onFocusGained();
         if(const auto* kp = e.getIf<sf::Event::KeyPressed>()) onKeyPressed(*kp);
         if(const auto* kr = e.getIf<sf::Event::KeyReleased>()) onKeyReleased(*kr);
     }
@@ -596,7 +598,8 @@ void updateInputForFrame(sf::RenderWindow& win, FrameContext& context)
     processEvents(
         win,
         [&]{ win.close(); },
-        [&]{ input = {}; },
+        [&]{ game_update_runtime::setFocus(input, false); },
+        [&]{ game_update_runtime::setFocus(input, true); },
         [&](const sf::Event::KeyPressed& kp){
             handleKeyPressed(kp, win, context);
         },

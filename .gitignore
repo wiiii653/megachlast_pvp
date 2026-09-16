@@ -2,6 +2,8 @@
 build*/
 cmake-build-*/
 out/
+release/
+_CPack_Packages/
 
 # --- CMake / CTest artifacts ---
 CMakeFiles/
@@ -15,7 +17,7 @@ install_manifest.txt
 
 # --- Native build artifacts ---
 SFML-3.0.1/
-megablast_pvp_sfml
+megablast_pvp_sfml*
 *.o
 *.obj
 *.a

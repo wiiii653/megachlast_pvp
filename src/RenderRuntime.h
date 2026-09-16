@@ -83,7 +83,7 @@ void drawAllBarriers(sf::RenderTarget& rt,
                      const std::array<BarrierBrick, BARRIER_BRICKS * 2>& barriers,
                      float t);
 void drawMenuTitle(sf::RenderTarget& rt, sf::Font& font, float t, int fxLevel);
-void drawPlasmaBg(sf::RenderTarget& rt, float t);
+void drawPlasmaBg(sf::RenderTarget& rt, float t, bool titleMode = false);
 void drawCopperBars(sf::RenderTarget& rt, float t);
 void drawIngameElements(sf::RenderTarget& rt, const IngameElementsContext& context);
 bool isPostfxDisabled(bool noPostfx, const GraphicsSettings& graphicsSettings, GameState state, int fxLevel);

@@ -17,6 +17,7 @@ struct Parsed {
     bool botEnabled = false;
     bool verbose = false;
     bool glInfo = false;
+    bool smokeTest = false;
 
     graphics_profile::GlProfile glProfile = graphics_profile::GlProfile::Default;
 

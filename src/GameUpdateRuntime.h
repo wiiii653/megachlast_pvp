@@ -6,12 +6,14 @@
 #include "Random.h"
 
 #include <array>
+#include <functional>
 
 class ProceduralSynth;
 
 namespace game_update_runtime {
 
 struct InputState {
+    bool focused = true;
     bool kA = false;
     bool kD = false;
     bool kLCtrl = false;
@@ -25,10 +27,12 @@ struct InputState {
 };
 
 using FireFn = void(*)(std::array<Bullet, MAX_BULLETS>&, const Player&, int);
-using SpawnThrusterFn = void(*)(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float, int);
+using SpawnThrusterFn = std::function<void(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float, int)>;
 
 void syncPlayingKeyboard(InputState& in);
 void syncPlayingControllers(InputState& in, const ControllerSettings& controllers);
+
+void setFocus(InputState& in, bool focused);
 
 void fireFromPlayer(std::array<Bullet, MAX_BULLETS>& bullets,
                     const Player& player,

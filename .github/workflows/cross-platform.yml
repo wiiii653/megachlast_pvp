@@ -78,6 +78,15 @@ jobs:
       - name: Test
         run: ctest --test-dir build_sfml3 --build-config ${{ matrix.build_type }} --output-on-failure
 
+      - name: Headless smoke test (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: ./build_sfml3/megablast_pvp_sfml --smoke-test --assets-dir assets
+
+      - name: Headless smoke test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./build_sfml3/${{ matrix.build_type }}/megablast_pvp_sfml.exe --smoke-test --assets-dir assets
+
       - name: Package artifact (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
