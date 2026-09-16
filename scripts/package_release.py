@@ -32,11 +32,16 @@ for name in ('LICENSE', 'README.md', 'EARLY_ACCESS.md', 'CHANGELOG.md', 'KNOWN_I
 licenses = package / 'licenses'
 licenses.mkdir()
 sfml = build / '_deps' / 'sfml-src'
-for path in sfml.rglob('*'):
-    if path.is_file() and any(word in path.name.lower() for word in ('license', 'copying', 'copyright')):
-        dest = licenses / 'SFML' / path.relative_to(sfml)
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(path, dest)
+for source_tree in (build / '_deps').glob('*-src'):
+    label = 'SFML' if source_tree == sfml else source_tree.name.removesuffix('-src')
+    for path in source_tree.rglob('*'):
+        if path.is_file() and '.git' not in path.parts and any(
+                word in path.name.lower() for word in ('license', 'copying', 'copyright', 'ftl.txt')):
+            dest = licenses / label / path.relative_to(source_tree)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(path, dest)
+# These dependencies carry their license notices inside their source headers.
+shutil.copytree(sfml / 'extlibs' / 'headers', licenses / 'SFML' / 'embedded-header-notices')
 if not (licenses / 'SFML' / 'license.md').exists():
     raise RuntimeError('SFML license missing')
 
