@@ -151,3 +151,27 @@ jobs:
 
       - name: Test (ASan+UBSan)
         run: ctest --test-dir build_san --output-on-failure
+
+  publish-release:
+    name: Publish tagged release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download platform packages
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          pattern: megachlast_pvp_*
+          merge-multiple: true
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" release-assets/* \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "Megachlast PvP ${GITHUB_REF_NAME}" \
+            --generate-notes

@@ -68,6 +68,13 @@ cd release/megachlast_pvp && cpack
 
 On Windows, use `--config Release` with both `cmake --install` and `cpack`.
 
+## GitHub Releases
+
+Push a version tag such as `v0.1.0` to run the multiplatform release workflow.
+It builds and smoke-checks Linux, macOS, and Windows, then attaches the
+platform archives to a GitHub Release automatically. The repository's GitHub
+Actions workflow requires write access to repository contents for this step.
+
 ### Linux
 
 Install/provide SFML 3 through a package manager such as vcpkg. If using vcpkg:
