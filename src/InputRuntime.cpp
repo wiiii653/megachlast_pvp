@@ -132,8 +132,12 @@ void updateControllerActions(sf::RenderWindow& win, FrameContext& context)
         if(rose(current.east, previous.east))
             emitControllerKey(sf::Keyboard::Scan::Escape, sf::Keyboard::Key::Escape, win, context);
     } else if(state == GameState::DONATE){
+        if(rose(current.up, previous.up))
+            emitControllerKey(sf::Keyboard::Scan::Up, sf::Keyboard::Key::Unknown, win, context);
+        if(rose(current.down, previous.down))
+            emitControllerKey(sf::Keyboard::Scan::Down, sf::Keyboard::Key::Unknown, win, context);
         if(rose(current.south, previous.south))
-            emitControllerKey(sf::Keyboard::Scan::C, sf::Keyboard::Key::C, win, context);
+            emitControllerKey(sf::Keyboard::Scan::Enter, sf::Keyboard::Key::Enter, win, context);
         if(rose(current.east, previous.east))
             emitControllerKey(sf::Keyboard::Scan::Escape, sf::Keyboard::Key::Escape, win, context);
     } else if(state == GameState::PLAYING){
@@ -349,8 +353,15 @@ bool handleSettingsKeyPressed(const sf::Event::KeyPressed& kp,
 
 bool handleDonateKeyPressed(const sf::Event::KeyPressed& kp,
                             GameState& state,
-                            float& donateMsgTimer)
+                            float& donateMsgTimer,
+                            int& donateSel)
 {
+    if(kp.scancode == sf::Keyboard::Scan::Up || kp.scancode == sf::Keyboard::Scan::Down)
+        donateSel = (donateSel + 1) % 2;
+    if(kp.scancode == sf::Keyboard::Scan::Enter && donateSel == 0){
+        sf::Clipboard::setString("https://buymeacoffee.com/ojnen");
+        donateMsgTimer = 2.0f;
+    }
     if(kp.scancode == sf::Keyboard::Scan::C){
         sf::Clipboard::setString("https://buymeacoffee.com/ojnen");
         donateMsgTimer = 2.0f;
@@ -506,6 +517,7 @@ void handleKeyPressed(const sf::Event::KeyPressed& kp,
     GraphicsSettings& graphicsSettings = *context.graphicsSettings;
     ControllerSettings& controllers = *context.controllers;
     float& donateMsgTimer = *context.donateMsgTimer;
+    int& donateSel = *context.donateSel;
     bool& botDebug = *context.botDebug;
     PerfLevel& perfLevel = *context.perfLevel;
     bool& muted = *context.muted;
@@ -541,7 +553,7 @@ void handleKeyPressed(const sf::Event::KeyPressed& kp,
     }
 
     if(state == GameState::DONATE){
-        handleDonateKeyPressed(kp, state, donateMsgTimer);
+        handleDonateKeyPressed(kp, state, donateMsgTimer, donateSel);
         return;
     }
 

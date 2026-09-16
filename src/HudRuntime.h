@@ -15,6 +15,7 @@ struct TextOverlayContext {
     float dt = 0.f;
     float menuAnim = 0.f;
     int menuSel = 0;
+    int donateSel = 0;
     bool showBlink = false;
     float* donateMsgTimer = nullptr;
     PerfLevel perfLevel = PerfLevel::MEDIUM;
@@ -55,7 +56,7 @@ void drawPersistentInfo(sf::RenderTarget& rt,
                         bool botEnabled,
                         BotDifficulty botDifficulty);
 void drawMenuInstructions(sf::RenderTarget& rt, sf::Font& font, float menuAnim, bool showBlink, int menuSel);
-void drawDonateOverlay(sf::RenderTarget& rt, sf::Font& font, float& donateMsgTimer, float dt);
+void drawDonateOverlay(sf::RenderTarget& rt, sf::Font& font, float& donateMsgTimer, float dt, int donateSel);
 void drawPausedOverlay(sf::RenderTarget& rt, sf::Font& font);
 void drawGameOverOverlay(sf::RenderTarget& rt,
                          sf::Font& font,

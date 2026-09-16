@@ -60,7 +60,8 @@ bool handleSettingsKeyPressed(const sf::Event::KeyPressed& kp,
 
 bool handleDonateKeyPressed(const sf::Event::KeyPressed& kp,
                             GameState& state,
-                            float& donateMsgTimer);
+                            float& donateMsgTimer,
+                            int& donateSel);
 
 void handleStateTransitionKeyPressed(const sf::Event::KeyPressed& kp,
                                      GameState state,
@@ -96,6 +97,7 @@ void handleGlobalControlKeyPressed(const sf::Event::KeyPressed& kp,
 struct FrameContext {
     GameState* state = nullptr;
     int* menuSel = nullptr;
+    int* donateSel = nullptr;
     int* settingsSel = nullptr;
     Config* cfg = nullptr;
     bool* botEnabled = nullptr;

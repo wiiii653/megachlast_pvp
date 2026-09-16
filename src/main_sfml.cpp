@@ -273,6 +273,7 @@ int main(int argc, char** argv){
     int knockoutScorer = 0;
     bool knockoutEndsMatch = false;
     float donate_msg_timer = 0.f; // short feedback when link copied
+    int donate_sel = 0;
     std::array<FragFloat, MAX_FRAG_FLOATS> fragFloats{};
 
     int settings_sel = 0;
@@ -439,6 +440,7 @@ int main(int argc, char** argv){
         round_runtime::openSettingsMenu(state, settings_sel);
     };
     auto openDonateScreen = [&]{
+        donate_sel = 0;
         round_runtime::openDonateScreen(state, donate_msg_timer);
     };
     auto pauseGameplay = [&]{
@@ -472,6 +474,7 @@ int main(int argc, char** argv){
     input_runtime::FrameContext inputContext{};
     inputContext.state = &state;
     inputContext.menuSel = &menu_sel;
+    inputContext.donateSel = &donate_sel;
     inputContext.settingsSel = &settings_sel;
     inputContext.cfg = &cfg;
     inputContext.botEnabled = &g_runtime.bot_enabled;
@@ -714,6 +717,7 @@ int main(int argc, char** argv){
             hudCtx.dt = dt;
             hudCtx.menuAnim = menuAnim;
             hudCtx.menuSel = menu_sel;
+            hudCtx.donateSel = donate_sel;
             hudCtx.showBlink = showBlink;
             hudCtx.donateMsgTimer = &donate_msg_timer;
             hudCtx.perfLevel = g_runtime.perf_level;

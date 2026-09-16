@@ -247,7 +247,7 @@ void drawMenuInstructions(sf::RenderTarget& rt, sf::Font& font, float menuAnim, 
     rt.draw(hint);
 }
 
-void drawDonateOverlay(sf::RenderTarget& rt, sf::Font& font, float& donateMsgTimer, float dt)
+void drawDonateOverlay(sf::RenderTarget& rt, sf::Font& font, float& donateMsgTimer, float dt, int donateSel)
 {
     sf::RectangleShape panel(sf::Vector2f((float)W, (float)H));
     panel.setFillColor(sf::Color(0, 0, 0, 210));
@@ -259,24 +259,43 @@ void drawDonateOverlay(sf::RenderTarget& rt, sf::Font& font, float& donateMsgTim
     title.setPosition(sf::Vector2f(W / 2.f - tb.size.x / 2.f, 50.f));
     rt.draw(title);
 
+    const bool buyMeSelected = donateSel == 0;
+    sf::Text buyMe(font, "BUY ME A COFFEE", 12);
+    buyMe.setFillColor(buyMeSelected ? sf::Color(255, 220, 120) : sf::Color(160, 160, 180));
+    auto bm = buyMe.getLocalBounds();
+    buyMe.setPosition(sf::Vector2f(W / 2.f - bm.size.x / 2.f, 112.f));
+    rt.draw(buyMe);
+
+    sf::Text bitcoin(font, "BITCOIN / LIGHTNING", 12);
+    bitcoin.setFillColor(!buyMeSelected ? sf::Color(255, 220, 120) : sf::Color(130, 130, 150));
+    auto btc = bitcoin.getLocalBounds();
+    bitcoin.setPosition(sf::Vector2f(W / 2.f - btc.size.x / 2.f, 138.f));
+    rt.draw(bitcoin);
+
+    sf::Text placeholder(font, "COMING SOON - ADDRESS NOT CONFIGURED", 8);
+    placeholder.setFillColor(sf::Color(120, 120, 140));
+    auto ph = placeholder.getLocalBounds();
+    placeholder.setPosition(sf::Vector2f(W / 2.f - ph.size.x / 2.f, 158.f));
+    rt.draw(placeholder);
+
     const std::string donateUrl = "https://buymeacoffee.com/ojnen";
     sf::Text url(font, donateUrl, 12);
     url.setFillColor(sf::Color(200, 200, 255));
     auto ub = url.getLocalBounds();
-    url.setPosition(sf::Vector2f(W / 2.f - ub.size.x / 2.f, 140.f));
+    url.setPosition(sf::Vector2f(W / 2.f - ub.size.x / 2.f, 185.f));
     rt.draw(url);
 
-    sf::Text hint(font, "Press C to copy link to clipboard. Esc to return.", 9);
+    sf::Text hint(font, "Up/Down select   Enter accept   C copies link   Esc back", 8);
     hint.setFillColor(sf::Color(160, 160, 180));
     auto hb = hint.getLocalBounds();
-    hint.setPosition(sf::Vector2f(W / 2.f - hb.size.x / 2.f, 170.f));
+    hint.setPosition(sf::Vector2f(W / 2.f - hb.size.x / 2.f, 215.f));
     rt.draw(hint);
 
     if(donateMsgTimer > 0.f){
         sf::Text cm(font, "Link copied to clipboard!", 10);
         cm.setFillColor(sf::Color(120, 255, 120));
         auto cb = cm.getLocalBounds();
-        cm.setPosition(sf::Vector2f(W / 2.f - cb.size.x / 2.f, 200.f));
+        cm.setPosition(sf::Vector2f(W / 2.f - cb.size.x / 2.f, 245.f));
         rt.draw(cm);
     }
     if(donateMsgTimer > 0.f) donateMsgTimer = std::max(0.f, donateMsgTimer - dt);
@@ -695,7 +714,7 @@ void drawFragFloats(sf::RenderTarget& rt,
 void drawTextOverlays(sf::RenderTarget& rt, sf::Font& font, const TextOverlayContext& context)
 {
     if(context.state == GameState::DONATE && context.donateMsgTimer)
-        drawDonateOverlay(rt, font, *context.donateMsgTimer, context.dt);
+        drawDonateOverlay(rt, font, *context.donateMsgTimer, context.dt, context.donateSel);
 
     drawPersistentInfo(rt, font, context.appVersion, context.perfLevel, context.fxLevel, context.fpsDisplay,
                        context.botEnabled, context.botDifficulty);
