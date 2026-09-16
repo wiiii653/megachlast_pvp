@@ -1,5 +1,6 @@
 #include "InputRuntime.h"
 
+#include "ControllerInput.h"
 #include "GameConstants.h"
 
 #include <SFML/Window/Clipboard.hpp>
@@ -9,6 +10,11 @@
 #include <cstdio>
 
 namespace input_runtime {
+
+void handleKeyPressed(const sf::Event::KeyPressed& kp,
+                      sf::RenderWindow& win,
+                      FrameContext& context);
+
 namespace {
 
 RoundModifier cycleModifier(RoundModifier modifier, int delta)
@@ -36,6 +42,126 @@ struct SetupControllerState {
     bool p2Start = false;
 };
 
+struct UiControllerState {
+    bool up = false;
+    bool down = false;
+    bool left = false;
+    bool right = false;
+    bool south = false;
+    bool east = false;
+    bool north = false;
+    bool west = false;
+    bool start = false;
+    bool select = false;
+};
+
+UiControllerState pollUiController(int joystick)
+{
+    UiControllerState current{};
+    if(joystick < 0 || joystick >= static_cast<int>(sf::Joystick::Count) ||
+       !sf::Joystick::isConnected(static_cast<unsigned int>(joystick))) return current;
+
+    const unsigned int id = static_cast<unsigned int>(joystick);
+    const auto axisPressed = [&](sf::Joystick::Axis axis, bool negative){
+        if(!sf::Joystick::hasAxis(id, axis)) return false;
+        const float position = sf::Joystick::getAxisPosition(id, axis);
+        return negative ? position < -35.f : position > 35.f;
+    };
+    current.left = axisPressed(sf::Joystick::Axis::X, true) || axisPressed(sf::Joystick::Axis::PovX, true);
+    current.right = axisPressed(sf::Joystick::Axis::X, false) || axisPressed(sf::Joystick::Axis::PovX, false);
+    current.up = axisPressed(sf::Joystick::Axis::Y, true) || axisPressed(sf::Joystick::Axis::PovY, true);
+    current.down = axisPressed(sf::Joystick::Axis::Y, false) || axisPressed(sf::Joystick::Axis::PovY, false);
+    current.south = controller_input::buttonPressed(id, controller_input::southButton(id));
+    current.east = controller_input::buttonPressed(id, controller_input::eastButton(id));
+    current.north = controller_input::buttonPressed(id, controller_input::northButton(id));
+    current.west = controller_input::buttonPressed(id, controller_input::westButton(id));
+    current.start = controller_input::buttonPressed(id, controller_input::startButton(id));
+    current.select = controller_input::buttonPressed(id, controller_input::selectButton(id));
+    return current;
+}
+
+bool rose(bool current, bool previous)
+{
+    return current && !previous;
+}
+
+void emitControllerKey(const sf::Keyboard::Scancode scancode,
+                       const sf::Keyboard::Key code,
+                       sf::RenderWindow& win,
+                       FrameContext& context)
+{
+    sf::Event::KeyPressed key{};
+    key.scancode = scancode;
+    key.code = code;
+    handleKeyPressed(key, win, context);
+}
+
+void updateControllerActions(sf::RenderWindow& win, FrameContext& context)
+{
+    static UiControllerState previous{};
+    static GameState previousState = GameState::MENU;
+    const GameState state = *context.state;
+    const int joystick = context.controllers->p1_joystick;
+    const UiControllerState current = pollUiController(joystick);
+
+    if(state != previousState) previous = {};
+
+    if(state == GameState::MENU){
+        if(rose(current.south, previous.south))
+            emitControllerKey(sf::Keyboard::Scan::Enter, sf::Keyboard::Key::Enter, win, context);
+        if(rose(current.north, previous.north))
+            emitControllerKey(sf::Keyboard::Scan::O, sf::Keyboard::Key::O, win, context);
+        if(rose(current.west, previous.west))
+            emitControllerKey(sf::Keyboard::Scan::D, sf::Keyboard::Key::D, win, context);
+        if(rose(current.east, previous.east))
+            emitControllerKey(sf::Keyboard::Scan::Escape, sf::Keyboard::Key::Escape, win, context);
+    } else if(state == GameState::MATCH_SETUP){
+        if(rose(current.east, previous.east))
+            emitControllerKey(sf::Keyboard::Scan::Escape, sf::Keyboard::Key::Escape, win, context);
+    } else if(state == GameState::SETTINGS){
+        if(rose(current.up, previous.up))
+            emitControllerKey(sf::Keyboard::Scan::Up, sf::Keyboard::Key::Unknown, win, context);
+        if(rose(current.down, previous.down))
+            emitControllerKey(sf::Keyboard::Scan::Down, sf::Keyboard::Key::Unknown, win, context);
+        if(rose(current.left, previous.left))
+            emitControllerKey(sf::Keyboard::Scan::Left, sf::Keyboard::Key::Unknown, win, context);
+        if(rose(current.right, previous.right))
+            emitControllerKey(sf::Keyboard::Scan::Right, sf::Keyboard::Key::Unknown, win, context);
+        if(rose(current.south, previous.south))
+            emitControllerKey(sf::Keyboard::Scan::Enter, sf::Keyboard::Key::Enter, win, context);
+        if(rose(current.east, previous.east))
+            emitControllerKey(sf::Keyboard::Scan::Escape, sf::Keyboard::Key::Escape, win, context);
+    } else if(state == GameState::DONATE){
+        if(rose(current.south, previous.south))
+            emitControllerKey(sf::Keyboard::Scan::C, sf::Keyboard::Key::C, win, context);
+        if(rose(current.east, previous.east))
+            emitControllerKey(sf::Keyboard::Scan::Escape, sf::Keyboard::Key::Escape, win, context);
+    } else if(state == GameState::PLAYING){
+        if(rose(current.start, previous.start))
+            emitControllerKey(sf::Keyboard::Scan::Space, sf::Keyboard::Key::Space, win, context);
+        if(rose(current.select, previous.select))
+            emitControllerKey(sf::Keyboard::Scan::R, sf::Keyboard::Key::R, win, context);
+        if(rose(current.east, previous.east))
+            emitControllerKey(sf::Keyboard::Scan::Escape, sf::Keyboard::Key::Escape, win, context);
+    } else if(state == GameState::PAUSED){
+        if(rose(current.start, previous.start))
+            emitControllerKey(sf::Keyboard::Scan::Space, sf::Keyboard::Key::Space, win, context);
+        if(rose(current.east, previous.east))
+            emitControllerKey(sf::Keyboard::Scan::Escape, sf::Keyboard::Key::Escape, win, context);
+    } else if(state == GameState::GAME_OVER){
+        if(rose(current.south, previous.south))
+            emitControllerKey(sf::Keyboard::Scan::Enter, sf::Keyboard::Key::Enter, win, context);
+        if(rose(current.east, previous.east))
+            emitControllerKey(sf::Keyboard::Scan::Escape, sf::Keyboard::Key::Escape, win, context);
+    } else if(state == GameState::COUNTDOWN){
+        if(rose(current.east, previous.east))
+            emitControllerKey(sf::Keyboard::Scan::Escape, sf::Keyboard::Key::Escape, win, context);
+    }
+
+    previous = current;
+    previousState = *context.state;
+}
+
 void updateMatchSetupControllers(FrameContext& context)
 {
     if(*context.state != GameState::MATCH_SETUP) return;
@@ -46,15 +172,15 @@ void updateMatchSetupControllers(FrameContext& context)
         if(joystick < 0 || joystick >= static_cast<int>(sf::Joystick::Count) ||
            !sf::Joystick::isConnected(static_cast<unsigned int>(joystick))) return;
         unsigned int id = static_cast<unsigned int>(joystick);
-        float x = sf::Joystick::hasAxis(id, sf::Joystick::Axis::X)
-                    ? sf::Joystick::getAxisPosition(id, sf::Joystick::Axis::X) : 0.f;
-        if(sf::Joystick::hasAxis(id, sf::Joystick::Axis::PovX))
-            x += sf::Joystick::getAxisPosition(id, sf::Joystick::Axis::PovX);
-        left = x < -35.f;
-        right = x > 35.f;
+        const float x = sf::Joystick::hasAxis(id, sf::Joystick::Axis::X)
+                          ? sf::Joystick::getAxisPosition(id, sf::Joystick::Axis::X) : 0.f;
+        const float povX = sf::Joystick::hasAxis(id, sf::Joystick::Axis::PovX)
+                             ? sf::Joystick::getAxisPosition(id, sf::Joystick::Axis::PovX) : 0.f;
+        left = x < -35.f || povX < -35.f;
+        right = x > 35.f || povX > 35.f;
         arenaLeft = sf::Joystick::isButtonPressed(id, 4);
         arenaRight = sf::Joystick::isButtonPressed(id, 5);
-        start = sf::Joystick::isButtonPressed(id, 0);
+        start = controller_input::firePressed(id);
     };
 
     SetupControllerState current{};
@@ -469,6 +595,7 @@ void updateInputForFrame(sf::RenderWindow& win, FrameContext& context)
         });
 
     updateMatchSetupControllers(context);
+    updateControllerActions(win, context);
 
     if(*context.state == GameState::PLAYING){
         game_update_runtime::syncPlayingKeyboard(input);

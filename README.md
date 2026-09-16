@@ -18,7 +18,10 @@ Player 2 (top):
 Controllers:
 
 - Each player can use a configured controller alongside their keyboard bindings.
+- PS4, PS5, and Xbox controllers are supported through their connected SFML joystick slots.
 - Left stick or D-pad: move left/right; south button, L1, or R1: fire.
+- In menus and Settings: D-pad/left stick navigates, south confirms, east goes back; north opens Settings and west opens Donate from the main menu.
+- During play: Start pauses/resumes, Select resets the round, and east returns to the menu. South confirms a rematch after Game Over.
 - In Settings, select `P1 Controller` or `P2 Controller` and use Left/Right to choose `OFF` or joystick slot `Joy 1` through `Joy 8` (the first two slots are the defaults).
 
 General:

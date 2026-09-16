@@ -1,4 +1,5 @@
 #include "InputRuntime.h"
+#include "ControllerInput.h"
 
 #include <iostream>
 
@@ -44,5 +45,12 @@ int main()
     check(starts == 1, "Enter starts the configured match once");
     press(sf::Keyboard::Scan::Escape);
     check(state == GameState::MENU && starts == 1, "Escape returns to menu without starting");
+
+    check(controller_input::familyForName("Xbox Wireless Controller") == controller_input::Family::Xbox,
+          "Xbox controllers are identified");
+    check(controller_input::familyForName("DualSense Wireless Controller") == controller_input::Family::PlayStation,
+          "PS5 controllers are identified");
+    check(controller_input::familyForName("Wireless Controller (PS4)") == controller_input::Family::PlayStation,
+          "PS4 controllers are identified");
     return failures == 0 ? 0 : 1;
 }

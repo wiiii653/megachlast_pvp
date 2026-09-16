@@ -1,5 +1,6 @@
 #include "GameUpdateRuntime.h"
 
+#include "ControllerInput.h"
 #include "GameConstants.h"
 #include "ProceduralSynth.h"
 
@@ -41,15 +42,13 @@ void syncPlayingControllers(InputState& in, const ControllerSettings& controller
 
         const unsigned int id = static_cast<unsigned int>(joystick);
         constexpr float deadZone = 35.f;
-        float x = sf::Joystick::hasAxis(id, sf::Joystick::Axis::X)
-                    ? sf::Joystick::getAxisPosition(id, sf::Joystick::Axis::X) : 0.f;
-        if(sf::Joystick::hasAxis(id, sf::Joystick::Axis::PovX))
-            x += sf::Joystick::getAxisPosition(id, sf::Joystick::Axis::PovX);
-        left  = left  || x < -deadZone;
-        right = right || x > deadZone;
-        fire = fire || sf::Joystick::isButtonPressed(id, 0) ||
-                       sf::Joystick::isButtonPressed(id, 4) ||
-                       sf::Joystick::isButtonPressed(id, 5);
+        const float x = sf::Joystick::hasAxis(id, sf::Joystick::Axis::X)
+                          ? sf::Joystick::getAxisPosition(id, sf::Joystick::Axis::X) : 0.f;
+        const float povX = sf::Joystick::hasAxis(id, sf::Joystick::Axis::PovX)
+                             ? sf::Joystick::getAxisPosition(id, sf::Joystick::Axis::PovX) : 0.f;
+        left  = left  || x < -deadZone || povX < -deadZone;
+        right = right || x > deadZone || povX > deadZone;
+        fire = fire || controller_input::firePressed(id);
     };
 
     applyController(controllers.p1_joystick, in.kA, in.kD, in.kLCtrl);
