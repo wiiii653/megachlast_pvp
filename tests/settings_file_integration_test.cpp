@@ -1,4 +1,5 @@
 #include "GameTypes.h"
+#include "ControlsInput.h"
 #include "SettingsIO.h"
 
 #include <cmath>
@@ -143,6 +144,68 @@ int main()
                                         g_bot_overrides),
           "settings load succeeds with invalid BOT_DIFFICULTY value");
     check(g_bot_difficulty == BotDifficulty::HARD, "invalid BOT_DIFFICULTY does not overwrite previous value");
+
+    // ── Control profile round-trip through the settings file ────────────────
+    g_controllers.profiles = controls::defaultProfiles();
+    controls::bindPrimary(g_controllers.profiles.profile(controls::ProfileId::Keyboard),
+                          controls::Action::KbP1Left, controls::keyInput(sf::Keyboard::Scan::J));
+    controls::bindPrimary(g_controllers.profiles.profile(controls::ProfileId::Xbox),
+                          controls::Action::GamePause, controls::buttonInput(5));
+    settings_io::saveSettingsFile(path, cfg, g_bot_enabled, g_bot_difficulty,
+                                  g_music_volume, g_sfx_volume, g_muted,
+                                  g_graphics,
+                                  g_controllers,
+                                  g_bot_overrides);
+
+    g_controllers.profiles = controls::defaultProfiles();
+    check(settings_io::loadSettingsFile(path, cfg, g_bot_enabled, g_bot_difficulty,
+                                        g_music_volume, g_sfx_volume, g_muted,
+                                        g_graphics,
+                                        g_controllers,
+                                        g_bot_overrides),
+          "settings load restores control bindings");
+    check(g_controllers.profiles.profile(controls::ProfileId::Keyboard)
+              .actions[static_cast<std::size_t>(controls::Action::KbP1Left)].containsKey(
+                  static_cast<int>(sf::Keyboard::Scan::J)),
+          "keyboard rebind round-trips through the settings file");
+    check(g_controllers.profiles.profile(controls::ProfileId::Xbox)
+              .actions[static_cast<std::size_t>(controls::Action::GamePause)].contains(
+                  controls::buttonInput(5)),
+          "xbox rebind round-trips through the settings file");
+
+    // ── Old config files stay compatible: missing keys keep the defaults ────
+    {
+        std::ofstream ofs(path, std::ios::trunc);
+        ofs << "TARGET_SCORE=7\n"
+               "P1_CONTROLLER=2\n"
+               "P2_CONTROLLER=-1\n"
+               "WINDOW_SCALE=3\n";
+    }
+    g_controllers.profiles = controls::defaultProfiles();
+    g_controllers.p1_joystick = 0;
+    g_controllers.p2_joystick = 1;
+    check(settings_io::loadSettingsFile(path, cfg, g_bot_enabled, g_bot_difficulty,
+                                        g_music_volume, g_sfx_volume, g_muted,
+                                        g_graphics,
+                                        g_controllers,
+                                        g_bot_overrides),
+          "legacy settings file loads");
+    check(g_controllers.p1_joystick == 2 && g_controllers.p2_joystick == -1,
+          "legacy controller slots still load");
+    check(g_controllers.profiles.profile(controls::ProfileId::Keyboard)
+              .actions[static_cast<std::size_t>(controls::Action::KbP1Left)].containsKey(
+                  static_cast<int>(sf::Keyboard::Scan::A)),
+          "legacy file keeps the default P1 move-left binding");
+    check(g_controllers.profiles.profile(controls::ProfileId::Ps5)
+              .actions[static_cast<std::size_t>(controls::Action::GamePause)].contains(
+                  controls::buttonInput(9)),
+          "legacy file keeps the default PS5 pause binding");
+
+    // Profiles are independent: PS4 stays at defaults after the Xbox rebind above.
+    check(!g_controllers.profiles.profile(controls::ProfileId::Ps4)
+              .actions[static_cast<std::size_t>(controls::Action::GamePause)].contains(
+                  controls::buttonInput(5)),
+          "PS4 profile unaffected by the Xbox rebind");
 
     std::remove(path.c_str());
     return failures == 0 ? 0 : 1;

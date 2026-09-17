@@ -13,7 +13,8 @@ void enforceSingleTrack(GameState state,
                         sf::Music& getReady,
                         const std::function<void()>& playMenuMusic)
 {
-    if(state == GameState::MENU || state == GameState::SETTINGS || state == GameState::MATCH_SETUP){
+    if(state == GameState::MENU || state == GameState::SETTINGS ||
+       state == GameState::CONTROLS || state == GameState::MATCH_SETUP){
         if(haveIngameMusic && ingameMusic.getStatus() != sf::Music::Status::Stopped){
             ingameMusic.stop();
             ingameMusic.setVolume(0);

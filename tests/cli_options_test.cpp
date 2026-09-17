@@ -21,7 +21,7 @@ int main()
     {
         cli_options::Parsed parsed{};
         const char* argv[] = {
-            "megablast_pvp_sfml",
+            "megablast_pvp",
             "--assets-dir", "custom_assets",
             "--bot",
             "--bot-difficulty", "hard",
@@ -61,7 +61,7 @@ int main()
 
     {
         cli_options::Parsed parsed{};
-        const char* argv[] = {"megablast_pvp_sfml", "--help"};
+        const char* argv[] = {"megablast_pvp", "--help"};
         auto res = cli_options::parse(static_cast<int>(sizeof(argv) / sizeof(argv[0])),
                                       const_cast<char**>(argv),
                                       parsed);
@@ -70,7 +70,7 @@ int main()
 
     {
         cli_options::Parsed parsed{};
-        const char* argv[] = {"megablast_pvp_sfml", "--perf"};
+        const char* argv[] = {"megablast_pvp", "--perf"};
         auto res = cli_options::parse(static_cast<int>(sizeof(argv) / sizeof(argv[0])),
                                       const_cast<char**>(argv),
                                       parsed);
@@ -80,7 +80,7 @@ int main()
 
     {
         cli_options::Parsed parsed{};
-        const char* argv[] = {"megablast_pvp_sfml", "--bad-flag"};
+        const char* argv[] = {"megablast_pvp", "--bad-flag"};
         auto res = cli_options::parse(static_cast<int>(sizeof(argv) / sizeof(argv[0])),
                                       const_cast<char**>(argv),
                                       parsed);
@@ -90,7 +90,7 @@ int main()
 
     {
         cli_options::Parsed parsed{};
-        const char* argv[] = {"megablast_pvp_sfml", "--gl-profile", "bogus"};
+        const char* argv[] = {"megablast_pvp", "--gl-profile", "bogus"};
         auto res = cli_options::parse(static_cast<int>(sizeof(argv) / sizeof(argv[0])),
                                       const_cast<char**>(argv),
                                       parsed);

@@ -1,5 +1,6 @@
 #include "HudRuntime.h"
 
+#include "ControlsInput.h"
 #include "GameConstants.h"
 
 #include <algorithm>
@@ -509,8 +510,9 @@ void drawSettingsPanel(sf::RenderTarget& rt,
     constexpr int OPT_COPPER_BARS = 15;
     constexpr int OPT_P1_CONTROLLER = 16;
     constexpr int OPT_P2_CONTROLLER = 17;
-    constexpr int OPT_SAVE = 18;
-    constexpr int OPT_LOAD = 19;
+    constexpr int OPT_CONTROLS = 18;
+    constexpr int OPT_SAVE = 19;
+    constexpr int OPT_LOAD = 20;
 
     float panelW = 278.f, panelH = 350.f;
     float px = W / 2.f - panelW / 2.f, py = H / 2.f - panelH / 2.f;
@@ -537,10 +539,10 @@ void drawSettingsPanel(sf::RenderTarget& rt,
     rt.draw(titleT);
 
     // Keep the title screen clean; the in-game keyboard legend lives here with
-    // the controller assignment controls.
-    const float cardW = 154.f;
-    const float cardH = 132.f;
-    const float cardX = px - cardW - 10.f;
+    // the controller assignment controls and reflects the current bindings.
+    const float cardW = 150.f;
+    const float cardH = 146.f;
+    const float cardX = px + panelW + 10.f;
     const float cardY = py + 36.f;
     sf::RectangleShape controlsCard(sf::Vector2f(cardW, cardH));
     controlsCard.setPosition(sf::Vector2f(cardX, cardY));
@@ -555,13 +557,26 @@ void drawSettingsPanel(sf::RenderTarget& rt,
         t.setPosition(sf::Vector2f(x, y));
         rt.draw(t);
     };
+    const controls::Profile& kb = controllers.profiles.keyboard();
+    const std::string p1Move = "P1  MOVE  " + controls::bindingLabel(
+        kb.actions[static_cast<std::size_t>(controls::Action::KbP1Left)]) + " / " +
+        controls::bindingLabel(kb.actions[static_cast<std::size_t>(controls::Action::KbP1Right)]);
+    const std::string p1Fire = "P1  FIRE  " + controls::bindingLabel(
+        kb.actions[static_cast<std::size_t>(controls::Action::KbP1Fire)]);
+    const std::string p2Move = "P2  MOVE  " + controls::bindingLabel(
+        kb.actions[static_cast<std::size_t>(controls::Action::KbP2Left)]) + " / " +
+        controls::bindingLabel(kb.actions[static_cast<std::size_t>(controls::Action::KbP2Right)]);
+    const std::string p2Fire = "P2  FIRE  " + controls::bindingLabel(
+        kb.actions[static_cast<std::size_t>(controls::Action::KbP2Fire)]);
     drawCardText("CONTROLS", cardX + 10.f, cardY + 8.f, sf::Color(200, 200, 255), 10);
-    drawCardText("P1  MOVE   A / D", cardX + 10.f, cardY + 28.f, sf::Color(150, 235, 235), 8);
-    drawCardText("P1  FIRE   CTRL / Z", cardX + 10.f, cardY + 41.f, sf::Color(150, 235, 235), 8);
-    drawCardText("P2  MOVE   LEFT / RIGHT", cardX + 10.f, cardY + 61.f, sf::Color(255, 160, 160), 8);
-    drawCardText("P2  FIRE   RCTRL / /", cardX + 10.f, cardY + 74.f, sf::Color(255, 160, 160), 8);
-    drawCardText("Controller slots below", cardX + 10.f, cardY + 96.f, sf::Color(150, 150, 180), 7);
-    drawCardText("Left/Right edits", cardX + 10.f, cardY + 108.f, sf::Color(150, 150, 180), 7);
+    drawCardText(p1Move.c_str(), cardX + 8.f, cardY + 26.f, sf::Color(150, 235, 235), 7);
+    drawCardText(p1Fire.c_str(), cardX + 8.f, cardY + 38.f, sf::Color(150, 235, 235), 7);
+    drawCardText(p2Move.c_str(), cardX + 8.f, cardY + 58.f, sf::Color(255, 160, 160), 7);
+    drawCardText(p2Fire.c_str(), cardX + 8.f, cardY + 70.f, sf::Color(255, 160, 160), 7);
+    drawCardText("Controller slots below", cardX + 8.f, cardY + 92.f, sf::Color(150, 150, 180), 7);
+    drawCardText("Up/Down select", cardX + 8.f, cardY + 104.f, sf::Color(150, 150, 180), 7);
+    drawCardText("Enter toggles / saves", cardX + 8.f, cardY + 116.f, sf::Color(150, 150, 180), 7);
+    drawCardText("Controls row = rebind", cardX + 8.f, cardY + 130.f, sf::Color(180, 190, 235), 7);
 
     float ly = py + 28.f;
     char tmp[72];
@@ -674,19 +689,109 @@ void drawSettingsPanel(sf::RenderTarget& rt,
 
     std::snprintf(tmp, sizeof(tmp), "P2 Controller: %s", controllers.p2_joystick < 0 ? "OFF" : ("Joy " + std::to_string(controllers.p2_joystick + 1)).c_str());
     drawOpt(OPT_P2_CONTROLLER, tmp);
+    ly += 14.f;
+
+    drawOpt(OPT_CONTROLS, "[ Controls ]");
     ly += 18.f;
 
     drawOpt(OPT_SAVE, "[ Save Settings ]");
     ly += 14.f;
     drawOpt(OPT_LOAD, "[ Load Settings ]");
-    ly += 20.f;
+}
 
-    sf::Text hint(font,
-        "Up/Down: select   Left/Right: adjust   Enter: toggle/save/load   Esc: back", 7);
-    hint.setFillColor(sf::Color(100, 100, 120));
-    auto hb = hint.getLocalBounds();
-    hint.setPosition(sf::Vector2f(px + panelW / 2.f - hb.size.x / 2.f, py + panelH - 14.f));
-    rt.draw(hint);
+void drawControlsPanel(sf::RenderTarget& rt,
+                       sf::Font& font,
+                       float menuAnim,
+                       int controlsProfile,
+                       int controlsSel,
+                       int controlsScroll,
+                       bool controlsCapturing,
+                       int controlsCaptureAction,
+                       const ControllerSettings& controllers)
+{
+    const auto pid = static_cast<controls::ProfileId>(controlsProfile);
+    const std::size_t actionCount = controls::profileActionCount(pid);
+    constexpr int kVisibleRows = 18;
+
+    sf::RectangleShape panel(sf::Vector2f((float)W, (float)H));
+    panel.setFillColor(sf::Color(0, 0, 0, 225));
+    rt.draw(panel);
+
+    float titlePulse = 0.7f + 0.3f * std::sin(menuAnim * 3.f);
+    sf::Text title(font, "CONTROLS", 15);
+    title.setFillColor(sf::Color(
+        static_cast<uint8_t>(170 + 60 * titlePulse),
+        static_cast<uint8_t>(170 + 60 * titlePulse), 255));
+    auto tb = title.getLocalBounds();
+    title.setPosition(sf::Vector2f(W / 2.f - tb.size.x / 2.f, 24.f));
+    rt.draw(title);
+
+    const bool profileSel = controls::controlsRowIsProfile(controlsSel) && !controlsCapturing;
+    std::string profileLabel = std::string("< ") + controls::profileName(pid) + " >";
+    sf::Text profileText(font, profileLabel, 11);
+    profileText.setFillColor(profileSel ? sf::Color(255, 220, 120) : sf::Color(160, 180, 220));
+    auto pb = profileText.getLocalBounds();
+    profileText.setPosition(sf::Vector2f(W / 2.f - pb.size.x / 2.f, 50.f));
+    rt.draw(profileText);
+
+    const controls::Profile& prof = controllers.profiles.profile(pid);
+    const float rowH = 11.f;
+    float ly = 76.f;
+    for(int row = 1; row <= static_cast<int>(actionCount); ++row){
+        if(row < controlsScroll + 1) continue;
+        if(row >= controlsScroll + 1 + kVisibleRows) break;
+        const controls::Action a = controls::controlsRowAction(row, pid);
+        const bool sel = (controlsSel == row && !controlsCapturing);
+        if(sel){
+            sf::RectangleShape selBg(sf::Vector2f((float)W - 40.f, rowH));
+            selBg.setPosition(sf::Vector2f(20.f, ly - 1.f));
+            selBg.setFillColor(sf::Color(60, 60, 100, 140));
+            rt.draw(selBg);
+        }
+        sf::Text labelText(font, controls::actionName(a), 9);
+        labelText.setFillColor(sel ? sf::Color(255, 230, 150) : sf::Color(180, 190, 215));
+        labelText.setPosition(sf::Vector2f(28.f, ly));
+        rt.draw(labelText);
+
+        sf::Text bindText(font,
+            controls::bindingLabel(prof.actions[static_cast<std::size_t>(a)]), 9);
+        bindText.setFillColor(sel ? sf::Color(255, 230, 150) : sf::Color(120, 220, 160));
+        auto bb = bindText.getLocalBounds();
+        bindText.setPosition(sf::Vector2f(W - 28.f - bb.size.x, ly));
+        rt.draw(bindText);
+        ly += rowH;
+    }
+
+    const bool restoreSel = controls::controlsRowIsRestore(controlsSel, pid) && !controlsCapturing;
+    sf::Text restore(font, "[ Restore Defaults ]", 9);
+    restore.setFillColor(restoreSel ? sf::Color(255, 220, 120) : sf::Color(170, 180, 210));
+    auto rb = restore.getLocalBounds();
+    restore.setPosition(sf::Vector2f(W / 2.f - rb.size.x / 2.f, H - 58.f));
+    rt.draw(restore);
+
+    const bool backSel = controls::controlsRowIsBack(controlsSel, pid) && !controlsCapturing;
+    sf::Text back(font, "[ Back ]", 9);
+    back.setFillColor(backSel ? sf::Color(255, 220, 120) : sf::Color(170, 180, 210));
+    auto bb2 = back.getLocalBounds();
+    back.setPosition(sf::Vector2f(W / 2.f - bb2.size.x / 2.f, H - 40.f));
+    rt.draw(back);
+
+    if(controlsCapturing){
+        std::string capText = "Rebinding: " +
+            std::string(controls::actionName(static_cast<controls::Action>(controlsCaptureAction))) +
+            " — press a new key or button (Esc / East cancels)";
+        sf::Text cap(font, capText, 10);
+        cap.setFillColor(sf::Color(255, 220, 120));
+        auto cb = cap.getLocalBounds();
+        cap.setPosition(sf::Vector2f(W / 2.f - cb.size.x / 2.f, H - 20.f));
+        rt.draw(cap);
+    } else {
+        sf::Text hint(font, "Up/Down: select   Left/Right: profile   Enter: change   Esc: back", 8);
+        hint.setFillColor(sf::Color(120, 130, 160));
+        auto hb = hint.getLocalBounds();
+        hint.setPosition(sf::Vector2f(W / 2.f - hb.size.x / 2.f, H - 20.f));
+        rt.draw(hint);
+    }
 }
 
 void drawFragFloats(sf::RenderTarget& rt,
@@ -747,6 +852,11 @@ void drawTextOverlays(sf::RenderTarget& rt, sf::Font& font, const TextOverlayCon
                           context.musicVolume, context.sfxVolume,
                           context.botEnabled, context.botDifficulty,
                           *context.graphicsSettings, *context.controllers);
+
+    if(context.state == GameState::CONTROLS && context.controllers)
+        drawControlsPanel(rt, font, context.menuAnim, context.controlsProfile, context.controlsSel,
+                          context.controlsScroll, context.controlsCapturing,
+                          context.controlsCaptureAction, *context.controllers);
 
     drawKnockoutOverlay(rt, font, context.knockoutTimer,
                         context.knockoutScorer, context.knockoutEndsMatch);

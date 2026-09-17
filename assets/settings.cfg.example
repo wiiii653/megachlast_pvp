@@ -68,3 +68,29 @@ COPPER_BARS=1
 # Defaults assign the first two connected controllers to P1 and P2.
 P1_CONTROLLER=0
 P2_CONTROLLER=1
+
+# ── Control profiles (Settings -> Controls) ──────────────────────────────────
+# Independent, persistent bindings for Keyboard, Xbox, PS4, PS5 and a generic
+# joystick fallback. Each line is a semicolon-separated list of ACTION:BINDING
+# pairs. Omitting an action keeps its default; NONE leaves it unbound.
+#
+# A BINDING is up to three physical inputs separated by '|':
+#   <int>     keyboard scancode (raw SFML scancode index)
+#   B<n>      joystick button index
+#   AX<n>-/+  joystick axis index with direction (0=X,1=Y,6=PovX,7=PovY)
+#
+# Action tags: P1L/P1R/P1F, P2L/P2R/P2F (gameplay), UP/DOWN/LEFT/RIGHT/CONF/BACK
+# (menu), ML/MR/P2ML/P2MR/AL/AR/START/SBACK (match setup), PAUSE/RESET/MENU
+# (in-game), SETT/DONATE/FS/SAVE/LOAD/BOT/BDIFF/BDBG/PERF/MUTE/VD/VU (keyboard
+# shortcuts). Pad profiles bind MVL/MVR/FIR and the menu/match-setup/game tags.
+# The game writes all profiles on save; edit only what you want to change.
+
+# Defaults (for reference):
+# KEYBOARD_BINDINGS=P1L:0;P1R:3;P1F:127|25|128;P2L:87;P2R:86;P2F:131|51|132;UP:89;DOWN:88;LEFT:87;RIGHT:86;CONF:36;BACK:37;ML:0;MR:3;P2ML:87;P2MR:86;AL:16;AR:4;START:36;SBACK:37;PAUSE:40;RESET:17;MENU:37;SETT:14;DONATE:3;FS:62;SAVE:10;LOAD:11;BOT:1;BDIFF:21;BDBG:6;PERF:15;MUTE:12;VD:49;VU:50
+# XBOX_BINDINGS=MVL:AX0-|AX6-;MVR:AX0+|AX6+;FIR:B0|B4|B5;UP:AX1-|AX7-;DOWN:AX1+|AX7+;LEFT:AX0-|AX6-;RIGHT:AX0+|AX6+;CONF:B0;BACK:B1;ML:AX0-|AX6-;MR:AX0+|AX6+;AL:B4;AR:B5;START:B0|B4|B5;SBACK:B1;PAUSE:B7;RESET:B6;MENU:B1
+# PS4_BINDINGS=MVL:AX0-|AX6-;MVR:AX0+|AX6+;FIR:B0|B4|B5;UP:AX1-|AX7-;DOWN:AX1+|AX7+;LEFT:AX0-|AX6-;RIGHT:AX0+|AX6+;CONF:B0;BACK:B1;ML:AX0-|AX6-;MR:AX0+|AX6+;AL:B4;AR:B5;START:B0|B4|B5;SBACK:B1;PAUSE:B9;RESET:B8;MENU:B1
+# PS5_BINDINGS=MVL:AX0-|AX6-;MVR:AX0+|AX6+;FIR:B0|B4|B5;UP:AX1-|AX7-;DOWN:AX1+|AX7+;LEFT:AX0-|AX6-;RIGHT:AX0+|AX6+;CONF:B0;BACK:B1;ML:AX0-|AX6-;MR:AX0+|AX6+;AL:B4;AR:B5;START:B0|B4|B5;SBACK:B1;PAUSE:B9;RESET:B8;MENU:B1
+# GENERIC_BINDINGS=MVL:AX0-|AX6-;MVR:AX0+|AX6+;FIR:B0|B4|B5;UP:AX1-|AX7-;DOWN:AX1+|AX7+;LEFT:AX0-|AX6-;RIGHT:AX0+|AX6+;CONF:B0;BACK:B1;ML:AX0-|AX6-;MR:AX0+|AX6+;AL:B4;AR:B5;START:B0|B4|B5;SBACK:B1;PAUSE:B7;RESET:B6;MENU:B1
+
+# Example: move P1 left/right to H (scancode 71) and G (scancode 74).
+# KEYBOARD_BINDINGS=P1L:71;P1R:74

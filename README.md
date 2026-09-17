@@ -20,9 +20,17 @@ Controllers:
 - Each player can use a configured controller alongside their keyboard bindings.
 - PS4, PS5, and Xbox controllers are supported through their connected SFML joystick slots.
 - Left stick or D-pad: move left/right; south button, L1, or R1: fire.
-- In menus and Settings: D-pad/left stick navigates, south confirms, east goes back; north opens Settings and west opens Donate from the main menu.
+- In menus and Settings: D-pad/left stick navigates, south confirms, and east goes back.
 - During play: Start pauses/resumes, Select resets the round, and east returns to the menu. South confirms a rematch after Game Over.
 - In Settings, select `P1 Controller` or `P2 Controller` and use Left/Right to choose `OFF` or joystick slot `Joy 1` through `Joy 8` (the first two slots are the defaults).
+
+Remappable controls:
+
+- Open **Settings → Controls** to view and change every binding.
+- Independent profiles are provided for **Keyboard**, **Xbox**, **PlayStation 4**, **PlayStation 5**, and a **Generic** joystick fallback. A player's assigned controller automatically uses the profile that matches its detected family, so PS4 and PS5 layouts (and Start/Select positions) stay correct even for unknown devices.
+- Navigate with Up/Down, switch profiles with Left/Right, press Enter on an action to rebind it (Esc or East cancels), and use `Restore Defaults` to reset the active profile.
+- Bindings apply immediately and are saved with `Save Settings`; they persist in `assets/settings.cfg` (see `assets/settings.cfg.example`). Old settings files load safely and keep the built-in defaults for any new key that is absent.
+- Keyboard bindings use physical scancodes, so they are layout-independent. Rebinding an action makes it exclusive to the new key; the bundled defaults are restored with `Restore Defaults`.
 
 General:
 
@@ -31,6 +39,8 @@ General:
 - O: open settings screen
 - F11: toggle fullscreen
 - Escape: open menu from game screens (quit only when already in menu)
+
+Developer shortcuts (`B`, `V`, `G`, `P`, `M`, `,`, `.`, `K`, `L`, `O`, `D`, `F11`) are also configurable from the Keyboard profile and keep their defaults. The `C` copy-link shortcut on the Donate screen is a fixed convenience shortcut.
 
 Before each match, choose one 12-second round modifier: Shield, Rapid Fire, Spread Shot, or Overdrive. Choose a curated arena (Mirror Maze, Fortress, or Open Reactor) with Q/E. In match setup, P1 uses A/D, P2 uses Left/Right, and Enter starts the match. Escape returns to the menu. Controllers use the stick or D-pad to choose modifiers, P1's L1/R1 to choose the arena, and either controller's south button to start.
 
