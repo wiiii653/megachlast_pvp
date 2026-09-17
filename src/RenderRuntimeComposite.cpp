@@ -33,10 +33,6 @@ void drawPostfxOverlays(sf::RenderTarget& rt, const PostfxContext& context)
 void drawSceneOverlays(sf::RenderTarget& rt, const SceneOverlayContext& context)
 {
     if(context.state == GameState::MENU){
-        sf::RectangleShape overlay(sf::Vector2f(static_cast<float>(W), static_cast<float>(H)));
-        overlay.setFillColor(sf::Color(0, 0, 0, 195));
-        rt.draw(overlay);
-
         float cx = W * 0.5f;
         float cy = H * 0.45f;
         float rx = W * 0.38f;

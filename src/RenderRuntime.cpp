@@ -35,6 +35,45 @@ sf::Color hsvToRgb(float h, float s, float v)
     }
 }
 
+// Hash-based value noise for the title menu's drifting cloud masses.
+float hashVal(float x, float y)
+{
+    float s = std::sin(x * 127.1f + y * 311.7f) * 43758.5453f;
+    return s - std::floor(s);
+}
+
+float vnoise(float x, float y)
+{
+    int xi = static_cast<int>(std::floor(x));
+    int yi = static_cast<int>(std::floor(y));
+    float xf = x - std::floor(x);
+    float yf = y - std::floor(y);
+    float u = xf * xf * (3.f - 2.f * xf);
+    float v = yf * yf * (3.f - 2.f * yf);
+    float a = hashVal(xi,     yi);
+    float b = hashVal(xi + 1, yi);
+    float c = hashVal(xi,     yi + 1);
+    float d = hashVal(xi + 1, yi + 1);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+
+// Thresholded fractal noise -> localized darker cloud forms (0 = none, 1 = dense).
+float cloudField(float wx, float wy, float t2)
+{
+    float nx = wx * 0.006f + t2 * 0.018f;
+    float ny = wy * 0.006f - t2 * 0.012f;
+    // Domain warping for organic, drifting edges.
+    float qx = nx + vnoise(nx * 1.4f, ny * 1.4f) * 0.9f;
+    float qy = ny + vnoise(ny * 1.4f + 7.f, nx * 1.4f) * 0.9f;
+    float n = vnoise(qx, qy) * 0.66f
+            + vnoise(qx * 2.7f, qy * 2.7f) * 0.24f
+            + vnoise(qx * 5.3f, qy * 5.3f) * 0.10f;
+    // High threshold -> only the strongest noise features become clouds, so the
+    // masses stay localized and distinct instead of covering the whole field.
+    float c = clampf((n - 0.60f) / 0.22f, 0.f, 1.f);
+    return c * c * (3.f - 2.f * c); // smoothstep -> distinct masses
+}
+
 void hueToRgb(float h, uint8_t& ro, uint8_t& go, uint8_t& bo)
 {
     float s = 0.85f;
@@ -890,24 +929,35 @@ void drawMenuTitle(sf::RenderTarget& rt, sf::Font& font, float t, int fxLevel)
 
 }
 
+sf::Color evalPlasmaBgColor(bool titleMode, float wx, float wy, float t2)
+{
+    float v =   std::sin(wx * 0.013f + t2 * 1.1f)
+              + std::sin(wy * 0.016f - t2 * 0.7f)
+              + std::sin((wx - wy) * 0.0085f + t2 * 0.5f)
+              + std::sin(std::sqrt(wx*wx + wy*wy) * 0.005f - t2 * 0.9f);
+    v = v * 0.125f + 0.5f;
+    if(!titleMode){
+        // In-game duel field: unchanged reference palette.
+        return sf::Color(
+            static_cast<uint8_t>(6  + v * 28.f),
+            static_cast<uint8_t>(6  + v * 14.f),
+            static_cast<uint8_t>(14 + v * 56.f));
+    }
+    // Title menu: same blue field as the duel, with distinct darker cloud
+    // masses drifting slowly over it.
+    float cloud = cloudField(wx, wy, t2);
+    float dark = 1.f - 0.50f * cloud;
+    return sf::Color(
+        static_cast<uint8_t>(clampf((6.f  + v * 28.f) * dark, 0.f, 255.f)),
+        static_cast<uint8_t>(clampf((6.f  + v * 14.f) * dark, 0.f, 255.f)),
+        static_cast<uint8_t>(clampf((14.f + v * 56.f) * dark, 0.f, 255.f)));
+}
+
 void drawPlasmaBg(sf::RenderTarget& rt, float t, bool titleMode)
 {
     constexpr int STEP = 40;
     const int GXN = W / STEP + 2;
     const int GYN = H / STEP + 2;
-
-    auto evalPlasma = [titleMode](float wx, float wy, float t2) -> sf::Color {
-        float v =   std::sin(wx * 0.013f + t2 * 1.1f)
-                  + std::sin(wy * 0.016f - t2 * 0.7f)
-                  + std::sin((wx - wy) * 0.0085f + t2 * 0.5f)
-                  + std::sin(std::sqrt(wx*wx + wy*wy) * 0.005f - t2 * 0.9f);
-        v = v * 0.125f + 0.5f;
-        const float lift = titleMode ? 1.f : 0.f;
-        return sf::Color(
-            static_cast<uint8_t>(6  + lift * 8.f  + v * (28.f + lift * 18.f)),
-            static_cast<uint8_t>(6  + lift * 8.f  + v * (14.f + lift * 12.f)),
-            static_cast<uint8_t>(14 + lift * 18.f + v * (56.f + lift * 34.f)));
-    };
 
     static sf::VertexArray va(sf::PrimitiveType::Triangles,
                               static_cast<std::size_t>((GXN-1) * (GYN-1) * 6));
@@ -916,10 +966,10 @@ void drawPlasmaBg(sf::RenderTarget& rt, float t, bool titleMode)
         for(int gx = 0; gx < GXN-1; gx++){
             float x0 = gx * STEP, y0 = gy * STEP;
             float x1 = x0 + STEP, y1 = y0 + STEP;
-            sf::Color c00 = evalPlasma(x0, y0, t);
-            sf::Color c10 = evalPlasma(x1, y0, t);
-            sf::Color c01 = evalPlasma(x0, y1, t);
-            sf::Color c11 = evalPlasma(x1, y1, t);
+            sf::Color c00 = evalPlasmaBgColor(titleMode, x0, y0, t);
+            sf::Color c10 = evalPlasmaBgColor(titleMode, x1, y0, t);
+            sf::Color c01 = evalPlasmaBgColor(titleMode, x0, y1, t);
+            sf::Color c11 = evalPlasmaBgColor(titleMode, x1, y1, t);
             va[vi].position = {x0,y0}; va[vi].color = c00; vi++;
             va[vi].position = {x1,y0}; va[vi].color = c10; vi++;
             va[vi].position = {x0,y1}; va[vi].color = c01; vi++;
