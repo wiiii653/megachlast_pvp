@@ -29,7 +29,7 @@ struct InputState {
 using FireFn = void(*)(std::array<Bullet, MAX_BULLETS>&, const Player&, int);
 using SpawnThrusterFn = std::function<void(std::array<Particle, MAX_PARTICLES>&, RNG&, float, float, int)>;
 
-void syncPlayingKeyboard(InputState& in);
+void syncPlayingKeyboard(InputState& in, const controls::Profile& keyboard);
 void syncPlayingControllers(InputState& in, const ControllerSettings& controllers);
 
 void setFocus(InputState& in, bool focused);

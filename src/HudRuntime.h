@@ -43,6 +43,11 @@ struct TextOverlayContext {
     const GraphicsSettings* graphicsSettings = nullptr;
     const ControllerSettings* controllers = nullptr;
     const MatchSetup* matchSetup = nullptr;
+    int controlsProfile = 0;
+    int controlsSel = 0;
+    int controlsScroll = 0;
+    bool controlsCapturing = false;
+    int controlsCaptureAction = 0;
     std::function<void()> drawMenuTitle;
 };
 
@@ -90,6 +95,15 @@ void drawSettingsPanel(sf::RenderTarget& rt,
                        bool botEnabled,
                        BotDifficulty botDifficulty,
                        const GraphicsSettings& graphicsSettings,
+                       const ControllerSettings& controllers);
+void drawControlsPanel(sf::RenderTarget& rt,
+                       sf::Font& font,
+                       float menuAnim,
+                       int controlsProfile,
+                       int controlsSel,
+                       int controlsScroll,
+                       bool controlsCapturing,
+                       int controlsCaptureAction,
                        const ControllerSettings& controllers);
 void drawFragFloats(sf::RenderTarget& rt,
                     sf::Font& font,

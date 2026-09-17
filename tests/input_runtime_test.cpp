@@ -1,26 +1,39 @@
 #include "InputRuntime.h"
+#include "ControlsInput.h"
 #include "ControllerInput.h"
 
 #include <iostream>
 
+namespace {
+
+int failures = 0;
+
+void check(bool ok, const char* message)
+{
+    if(!ok){
+        std::cerr << "FAIL: " << message << '\n';
+        ++failures;
+    }
+}
+
+} // namespace
+
 int main()
 {
-    int failures = 0;
-    auto check = [&](bool ok, const char* message){
-        if(!ok){
-            std::cerr << "FAIL: " << message << '\n';
-            ++failures;
-        }
-    };
+    const controls::Profile keyboard =
+        controls::defaultProfile(controls::ProfileId::Keyboard);
+
     GameState state = GameState::MATCH_SETUP;
     MatchSetup setup{};
     int starts = 0;
-    auto press = [&](sf::Keyboard::Scancode scancode){
+    auto pressWith = [&](const controls::Profile& profile, sf::Keyboard::Scancode scancode){
         sf::Event::KeyPressed event{};
         event.scancode = scancode;
         if(scancode == sf::Keyboard::Scan::Escape) event.code = sf::Keyboard::Key::Escape;
-        input_runtime::handleMatchSetupKeyPressed(event, state, setup, [&]{ ++starts; });
+        input_runtime::handleMatchSetupKeyPressed(event, state, setup, profile,
+                                                 [&]{ ++starts; });
     };
+    auto press = [&](sf::Keyboard::Scancode scancode){ pressWith(keyboard, scancode); };
 
     press(sf::Keyboard::Scan::D);
     check(setup.p1_modifier == RoundModifier::RAPID && setup.p2_modifier == RoundModifier::RAPID,
@@ -46,12 +59,50 @@ int main()
     press(sf::Keyboard::Scan::Escape);
     check(state == GameState::MENU && starts == 1, "Escape returns to menu without starting");
 
+    // Rebind P1 modifier left to J: the new key works, the old one stops.
+    controls::Profile rebound = keyboard;
+    controls::bindPrimary(rebound, controls::Action::SetupModLeft,
+                          controls::keyInput(sf::Keyboard::Scan::J));
+    state = GameState::MATCH_SETUP;
+    setup = {};
+    sf::Event::KeyPressed jEvent{};
+    jEvent.scancode = sf::Keyboard::Scan::J;
+    input_runtime::handleMatchSetupKeyPressed(jEvent, state, setup, rebound, []{});
+    check(setup.p1_modifier == RoundModifier::OVERDRIVE,
+          "rebound modifier key drives P1's modifier");
+    pressWith(rebound, sf::Keyboard::Scan::A);
+    check(setup.p1_modifier == RoundModifier::OVERDRIVE,
+          "old modifier key stops working after rebind");
+    // Rebinding in one profile must not affect another profile.
+    controls::Profile ps4 = controls::defaultProfile(controls::ProfileId::Ps4);
+    controls::Profile xbox = controls::defaultProfile(controls::ProfileId::Xbox);
+    check(ps4.actions[static_cast<std::size_t>(controls::Action::GamePause)].contains(
+              controls::buttonInput(9)),
+          "PS4 default pause uses the PS Start button (9)");
+    check(xbox.actions[static_cast<std::size_t>(controls::Action::GamePause)].contains(
+              controls::buttonInput(7)),
+          "Xbox default pause uses the Xbox Start button (7)");
+    controls::bindPrimary(ps4, controls::Action::GamePause, controls::buttonInput(7));
+    check(ps4.actions[static_cast<std::size_t>(controls::Action::GamePause)].contains(
+              controls::buttonInput(7)),
+          "PS4 pause rebind applied");
+    check(!ps4.actions[static_cast<std::size_t>(controls::Action::GamePause)].contains(
+              controls::buttonInput(9)),
+          "PS4 default start cleared after rebind");
+    check(xbox.actions[static_cast<std::size_t>(controls::Action::GamePause)].contains(
+              controls::buttonInput(7)) &&
+          !xbox.actions[static_cast<std::size_t>(controls::Action::GamePause)].contains(
+              controls::buttonInput(9)),
+          "Xbox profile untouched by the PS4 rebind");
+
     check(controller_input::familyForName("Xbox Wireless Controller") == controller_input::Family::Xbox,
           "Xbox controllers are identified");
-    check(controller_input::familyForName("DualSense Wireless Controller") == controller_input::Family::PlayStation,
+    check(controller_input::familyForName("DualSense Wireless Controller") == controller_input::Family::Ps5,
           "PS5 controllers are identified");
-    check(controller_input::familyForName("Wireless Controller (PS4)") == controller_input::Family::PlayStation,
+    check(controller_input::familyForName("Wireless Controller (PS4)") == controller_input::Family::Ps4,
           "PS4 controllers are identified");
+    check(controller_input::familyForName("Some Generic Pad") == controller_input::Family::Generic,
+          "unknown controllers fall back to generic");
 
     int menuSel = 0;
     int menuAction = -1;
@@ -59,7 +110,7 @@ int main()
         sf::Event::KeyPressed event{};
         event.scancode = scancode;
         input_runtime::handleStateTransitionKeyPressed(
-            event, GameState::MENU, menuSel,
+            event, GameState::MENU, menuSel, keyboard,
             [&]{ menuAction = 0; }, [&]{ menuAction = 1; }, [&]{ menuAction = 2; },
             []{}, []{}, []{}, []{});
     };
@@ -70,5 +121,6 @@ int main()
     menuPress(sf::Keyboard::Scan::Right);
     menuPress(sf::Keyboard::Scan::Enter);
     check(menuSel == 2 && menuAction == 2, "menu selection reaches Donate");
+
     return failures == 0 ? 0 : 1;
 }

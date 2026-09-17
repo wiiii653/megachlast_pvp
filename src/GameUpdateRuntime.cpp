@@ -1,5 +1,6 @@
 #include "GameUpdateRuntime.h"
 
+#include "ControlsInput.h"
 #include "ControllerInput.h"
 #include "GameConstants.h"
 #include "ProceduralSynth.h"
@@ -20,36 +21,34 @@ float clampf(float v, float lo, float hi)
 
 } // namespace
 
-void syncPlayingKeyboard(InputState& in)
+void syncPlayingKeyboard(InputState& in, const controls::Profile& keyboard)
 {
     if(!in.focused) return;
-    in.kA = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::A);
-    in.kD = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::D);
-    in.kLCtrl = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::LControl);
-    in.kZ = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::Z);
-    in.kLShift = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::LShift);
-    in.kLeft = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::Left);
-    in.kRight = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::Right);
-    in.kRCtrl = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::RControl);
-    in.kSlash = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::Slash);
-    in.kRShift = sf::Keyboard::isKeyPressed(sf::Keyboard::Scan::RShift);
+    using controls::Action;
+    in.kA = controls::actionKeyDown(keyboard, Action::KbP1Left);
+    in.kD = controls::actionKeyDown(keyboard, Action::KbP1Right);
+    const bool p1Fire = controls::actionKeyDown(keyboard, Action::KbP1Fire);
+    in.kLCtrl = p1Fire;
+    in.kZ = p1Fire;
+    in.kLShift = p1Fire;
+    in.kLeft = controls::actionKeyDown(keyboard, Action::KbP2Left);
+    in.kRight = controls::actionKeyDown(keyboard, Action::KbP2Right);
+    const bool p2Fire = controls::actionKeyDown(keyboard, Action::KbP2Fire);
+    in.kRCtrl = p2Fire;
+    in.kSlash = p2Fire;
+    in.kRShift = p2Fire;
 }
 
 void syncPlayingControllers(InputState& in, const ControllerSettings& controllers)
 {
-    auto applyController = [](int joystick, bool& left, bool& right, bool& fire){
-        if(joystick < 0 || joystick >= static_cast<int>(sf::Joystick::Count) ||
-           !sf::Joystick::isConnected(static_cast<unsigned int>(joystick))) return;
-
+    auto applyController = [&](int joystick, bool& left, bool& right, bool& fire){
+        if(!controls::isConnected(joystick)) return;
+        const controls::Profile& pad = controls::profileForJoystick(controllers.profiles, joystick);
         const unsigned int id = static_cast<unsigned int>(joystick);
-        constexpr float deadZone = 35.f;
-        const float x = sf::Joystick::hasAxis(id, sf::Joystick::Axis::X)
-                          ? sf::Joystick::getAxisPosition(id, sf::Joystick::Axis::X) : 0.f;
-        const float povX = sf::Joystick::hasAxis(id, sf::Joystick::Axis::PovX)
-                             ? sf::Joystick::getAxisPosition(id, sf::Joystick::Axis::PovX) : 0.f;
-        left  = left  || x < -deadZone || povX < -deadZone;
-        right = right || x > deadZone || povX > deadZone;
-        fire = fire || controller_input::firePressed(id);
+        using controls::Action;
+        left  = left  || controls::actionPadActive(id, pad, Action::PadMoveLeft);
+        right = right || controls::actionPadActive(id, pad, Action::PadMoveRight);
+        fire  = fire  || controls::actionPadActive(id, pad, Action::PadFire);
     };
 
     applyController(controllers.p1_joystick, in.kA, in.kD, in.kLCtrl);

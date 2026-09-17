@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ControlsConfig.h"
 #include "GameConstants.h"
 
 #include <cstdint>
@@ -18,7 +19,7 @@ struct Config {
 
 enum class BotDifficulty : uint8_t { EASY=0, MEDIUM=1, HARD=2 };
 enum class PerfLevel : uint8_t { HIGH=0, MEDIUM=1, LOW=2, ULTRA=3 };
-enum class GameState : uint8_t { MENU=0, PLAYING=1, PAUSED=2, GAME_OVER=3, COUNTDOWN=4, SETTINGS=5, DONATE=6, MATCH_SETUP=7 };
+enum class GameState : uint8_t { MENU=0, PLAYING=1, PAUSED=2, GAME_OVER=3, COUNTDOWN=4, SETTINGS=5, DONATE=6, MATCH_SETUP=7, CONTROLS=8 };
 
 struct MatchState {
     int p1_round_wins = 0;
@@ -84,6 +85,10 @@ struct ControllerSettings {
     // SFML joystick slots are zero-based. -1 leaves that player keyboard-only.
     int p1_joystick = 0;
     int p2_joystick = 1;
+    // Independent binding profiles for Keyboard, Xbox, PS4, PS5 and a
+    // generic joystick fallback. The selected player's assigned device uses
+    // the profile matching its detected family.
+    controls::Profiles profiles;
 };
 
 struct Bullet {

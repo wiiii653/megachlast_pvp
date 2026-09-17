@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ControlsConfig.h"
 #include "GameUpdateRuntime.h"
 #include "GameTypes.h"
 
@@ -30,17 +31,23 @@ enum SettingsOption {
     OPT_COPPER_BARS = 15,
     OPT_P1_CONTROLLER = 16,
     OPT_P2_CONTROLLER = 17,
-    OPT_SAVE = 18,
-    OPT_LOAD = 19,
-    OPT_COUNT = 20,
+    OPT_CONTROLS = 18,
+    OPT_SAVE = 19,
+    OPT_LOAD = 20,
+    OPT_COUNT = 21,
 };
 
-void setMovementKeyPressed(sf::Keyboard::Scancode sc, game_update_runtime::InputState& input);
-void setMovementKeyReleased(sf::Keyboard::Scancode sc, game_update_runtime::InputState& input);
+void setMovementKeyPressed(sf::Keyboard::Scancode sc,
+                           game_update_runtime::InputState& input,
+                           const controls::Profile& keyboard);
+void setMovementKeyReleased(sf::Keyboard::Scancode sc,
+                            game_update_runtime::InputState& input,
+                            const controls::Profile& keyboard);
 
 bool handleMatchSetupKeyPressed(const sf::Event::KeyPressed& kp,
                                 GameState& state,
                                 MatchSetup& setup,
+                                const controls::Profile& keyboard,
                                 const std::function<void()>& startMatch);
 
 bool handleSettingsKeyPressed(const sf::Event::KeyPressed& kp,
@@ -53,19 +60,38 @@ bool handleSettingsKeyPressed(const sf::Event::KeyPressed& kp,
                               float& sfxVolume,
                               GraphicsSettings& graphicsSettings,
                               ControllerSettings& controllers,
+                              int& controlsProfile,
+                              int& controlsSel,
+                              int& controlsScroll,
+                              bool& controlsCapturing,
+                              int& controlsCaptureAction,
                               const std::string& cfgPath,
                               const std::function<void(const std::string&)>& saveSettings,
                               const std::function<bool(const std::string&)>& loadSettings,
                               const std::function<void()>& applyGraphicsSettings);
 
+bool handleControlsKeyPressed(const sf::Event::KeyPressed& kp,
+                              GameState& state,
+                              int& controlsProfile,
+                              int& controlsSel,
+                              int& controlsScroll,
+                              bool& controlsCapturing,
+                              int& controlsCaptureAction,
+                              ControllerSettings& controllers,
+                              const std::string& cfgPath,
+                              const std::function<void(const std::string&)>& saveSettings,
+                              const std::function<bool(const std::string&)>& loadSettings);
+
 bool handleDonateKeyPressed(const sf::Event::KeyPressed& kp,
                             GameState& state,
                             float& donateMsgTimer,
-                            int& donateSel);
+                            int& donateSel,
+                            const controls::Profile& keyboard);
 
 void handleStateTransitionKeyPressed(const sf::Event::KeyPressed& kp,
                                      GameState state,
                                      int& menuSel,
+                                     const controls::Profile& keyboard,
                                      const std::function<void()>& startCountdownRound,
                                      const std::function<void()>& openSettings,
                                      const std::function<void()>& openDonate,
@@ -75,6 +101,7 @@ void handleStateTransitionKeyPressed(const sf::Event::KeyPressed& kp,
                                      const std::function<void()>& rematchCountdownRound);
 
 void handleRuntimeToggleKeyPressed(const sf::Event::KeyPressed& kp,
+                                   const controls::Profile& keyboard,
                                    bool& botDebug,
                                    bool& botEnabled,
                                    BotDifficulty& botDifficulty,
@@ -82,6 +109,7 @@ void handleRuntimeToggleKeyPressed(const sf::Event::KeyPressed& kp,
 
 void handleGlobalControlKeyPressed(const sf::Event::KeyPressed& kp,
                                    GameState& state,
+                                   const controls::Profile& keyboard,
                                    bool& muted,
                                    float& musicVolume,
                                    float& sfxVolume,
@@ -113,6 +141,13 @@ struct FrameContext {
     bool* muted = nullptr;
     bool* isFullscreen = nullptr;
     game_update_runtime::InputState* input = nullptr;
+
+    // Controls submenu state.
+    int* controlsProfile = nullptr;
+    int* controlsSel = nullptr;
+    int* controlsScroll = nullptr;
+    bool* controlsCapturing = nullptr;
+    int* controlsCaptureAction = nullptr;
 
     const std::string* assetsDir = nullptr;
     const std::string* cfgPath = nullptr;

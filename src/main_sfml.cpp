@@ -40,6 +40,7 @@
 #include "GraphicsRuntime.h"
 #include "HudRuntime.h"
 #include "InputRuntime.h"
+#include "ControlsInput.h"
 #include "ProjectileRuntime.h"
 #include "RenderRuntime.h"
 #include "RoundRuntime.h"
@@ -164,6 +165,8 @@ int main(int argc, char** argv){
 
     // ── Settings file ────────────────────────────────────────────────────────
     g_runtime.assets_dir = cli.assetsDir;
+    // Start from the built-in control bindings; the settings file may override.
+    g_controllers.profiles = controls::defaultProfiles();
     std::string cfgpath = app_runtime::settingsPath(g_runtime);
     auto save_settings_file = [&](const std::string& path){
         settings_io::saveSettingsFile(path, cfg, g_runtime.bot_enabled, g_runtime.bot_difficulty,
@@ -277,6 +280,12 @@ int main(int argc, char** argv){
     std::array<FragFloat, MAX_FRAG_FLOATS> fragFloats{};
 
     int settings_sel = 0;
+
+    int controls_profile = 0;
+    int controls_sel = 0;
+    int controls_scroll = 0;
+    bool controls_capturing = false;
+    int controls_capture_action = 0;
 
     game_update_runtime::InputState input{};
     effects_runtime::Context effectsContext{};
@@ -490,6 +499,11 @@ int main(int argc, char** argv){
     inputContext.muted = &g_audio.muted;
     inputContext.isFullscreen = &isFullscreen;
     inputContext.input = &input;
+    inputContext.controlsProfile = &controls_profile;
+    inputContext.controlsSel = &controls_sel;
+    inputContext.controlsScroll = &controls_scroll;
+    inputContext.controlsCapturing = &controls_capturing;
+    inputContext.controlsCaptureAction = &controls_capture_action;
     inputContext.assetsDir = &g_runtime.assets_dir;
     inputContext.cfgPath = &cfgpath;
     inputContext.playMenuMusic = playMenuMusic;
@@ -740,6 +754,11 @@ int main(int argc, char** argv){
             hudCtx.boardSeed = g_board_state.board_seed;
             hudCtx.fightFlashTimer = fightFlashTimer;
             hudCtx.settingsSel = settings_sel;
+            hudCtx.controlsProfile = controls_profile;
+            hudCtx.controlsSel = controls_sel;
+            hudCtx.controlsScroll = controls_scroll;
+            hudCtx.controlsCapturing = controls_capturing;
+            hudCtx.controlsCaptureAction = controls_capture_action;
             hudCtx.cfg = &cfg;
             hudCtx.musicVolume = g_audio.music_volume;
             hudCtx.sfxVolume = g_audio.sfx_volume;

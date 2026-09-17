@@ -8,6 +8,31 @@
 #include <stdexcept>
 
 namespace settings_io {
+namespace {
+
+const char* profileFileTag(controls::ProfileId id)
+{
+    switch(id){
+        case controls::ProfileId::Keyboard: return "KEYBOARD_BINDINGS";
+        case controls::ProfileId::Xbox:     return "XBOX_BINDINGS";
+        case controls::ProfileId::Ps4:      return "PS4_BINDINGS";
+        case controls::ProfileId::Ps5:      return "PS5_BINDINGS";
+        case controls::ProfileId::Generic:  return "GENERIC_BINDINGS";
+        case controls::ProfileId::Count:    break;
+    }
+    return "";
+}
+
+controls::ProfileId profileIdFromTag(const std::string& tag)
+{
+    for(int i = 0; i < static_cast<int>(controls::ProfileId::Count); ++i){
+        const auto id = static_cast<controls::ProfileId>(i);
+        if(tag == profileFileTag(id)) return id;
+    }
+    return controls::ProfileId::Count; // invalid
+}
+
+} // namespace
 
 void saveSettingsFile(const std::string& path,
                       const Config& cfg,
@@ -46,6 +71,13 @@ void saveSettingsFile(const std::string& path,
         << "COPPER_BARS="    << (graphics.copper_bars_enabled ? 1 : 0) << "\n"
         << "P1_CONTROLLER=" << controllers.p1_joystick << "\n"
         << "P2_CONTROLLER=" << controllers.p2_joystick << "\n";
+
+    for(int i = 0; i < static_cast<int>(controls::ProfileId::Count); ++i){
+        const auto id = static_cast<controls::ProfileId>(i);
+        const bool isKeyboard = (id == controls::ProfileId::Keyboard);
+        ofs << profileFileTag(id) << "="
+            << controls::encodeProfile(controllers.profiles.profile(id), isKeyboard) << "\n";
+    }
 
     auto writeOverride = [&](const char* key, float value){
         if(value >= 0.f) ofs << key << "=" << value << "\n";
@@ -183,6 +215,18 @@ bool loadSettingsFile(const std::string& path,
             }
             else if(key=="P1_CONTROLLER") controllers.p1_joystick = asInt(-1, 7);
             else if(key=="P2_CONTROLLER") controllers.p2_joystick = asInt(-1, 7);
+            else if(key=="KEYBOARD_BINDINGS" || key=="XBOX_BINDINGS" ||
+                    key=="PS4_BINDINGS" || key=="PS5_BINDINGS" || key=="GENERIC_BINDINGS"){
+                const auto pid = profileIdFromTag(key);
+                if(pid != controls::ProfileId::Count){
+                    const bool isKeyboard = (pid == controls::ProfileId::Keyboard);
+                    controls::Profile parsed = controllers.profiles.profile(pid);
+                    if(controls::decodeProfile(val, parsed, isKeyboard))
+                        controllers.profiles.profile(pid) = parsed;
+                    else
+                        std::fprintf(stderr, "Ignoring malformed %s\n", key.c_str());
+                }
+            }
         } catch(...) {
             std::fprintf(stderr, "Ignoring invalid setting %s=%s\n", key.c_str(), val.c_str());
         }
