@@ -64,15 +64,15 @@ This project requires **SFML 3.x**.
 - Cross Platform CI builds static SFML from the same upstream revision on all three platforms.
 
 ```bash
-cmake -S . -B build_sfml3
-cmake --build build_sfml3 -j
+cmake -S . -B build
+cmake --build build -j
 ```
 
 For a basic install layout (without runtime dependency bundling), use:
 
 ```bash
-cmake --install build_sfml3 --prefix release/megachlast_pvp
-cpack --config build_sfml3/CPackConfig.cmake
+cmake --install build --prefix release/megachlast_pvp
+cpack --config build/CPackConfig.cmake
 ```
 
 On Windows, use `--config Release` with `cmake --install` and `-C Release` with `cpack`.
@@ -100,16 +100,16 @@ Install/provide SFML 3 through a package manager such as vcpkg. If using vcpkg:
 
 ```bash
 vcpkg install sfml
-cmake -S . -B build_sfml3 \
+cmake -S . -B build \
   -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
-cmake --build build_sfml3 -j
-ctest --test-dir build_sfml3 --output-on-failure
+cmake --build build -j
+ctest --test-dir build --output-on-failure
 ```
 
 If SFML is installed in a standard system prefix, the default configure command also works:
 
 ```bash
-cmake -S . -B build_sfml3
+cmake -S . -B build
 ```
 
 ### macOS
@@ -118,10 +118,10 @@ The default configure command downloads SFML when needed. Alternatively, use vcp
 
 ```bash
 vcpkg install sfml
-cmake -S . -B build_sfml3 \
+cmake -S . -B build \
   -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
-cmake --build build_sfml3 -j
-ctest --test-dir build_sfml3 --output-on-failure
+cmake --build build -j
+ctest --test-dir build --output-on-failure
 ```
 
 ### Windows 10/11 (MSVC)
@@ -130,9 +130,9 @@ Use a VS Developer PowerShell; CMake can download SFML automatically. Alternativ
 
 ```powershell
 vcpkg install sfml:x64-windows
-cmake -S . -B build_sfml3 -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
-cmake --build build_sfml3 --config Release --parallel
-ctest --test-dir build_sfml3 --build-config Release --output-on-failure
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake --build build --config Release --parallel
+ctest --test-dir build --build-config Release --output-on-failure
 ```
 
 The executable links `Psapi` on Windows for perf logging support.
@@ -141,10 +141,10 @@ The executable links `Psapi` on Windows for perf logging support.
 
 ```bash
 # From project root (assets/ must be in CWD):
-./build_sfml3/megablast_pvp_sfml
+./build/megablast_pvp
 
 # Or via CMake:
-cmake --build build_sfml3 --target run
+cmake --build build --target run
 ```
 
 ## Early Access
@@ -183,10 +183,10 @@ Linux graphics fallback profiles:
 If launch logs mention `failed to load driver: nvidia-drm`, try:
 
 ```bash
-./build_sfml3/megablast_pvp_sfml --gl-info --gl-profile clean
-./build_sfml3/megablast_pvp_sfml --gl-info --gl-profile nvidia
-./build_sfml3/megablast_pvp_sfml --gl-info --gl-profile dri3-off
-./build_sfml3/megablast_pvp_sfml --gl-info --gl-profile software
+./build/megablast_pvp --gl-info --gl-profile clean
+./build/megablast_pvp --gl-info --gl-profile nvidia
+./build/megablast_pvp --gl-info --gl-profile dri3-off
+./build/megablast_pvp --gl-info --gl-profile software
 ```
 
 Keyboard shortcuts:

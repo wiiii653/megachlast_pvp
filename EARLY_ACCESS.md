@@ -21,9 +21,9 @@ This document defines the minimum quality bar and release process for Early Acce
 ## Pre-Release Checklist
 
 1. Run local sanity checks:
-   - `cmake -S . -B build_sfml3`
-   - `cmake --build build_sfml3 -j`
-   - `ctest --test-dir build_sfml3 --output-on-failure`
+   - `cmake -S . -B build`
+   - `cmake --build build -j`
+   - `ctest --test-dir build --output-on-failure`
 2. Ensure cross-platform CI workflow is green. Cross Platform CI obtains SFML 3.0.1 externally from upstream on Linux/macOS and vcpkg on Windows. Check [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for outstanding failures.
 3. Verify README setup/run commands are still accurate.
 4. Verify assets required by runtime are present in `assets/`.

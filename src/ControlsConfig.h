@@ -449,7 +449,7 @@ inline bool parseInput(const std::string& tokenIn, Input& out)
 
 inline bool decodeActionBinding(const std::string& text, ActionBinding& out)
 {
-    out = {};
+    out.clear();
     std::size_t start = 0;
     int slot = 0;
     while(start <= text.size() && slot < 3){
