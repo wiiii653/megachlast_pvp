@@ -5,7 +5,7 @@ Repository guidance for planning and coding agents working on Megachlast PvP.
 ## Repo Context
 
 - This is a C++/SFML 3 project.
-- Main build flow is CMake with a `build_sfml3` directory.
+- Main build flow is CMake with a `build` directory.
 - The game runs from the project root with `assets/` in the current working directory.
 - The repo may already contain unrelated local edits. Do not revert or overwrite them unless the user explicitly asks.
 - Vendored SFML lives under `SFML-3.0.1/`; treat it as third-party code unless the task explicitly targets it.
@@ -32,14 +32,14 @@ Repository guidance for planning and coding agents working on Megachlast PvP.
 Use the project’s documented build flow:
 
 ```bash
-cmake -S . -B build_sfml3
-cmake --build build_sfml3 -j
+cmake -S . -B build
+cmake --build build -j
 ```
 
 Useful checks:
 
 ```bash
-ctest --test-dir build_sfml3 --output-on-failure
+ctest --test-dir build --output-on-failure
 ```
 
 If a change affects runtime behavior, verify the executable from the repo root so `assets/` resolves correctly.

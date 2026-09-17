@@ -17,7 +17,7 @@ install_manifest.txt
 
 # --- Native build artifacts ---
 SFML-3.0.1/
-megablast_pvp_sfml*
+megablast_pvp*
 *.o
 *.obj
 *.a

@@ -55,7 +55,7 @@ endfunction()
 
 enable_testing()
 
-add_executable(megablast_pvp_sfml
+add_executable(megablast_pvp
     src/AppRuntime.cpp
     src/AssetRuntime.cpp
     src/BoardRuntime.cpp
@@ -82,7 +82,7 @@ add_library(settings_io STATIC src/SettingsIO.cpp)
 add_library(audio_runtime STATIC src/AudioRuntime.cpp)
 add_library(bot_controller STATIC src/BotController.cpp)
 add_library(render_runtime STATIC src/RenderRuntime.cpp src/RenderRuntimeComposite.cpp)
-configure_project_target(megablast_pvp_sfml)
+configure_project_target(megablast_pvp)
 configure_project_target(procedural_synth)
 configure_project_target(arena_layout)
 configure_project_target(particles)
@@ -133,7 +133,7 @@ if(SFML_PROVIDER STREQUAL "FETCH" OR NOT SFML_FOUND)
         GIT_TAG 016bea9491ccafc3529019fe1d403885a8b3a6ae)
     FetchContent_MakeAvailable(SFML)
 endif()
-target_link_libraries(megablast_pvp_sfml PRIVATE procedural_synth arena_layout particles settings_io audio_runtime bot_controller render_runtime SFML::Graphics SFML::Window SFML::System SFML::Audio)
+target_link_libraries(megablast_pvp PRIVATE procedural_synth arena_layout particles settings_io audio_runtime bot_controller render_runtime SFML::Graphics SFML::Window SFML::System SFML::Audio)
 target_link_libraries(arena_layout_test PRIVATE arena_layout)
 target_link_libraries(particles_test PRIVATE particles)
 target_link_libraries(settings_file_integration_test PRIVATE settings_io)
@@ -150,9 +150,9 @@ target_link_libraries(render_runtime PUBLIC SFML::Graphics)
 target_link_libraries(audio_runtime PUBLIC SFML::Audio)
 target_link_libraries(procedural_synth   PUBLIC SFML::Audio)
 if(WIN32)
-    target_link_libraries(megablast_pvp_sfml PRIVATE Psapi)
+    target_link_libraries(megablast_pvp PRIVATE Psapi)
 endif()
-target_include_directories(megablast_pvp_sfml PRIVATE ${CMAKE_BINARY_DIR}/generated)
+target_include_directories(megablast_pvp PRIVATE ${CMAKE_BINARY_DIR}/generated)
 target_include_directories(procedural_synth PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(arena_layout PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(particles PUBLIC ${CMAKE_SOURCE_DIR}/src)
@@ -161,17 +161,17 @@ target_include_directories(audio_runtime PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(bot_controller PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(render_runtime PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
-add_test(NAME cli_help COMMAND megablast_pvp_sfml --help)
-add_test(NAME cli_invalid_flag COMMAND megablast_pvp_sfml --bad-flag)
+add_test(NAME cli_help COMMAND megablast_pvp --help)
+add_test(NAME cli_invalid_flag COMMAND megablast_pvp --bad-flag)
 set_tests_properties(cli_invalid_flag PROPERTIES WILL_FAIL TRUE)
-add_test(NAME cli_missing_perf_value COMMAND megablast_pvp_sfml --perf)
+add_test(NAME cli_missing_perf_value COMMAND megablast_pvp --perf)
 set_tests_properties(cli_missing_perf_value PROPERTIES WILL_FAIL TRUE)
-add_test(NAME smoke_test COMMAND megablast_pvp_sfml --smoke-test --assets-dir ${CMAKE_SOURCE_DIR}/assets)
+add_test(NAME smoke_test COMMAND megablast_pvp --smoke-test --assets-dir ${CMAKE_SOURCE_DIR}/assets)
 
 # Convenience run target (launches from project root so assets/ is found)
 add_custom_target(run
-    COMMAND $<TARGET_FILE:megablast_pvp_sfml>
-    DEPENDS megablast_pvp_sfml
+    COMMAND $<TARGET_FILE:megablast_pvp>
+    DEPENDS megablast_pvp
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Running Megachlast PvP..."
 )
@@ -179,7 +179,7 @@ add_custom_target(run
 # Portable install/package layout: executable and assets share one directory
 # so the runtime's default relative assets path works on every platform.
 include(GNUInstallDirs)
-install(TARGETS megablast_pvp_sfml
+install(TARGETS megablast_pvp
     RUNTIME DESTINATION .
     BUNDLE DESTINATION .)
 install(DIRECTORY assets/ DESTINATION assets
