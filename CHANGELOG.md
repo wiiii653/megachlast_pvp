@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Reworked the title-menu plasma background to match the in-game blue field, with distinct darker cloud masses drifting over it.
+- Fixed the Escape key (and the controller east button) as the back/return action from Settings, Controls, and Donate, while keeping Escape returning to the menu from gameplay and quitting from the main menu.
 - Fixed CI dependency setup: install FreeType on Linux and explicitly build shared SFML on Linux/macOS.
 - Fixed SFML dependency propagation to library consumers and added a missing standard header exposed by MSVC.
 - Made the secondary CI workflow build and test Release consistently, including multi-configuration Windows generators.

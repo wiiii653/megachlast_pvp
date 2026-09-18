@@ -84,6 +84,9 @@ void drawAllBarriers(sf::RenderTarget& rt,
                      float t);
 void drawMenuTitle(sf::RenderTarget& rt, sf::Font& font, float t, int fxLevel);
 void drawPlasmaBg(sf::RenderTarget& rt, float t, bool titleMode = false);
+// Per-pixel plasma color. titleMode shares the in-game blue palette and adds
+// darker drifting cloud masses; the non-title path is the exact in-game field.
+sf::Color evalPlasmaBgColor(bool titleMode, float wx, float wy, float t);
 void drawCopperBars(sf::RenderTarget& rt, float t);
 void drawIngameElements(sf::RenderTarget& rt, const IngameElementsContext& context);
 bool isPostfxDisabled(bool noPostfx, const GraphicsSettings& graphicsSettings, GameState state, int fxLevel);

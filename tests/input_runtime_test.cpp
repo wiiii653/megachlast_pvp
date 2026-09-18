@@ -122,5 +122,82 @@ int main()
     menuPress(sf::Keyboard::Scan::Enter);
     check(menuSel == 2 && menuAction == 2, "menu selection reaches Donate");
 
+    // Escape is the back/return action from the menu screens. Settings and
+    // Donate return to the menu; Controls steps back to Settings.
+    {
+        GameState settingsState = GameState::SETTINGS;
+        int settingsSel = 0;
+        Config cfg{};
+        bool botEnabled = false;
+        BotDifficulty botDifficulty = BotDifficulty::EASY;
+        float musicVolume = 50.f;
+        float sfxVolume = 50.f;
+        GraphicsSettings graphicsSettings{};
+        ControllerSettings controllers;
+        controllers.profiles = controls::defaultProfiles();
+        int controlsProfile = 0;
+        int controlsSel = 0;
+        int controlsScroll = 0;
+        bool controlsCapturing = false;
+        int controlsCaptureAction = static_cast<int>(controls::Action::None);
+        int saves = 0;
+        int loads = 0;
+        sf::Event::KeyPressed esc{};
+        esc.scancode = sf::Keyboard::Scan::Escape;
+        esc.code = sf::Keyboard::Key::Escape;
+        input_runtime::handleSettingsKeyPressed(
+            esc, settingsState, settingsSel, cfg, botEnabled, botDifficulty,
+            musicVolume, sfxVolume, graphicsSettings, controllers,
+            controlsProfile, controlsSel, controlsScroll, controlsCapturing,
+            controlsCaptureAction, "settings.cfg",
+            [&](const std::string&){ ++saves; }, [&](const std::string&){ ++loads; return true; },
+            []{});
+        check(settingsState == GameState::MENU, "Escape returns to the menu from Settings");
+        check(saves == 0 && loads == 0, "Escape from Settings only navigates back");
+
+        GameState controlsState = GameState::CONTROLS;
+        input_runtime::handleControlsKeyPressed(
+            esc, controlsState, controlsProfile, controlsSel, controlsScroll,
+            controlsCapturing, controlsCaptureAction, controllers, "settings.cfg",
+            [&](const std::string&){ ++saves; }, [&](const std::string&){ ++loads; return true; });
+        check(controlsState == GameState::SETTINGS, "Escape returns to Settings from Controls");
+
+        GameState donateState = GameState::DONATE;
+        float donateMsgTimer = 0.f;
+        int donateSel = 0;
+        input_runtime::handleDonateKeyPressed(esc, donateState, donateMsgTimer, donateSel, keyboard);
+        check(donateState == GameState::MENU, "Escape returns to the menu from Donate");
+    }
+
+    // A non-back key must not navigate back from Settings.
+    {
+        GameState settingsState = GameState::SETTINGS;
+        int settingsSel = 0;
+        Config cfg{};
+        bool botEnabled = false;
+        BotDifficulty botDifficulty = BotDifficulty::EASY;
+        float musicVolume = 50.f;
+        float sfxVolume = 50.f;
+        GraphicsSettings graphicsSettings{};
+        ControllerSettings controllers;
+        controllers.profiles = controls::defaultProfiles();
+        int controlsProfile = 0;
+        int controlsSel = 0;
+        int controlsScroll = 0;
+        bool controlsCapturing = false;
+        int controlsCaptureAction = static_cast<int>(controls::Action::None);
+        sf::Event::KeyPressed down{};
+        down.scancode = sf::Keyboard::Scan::Down;
+        input_runtime::handleSettingsKeyPressed(
+            down, settingsState, settingsSel, cfg, botEnabled, botDifficulty,
+            musicVolume, sfxVolume, graphicsSettings, controllers,
+            controlsProfile, controlsSel, controlsScroll, controlsCapturing,
+            controlsCaptureAction, "settings.cfg",
+            [](const std::string&){}, [](const std::string&){ return false; },
+            []{});
+        check(settingsState == GameState::SETTINGS && settingsSel == 1,
+              "navigation keys move the cursor without leaving Settings");
+    }
+
     return failures == 0 ? 0 : 1;
 }

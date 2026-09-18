@@ -56,8 +56,9 @@ constexpr std::array<Action, 5> kMenuActions = {
     Action::UtilSettings, Action::UtilDonate,
 };
 
-constexpr std::array<Action, 5> kSettingsActions = {
+constexpr std::array<Action, 6> kSettingsActions = {
     Action::UiUp, Action::UiDown, Action::UiLeft, Action::UiRight, Action::UiConfirm,
+    Action::UiBack,
 };
 
 constexpr std::array<Action, 8> kMatchSetupActions = {
@@ -70,7 +71,7 @@ constexpr std::array<Action, 8> kMatchSetupActions = {
 constexpr std::array<Action, 2> kPlayingActions = { Action::GamePause, Action::GameReset };
 constexpr std::array<Action, 1> kPausedActions = { Action::GamePause };
 constexpr std::array<Action, 1> kGameOverActions = { Action::UiConfirm };
-constexpr std::array<Action, 3> kDonateActions = { Action::UiUp, Action::UiDown, Action::UiConfirm };
+constexpr std::array<Action, 4> kDonateActions = { Action::UiUp, Action::UiDown, Action::UiConfirm, Action::UiBack };
 
 ActionList stateEventActions(GameState state)
 {
