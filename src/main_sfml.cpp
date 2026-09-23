@@ -679,7 +679,7 @@ int main(int argc, char** argv){
         // Animated plasma background
         render_runtime::drawPlasmaBg(rt, menuAnim, state == GameState::MENU);
 
-        render_runtime::drawStars(rt, stars, starBright);
+        render_runtime::drawStars(rt, stars, starBright, state == GameState::MENU);
 
         render_runtime::IngameElementsContext renderCtx{};
         renderCtx.state = state;

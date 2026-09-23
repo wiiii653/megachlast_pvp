@@ -68,7 +68,8 @@ void initStars(std::array<Star, NUM_STARS>& stars, RNG& rng);
 void updateStars(std::array<Star, NUM_STARS>& stars, float dt, RNG& rng);
 void drawStars(sf::RenderTarget& rt,
                const std::array<Star, NUM_STARS>& stars,
-               float globalBright = 1.f);
+               float globalBright = 1.f,
+               bool menuOval = false);
 void initSpectStars(std::array<SpectStar, NUM_SPECT>& stars);
 void updateSpectStars(std::array<SpectStar, NUM_SPECT>& stars, float dt, RNG& rng, int state);
 void drawSpectStars(sf::RenderTarget& rt, const std::array<SpectStar, NUM_SPECT>& stars);
@@ -87,6 +88,28 @@ void drawPlasmaBg(sf::RenderTarget& rt, float t, bool titleMode = false);
 // Per-pixel plasma color. titleMode shares the in-game blue palette and adds
 // darker drifting cloud masses; the non-title path is the exact in-game field.
 sf::Color evalPlasmaBgColor(bool titleMode, float wx, float wy, float t);
+
+// Title-menu oval mask geometry. Shared by the plasma background, the star
+// field and the overlay so the masked region stays consistent across layers.
+inline float menuOvalCx() { return W * 0.5f; }
+inline float menuOvalCy() { return H * 0.45f; }
+inline float menuOvalRx() { return W * 0.38f; }
+inline float menuOvalRy() { return H * 0.35f; }
+// Background darkening applied outside the title-menu oval mask (20%).
+inline constexpr float kMenuMaskDarkenFactor = 0.8f;
+// True when a point lies inside the title-menu oval mask.
+inline bool isInsideMenuOval(float wx, float wy)
+{
+    float dx = (wx - menuOvalCx()) / menuOvalRx();
+    float dy = (wy - menuOvalCy()) / menuOvalRy();
+    return dx * dx + dy * dy <= 1.f;
+}
+// Background brightness factor for the title menu: 1 inside the oval mask,
+// kMenuMaskDarkenFactor outside it.
+inline float menuMaskFactor(float wx, float wy)
+{
+    return isInsideMenuOval(wx, wy) ? 1.f : kMenuMaskDarkenFactor;
+}
 void drawCopperBars(sf::RenderTarget& rt, float t);
 void drawIngameElements(sf::RenderTarget& rt, const IngameElementsContext& context);
 bool isPostfxDisabled(bool noPostfx, const GraphicsSettings& graphicsSettings, GameState state, int fxLevel);
