@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Darkened the title-menu background outside the oval mask by 20% to make the masked region stand out more clearly.
 - Reworked the title-menu plasma background to match the in-game blue field, with distinct darker cloud masses drifting over it.
 - Fixed the Escape key (and the controller east button) as the back/return action from Settings, Controls, and Donate, while keeping Escape returning to the menu from gameplay and quitting from the main menu.
 - Fixed CI dependency setup: install FreeType on Linux and explicitly build shared SFML on Linux/macOS.

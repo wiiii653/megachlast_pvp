@@ -456,12 +456,17 @@ void updateStars(std::array<Star, NUM_STARS>& stars, float dt, RNG& rng)
 
 void drawStars(sf::RenderTarget& rt,
                const std::array<Star, NUM_STARS>& stars,
-               float globalBright)
+               float globalBright,
+               bool menuOval)
 {
     static sf::RectangleShape dot(sf::Vector2f(1.f, 1.f));
     static sf::RectangleShape glow(sf::Vector2f(3.f, 3.f));
     for(const auto& s : stars){
         float b = s.bright * globalBright;
+        // In the title menu, darken stars outside the oval mask along with the
+        // background so the masked region keeps its full brightness.
+        if(menuOval && !isInsideMenuOval(s.x, s.y))
+            b *= kMenuMaskDarkenFactor;
         float depth = clampf((s.speed - 1.5f) / 10.5f, 0.f, 1.f);
         if(s.blinkTimer > 0.f){
             float flare = std::sin(s.blinkTimer / 0.22f * PI);
@@ -947,6 +952,9 @@ sf::Color evalPlasmaBgColor(bool titleMode, float wx, float wy, float t2)
     // masses drifting slowly over it.
     float cloud = cloudField(wx, wy, t2);
     float dark = 1.f - 0.50f * cloud;
+    // The oval mask region stays at full brightness; the surrounding
+    // background is darkened by 20% so the mask stands out.
+    dark *= menuMaskFactor(wx, wy);
     return sf::Color(
         static_cast<uint8_t>(clampf((6.f  + v * 28.f) * dark, 0.f, 255.f)),
         static_cast<uint8_t>(clampf((6.f  + v * 14.f) * dark, 0.f, 255.f)),

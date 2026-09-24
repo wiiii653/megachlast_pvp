@@ -33,10 +33,10 @@ void drawPostfxOverlays(sf::RenderTarget& rt, const PostfxContext& context)
 void drawSceneOverlays(sf::RenderTarget& rt, const SceneOverlayContext& context)
 {
     if(context.state == GameState::MENU){
-        float cx = W * 0.5f;
-        float cy = H * 0.45f;
-        float rx = W * 0.38f;
-        float ry = H * 0.35f;
+        float cx = menuOvalCx();
+        float cy = menuOvalCy();
+        float rx = menuOvalRx();
+        float ry = menuOvalRy();
         sf::CircleShape vig(1.f, 48);
         vig.setScale(sf::Vector2f(rx, ry));
         vig.setOrigin(sf::Vector2f(1.f, 1.f));
