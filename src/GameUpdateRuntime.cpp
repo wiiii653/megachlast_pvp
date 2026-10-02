@@ -105,6 +105,8 @@ void updateMovementAndFiring(InputState& in,
                              std::array<Bullet, MAX_BULLETS>& bullets,
                              const std::array<PowerUp, MAX_POWERUPS>& powerups,
                              const std::array<Bomb, MAX_BOMBS>& bombs,
+                             const std::array<Mirror, MIRROR_PAIRS * 2>& mirrors,
+                             const std::array<BarrierBrick, BARRIER_BRICKS * 2>& barriers,
                              std::array<Particle, MAX_PARTICLES>& particles,
                              RNG& rng,
                              const Config& cfg,
@@ -139,7 +141,7 @@ void updateMovementAndFiring(InputState& in,
     if(cd1 > 0) cd1--;
 
     if(botEnabled){
-        bot_controller::update(botRuntime, p2, p1, bullets, powerups, bombs, rng, cd2, dt,
+        bot_controller::update(botRuntime, p2, p1, bullets, powerups, bombs, mirrors, barriers, rng, cd2, dt,
                                botDifficulty, cfg, botOverrides, synth,
                                muted, sfxVolume, fireFn);
         spawnThrusterFn(particles, rng, p2.x, p2.y, 2);

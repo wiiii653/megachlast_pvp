@@ -1,6 +1,7 @@
 #include "BotController.h"
 
 #include "ProceduralSynth.h"
+#include "GameLogic.h"
 
 #include <algorithm>
 #include <cmath>
@@ -14,6 +15,376 @@ float clampf(float v, float lo, float hi)
     return std::max(lo, std::min(hi, v));
 }
 
+struct TraceBoard {
+    std::array<Mirror, MIRROR_PAIRS * 2> mirrors;
+    std::array<BarrierBrick, BARRIER_BRICKS * 2> barriers;
+    std::array<PowerUp, MAX_POWERUPS> powerups;
+    std::array<Bomb, MAX_BOMBS> bombs;
+};
+
+enum class Contact { NONE, EXPIRED, MIRROR, BARRIER, POWERUP, BOMB };
+struct TraceContact { Contact kind = Contact::NONE; int index = -1; };
+
+TraceContact advanceTrace(Bullet& b, TraceBoard& board, float dt, float elapsed)
+{
+    b.ttl -= dt;
+    if(b.ttl <= 0.f) return {Contact::EXPIRED};
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    if(b.x < -10.f || b.x > W + 10.f || b.y < -10.f || b.y > H + 10.f)
+        return {Contact::EXPIRED};
+    for(int i = 0; i < MAX_POWERUPS; ++i){
+        const auto& u = board.powerups[i];
+        if(!u.alive || u.ttl <= elapsed) continue;
+        const float x = clampf(u.x + u.vx * elapsed, POWERUP_R, W - POWERUP_R);
+        const float dx = b.x - x, dy = b.y - u.y;
+        if(dx * dx + dy * dy <= (POWERUP_R + 2.f) * (POWERUP_R + 2.f))
+            return {Contact::POWERUP, i};
+    }
+    for(int i = 0; i < BARRIER_BRICKS * 2; ++i){
+        const auto& brick = board.barriers[i];
+        if(brick.alive && std::abs(b.x - brick.x) <= BRICK_W * 0.5f + 2.f &&
+           std::abs(b.y - brick.y) <= BRICK_H * 0.5f + 2.f) return {Contact::BARRIER, i};
+    }
+    for(int i = 0; i < MAX_BOMBS; ++i){
+        const auto& bomb = board.bombs[i];
+        const float dx = b.x - bomb.x, dy = b.y - bomb.y;
+        if(bomb.alive && dx * dx + dy * dy <= (BOMB_R + 3.f) * (BOMB_R + 3.f))
+            return {Contact::BOMB, i};
+    }
+    for(auto& m : board.mirrors){
+        if(!game_logic::bulletHitsMirror(b, m)) continue;
+        const auto v = game_logic::reflectMirrorVelocity(b.vx, b.vy, m.slash);
+        b.vx = v.x; b.vy = v.y;
+        m.slash = !m.slash;
+        const float speed = std::sqrt(b.vx * b.vx + b.vy * b.vy);
+        if(speed > 0.0001f){
+            b.x += b.vx / speed * (MIRROR_R + 1.5f);
+            b.y += b.vy / speed * (MIRROR_R + 1.5f);
+        }
+        return {Contact::MIRROR};
+    }
+    return {};
+}
+
+struct ShotValue { float score = 0.f; int bounces = 0; };
+
+ShotValue evaluateRay(float x, const Player& bot, const Player& player, float playerVx,
+                      float aimLead, const Config& cfg, const TraceBoard& original, float dt,
+                      float vx, float vy, bool allowSetup = true)
+{
+    TraceBoard board = original;
+    Bullet b{x, bot.y + 16.f, vx, vy, cfg.bullet_ttl, 2, true};
+    ShotValue result;
+    float barrierCost = 0.f;
+    for(float time = dt; time <= std::min(cfg.bullet_ttl, 4.f); time += dt){
+        const auto contact = advanceTrace(b, board, dt, time);
+        if(contact.kind == Contact::EXPIRED) break;
+        if(contact.kind == Contact::BARRIER){
+            auto& brick = board.barriers[contact.index];
+            // Value the route after opening it, discounting the shots needed first.
+            barrierCost += std::max(1, brick.hp) * 7.f;
+            brick.alive = false;
+            continue;
+        }
+        if(contact.kind == Contact::POWERUP){
+            const auto type = board.powerups[contact.index].type;
+            float value = 45.f;
+            if(type == PowerUpType::HEAL) value = bot.energy < 60.f ? 110.f : 10.f;
+            if(type == PowerUpType::SHIELD) value = bot.shieldTimer > 1.f ? 15.f : 70.f;
+            return {value - barrierCost - time * 4.f, result.bounces};
+        }
+        if(contact.kind == Contact::BOMB){
+            const auto& bomb = board.bombs[contact.index];
+            if(std::hypot(bomb.x - x, bomb.y - bot.y) < BOMB_BLAST_R) return {-150.f, result.bounces};
+            const float distance = std::hypot(bomb.x - player.x, bomb.y - player.y);
+            return {distance < BOMB_BLAST_R ? 75.f - barrierCost : 0.f, result.bounces};
+        }
+        if(contact.kind == Contact::MIRROR){
+            if(++result.bounces >= 16) break;
+            continue;
+        }
+        if(time > bot.shieldTimer && time > bot.invulnTimer &&
+           game_logic::bulletHitsPlayer(b.x, b.y, x, bot.y, cfg.hit_r))
+            return {-150.f, result.bounces};
+        const float target = clampf(player.x + clampf(playerVx * std::min(time, 0.45f) * aimLead,
+                                                      -64.f, 64.f), 8.f, W - 8.f);
+        // Movement can reverse before impact; cover current and led positions.
+        const float lo = std::min(player.x, target), hi = std::max(player.x, target);
+        const float plausibleX = clampf(b.x, lo, hi);
+        if(game_logic::bulletHitsPlayer(b.x, b.y, plausibleX, player.y, cfg.hit_r)){
+            if(time <= player.shieldTimer || time <= player.invulnTimer){
+                if(barrierCost > 0.f) return {35.f - barrierCost * 0.35f - time * 2.f, result.bounces};
+                continue;
+            }
+            const bool direct = game_logic::bulletHitsPlayer(b.x, b.y, player.x, player.y, cfg.hit_r);
+            const bool led = game_logic::bulletHitsPlayer(b.x, b.y, target, player.y, cfg.hit_r);
+            return {(led ? 125.f : (direct ? 120.f : 100.f)) - barrierCost - time * 8.f, result.bounces};
+        }
+    }
+    if(allowSetup && result.bounces > 0){
+        // A harmless first shot can rotate a blocked route into a useful follow-up.
+        const auto followUp = evaluateRay(x, bot, player, playerVx, aimLead, cfg,
+                                          board, dt, vx, vy, false);
+        if(followUp.score > 0.f) return {followUp.score * 0.6f - barrierCost, result.bounces};
+    }
+    return {0.f, result.bounces};
+}
+
+ShotValue evaluateShot(float x, const Player& bot, const Player& player, float playerVx,
+                       float aimLead, const Config& cfg, const TraceBoard& board, float dt)
+{
+    auto best = evaluateRay(x, bot, player, playerVx, aimLead, cfg, board, dt, 0.f, cfg.bullet_speed);
+    if(bot.spreadTimer <= 0.f || best.score < -100.f) return best;
+    for(float sign : {-1.f, 1.f}){
+        const auto side = evaluateRay(x, bot, player, playerVx, aimLead, cfg, board, dt,
+                                      sign * cfg.bullet_speed * 0.3090f, cfg.bullet_speed * 0.9511f);
+        if(side.score < -100.f) return side;
+        if(side.score > best.score) best = side;
+    }
+    return best;
+}
+
+struct ThreatPath {
+    std::array<game_logic::Vec2, 49> positions{};
+    std::array<float, 49> times{};
+    int count = 0;
+};
+
+std::array<ThreatPath, MAX_BULLETS> predictThreats(const std::array<Bullet, MAX_BULLETS>& bullets,
+                                                TraceBoard board, float dt)
+{
+    std::array<ThreatPath, MAX_BULLETS> paths{};
+    auto future = bullets;
+    float nextSample = dt;
+    for(float time = dt; time <= 0.8f; time += dt){
+        const bool sample = time >= nextSample;
+        for(int i = 0; i < MAX_BULLETS; ++i){
+            auto& b = future[i];
+            if(!b.alive) continue;
+            const auto contact = advanceTrace(b, board, dt, time);
+            if(contact.kind == Contact::BARRIER){
+                auto& brick = board.barriers[contact.index];
+                if(--brick.hp <= 0) brick.alive = false;
+            }
+            if(contact.kind == Contact::POWERUP) board.powerups[contact.index].alive = false;
+            if(contact.kind != Contact::NONE && contact.kind != Contact::MIRROR){
+                b.alive = false;
+                continue;
+            }
+            auto& path = paths[i];
+            if(sample && contact.kind != Contact::MIRROR && path.count < 49){
+                path.positions[path.count] = {b.x, b.y};
+                path.times[path.count++] = time;
+            }
+        }
+        if(sample) nextSample = time + 1.f / 60.f;
+    }
+    return paths;
+}
+
+void updateAdvanced(RuntimeState& rt, Player& bot, const Player& player,
+                std::array<Bullet, MAX_BULLETS>& bullets,
+                const std::array<PowerUp, MAX_POWERUPS>& powerups,
+                const std::array<Bomb, MAX_BOMBS>& bombs,
+                const std::array<Mirror, MIRROR_PAIRS * 2>& mirrors,
+                const std::array<BarrierBrick, BARRIER_BRICKS * 2>& barriers,
+                bool mirrorAware,
+                RNG& rng, int& cooldown, float dt, const Config& cfg,
+                float aimLead, float alignTolerance, float fireProbability,
+                float powerupInterest, ProceduralSynth& synth,
+                bool muted, float volume, FireFn fireFn)
+{
+    if(dt <= 0.f) return;
+    rt.shot_idle += dt;
+    const bool finishingBurst = rt.pressure_timer > 0.f && rt.pressure_timer <= dt;
+    rt.pressure_timer = std::max(0.f, rt.pressure_timer - dt);
+    rt.reversal_timer = std::max(0.f, rt.reversal_timer - dt);
+    rt.retreat_timer = std::max(0.f, rt.retreat_timer - dt);
+    if(mirrorAware && finishingBurst) rt.retreat_timer = 0.4f;
+    float observedVx = rt.tracking_player
+        ? clampf((player.x - rt.prev_p1_x) / dt, -cfg.p_speed, cfg.p_speed) : 0.f;
+    if(mirrorAware){
+        rt.turn_age = std::min(100.f, rt.turn_age + dt);
+        if(std::abs(observedVx) > cfg.p_speed * 0.1f){
+            const float direction = observedVx > 0.f ? 1.f : -1.f;
+            if(rt.last_motion_direction * direction < 0.f){
+                if(rt.turn_age < 3.5f) rt.reversal_timer = 3.f;
+                rt.turn_age = 0.f;
+            }
+            rt.last_motion_direction = direction;
+        }
+    }
+    if(observedVx * rt.tracked_vx < 0.f) rt.tracked_vx = 0.f;
+    rt.tracked_vx += (observedVx - rt.tracked_vx) * (1.f - std::exp(-dt / 0.08f));
+    rt.tracking_player = true;
+    rt.prev_p1_x = player.x;
+    if(mirrorAware && rt.reversal_timer > 0.f) aimLead *= 0.35f;
+
+    const float travel = std::abs(player.y - bot.y) / std::max(1.f, cfg.bullet_speed);
+    const float lead = clampf(rt.tracked_vx * std::min(travel, 0.45f) * aimLead, -64.f, 64.f);
+    const float predictedX = clampf(player.x + lead, 8.f, W - 8.f);
+    float targetX = rt.attack_phase < 3 ? predictedX : player.x;
+    float pickupX = -1.f;
+    float pickupScore = 0.9f;
+    for(const auto& u : powerups){
+        if(!u.alive || u.y <= bot.y) continue;
+        const float time = (u.y - bot.y) / std::max(1.f, cfg.bullet_speed);
+        if(time >= u.ttl || time >= cfg.bullet_ttl) continue;
+        const float x = clampf(u.x + u.vx * time, POWERUP_R, W - POWERUP_R);
+        float value = 1.f;
+        if(u.type == PowerUpType::HEAL) value = bot.energy < 60.f ? 2.f : 0.2f;
+        if(u.type == PowerUpType::SHIELD) value = bot.shieldTimer > 1.f ? 0.3f : 1.5f;
+        const float score = powerupInterest * value - std::abs(x - bot.x) / (W * 0.5f);
+        if(score > pickupScore){ pickupScore = score; pickupX = x; }
+    }
+    if(pickupX >= 0.f) targetX = pickupX;
+
+    const float traceDt = clampf(dt, 1.f / 240.f, 1.f / 30.f);
+    const TraceBoard board{mirrors, barriers, powerups, bombs};
+    std::array<ThreatPath, MAX_BULLETS> paths{};
+    if(mirrorAware){
+        paths = predictThreats(bullets, board, traceDt);
+        rt.plan_timer -= dt;
+        if(!rt.mirror_planning || rt.plan_timer <= 0.f){
+            float bestUtility = -1e9f;
+            const float previousPlanX = rt.plan_x;
+            auto consider = [&](float candidate){
+                candidate = clampf(candidate, 8.f, W - 8.f);
+                const auto value = evaluateShot(candidate, bot, player, rt.tracked_vx, aimLead, cfg, board, traceDt);
+                if(value.score <= 0.f) return;
+                const float utility = value.score - std::abs(candidate - bot.x) * 0.12f
+                    + (std::abs(candidate - previousPlanX) < 2.f ? (value.bounces > 0 ? 3.f : 0.5f) : 0.f)
+                    + (rt.reversal_timer > 0.f && std::abs(rt.tracked_vx) > cfg.p_speed * 0.15f &&
+                       std::abs(candidate - targetX) < 1.f ? 10.f : 0.f);
+                if(utility > bestUtility){
+                    bestUtility = utility;
+                    rt.plan_x = candidate; rt.plan_score = value.score; rt.plan_bounces = value.bounces;
+                }
+            };
+            rt.plan_score = 0.f;
+            rt.plan_bounces = 0;
+            consider(bot.x); consider(targetX); consider(player.x);
+            const float shipEdge = std::max(1.f, 19.f + cfg.hit_r - 0.5f);
+            consider(player.x - shipEdge); consider(player.x + shipEdge);
+            for(float offset = -shipEdge; offset <= shipEdge; offset += 4.f)
+                consider(player.x + offset);
+            for(float x = 16.f; x < W; x += 24.f) consider(x);
+            for(const auto& m : mirrors){
+                if(!m.alive || m.y < bot.y || m.y >= H * 0.5f) continue;
+                for(float offset : {-8.f, -4.f, -3.f, 0.f, 3.f, 4.f, 8.f}) consider(m.x + offset);
+            }
+            rt.plan_timer = 0.15f;
+        }
+        if(rt.plan_score > 0.f) targetX = rt.plan_x;
+    }
+    rt.mirror_planning = mirrorAware;
+
+    const float speed = cfg.p_speed * (bot.slowTimer > 0.f ? 0.5f : 1.f);
+    const bool cornerPressure = mirrorAware && (player.x < 60.f || player.x > W - 60.f);
+    const bool pressAttack = (rt.shot_idle > 2.f || (cornerPressure && rt.pressure_timer > 0.f)) &&
+                             bot.energy >= cfg.damage * 3.f &&
+                             std::abs(rt.tracked_vx) < cfg.p_speed * 0.15f &&
+                             player.shieldTimer <= 0.f && pickupX < 0.f && rt.retreat_timer <= 0.f;
+    if(cornerPressure && rt.retreat_timer > 0.f)
+        targetX = player.x < W * 0.5f ? player.x + 55.f : player.x - 55.f;
+    const float directions[3] = {0.f, -1.f, 1.f};
+    float costs[3]{}, risks[3]{};
+    float earliestThreat = 1e9f;
+    float impactX = bot.x;
+    for(int choice = 0; choice < 3; ++choice){
+        const float direction = directions[choice];
+        const float moveDistance = mirrorAware ? std::min(speed * 0.25f, std::abs(targetX - bot.x)) : speed * 0.25f;
+        const float destination = clampf(bot.x + direction * moveDistance, 8.f, W - 8.f);
+        costs[choice] = std::abs(destination - targetX) * (pressAttack ? 3.f : 0.12f);
+        costs[choice] += std::max(0.f, 28.f - std::min(destination - 8.f, W - 8.f - destination)) * 0.15f;
+        for(int bulletIndex = 0; bulletIndex < MAX_BULLETS; ++bulletIndex){
+            const auto& b = bullets[bulletIndex];
+            if(!b.alive) continue;
+            float danger = 0.f;
+            const auto& path = paths[bulletIndex];
+            // Compare complete moves; opposing threats must not cancel each other.
+            for(int step = 1; step <= (mirrorAware ? path.count : 48); ++step){
+                const float time = mirrorAware ? path.times[step - 1] : step / 60.f;
+                if(time >= b.ttl) break;
+                if(bot.shieldTimer > time || bot.invulnTimer > time) continue;
+                const float x = clampf(bot.x + direction * speed * std::min(time, 0.25f), 8.f, W - 8.f);
+                const float bx = mirrorAware ? path.positions[step - 1].x : b.x + b.vx * time;
+                const float by = mirrorAware ? path.positions[step - 1].y : b.y + b.vy * time;
+                const float nx = std::abs(bx - x) / (21.f + cfg.hit_r);
+                const float ny = std::abs(by - bot.y) / (9.f + cfg.hit_r);
+                const float distance = std::max(nx, ny);
+                if(distance < 1.5f){
+                    const float severity = distance <= 1.f ? 1000.f : (1.5f - distance) * 100.f;
+                    danger = std::max(danger, severity / (0.2f + time));
+                    if(choice == 0 && distance <= 1.f && time < earliestThreat){
+                        earliestThreat = time;
+                        impactX = bx;
+                    }
+                }
+            }
+            risks[choice] += danger;
+        }
+        for(const auto& bomb : bombs){
+            if(!bomb.alive) continue;
+            const float dx = bomb.x - destination, dy = bomb.y - bot.y;
+            const float distance = std::sqrt(dx * dx + dy * dy);
+            if(distance < BOMB_BLAST_R && bot.shieldTimer <= 0.f)
+                risks[choice] += (1.f - distance / BOMB_BLAST_R) * 80.f;
+        }
+        // A healthy bot may briefly contest a firing lane instead of waiting forever.
+        costs[choice] += pressAttack ? std::min(60.f, risks[choice]) : risks[choice];
+        if(mirrorAware && pressAttack){
+            const auto opening = evaluateShot(destination, bot, player, rt.tracked_vx,
+                                               aimLead, cfg, board, traceDt);
+            costs[choice] -= std::max(0.f, opening.score) * 0.75f;
+        }
+    }
+    int best = 0;
+    for(int i = 1; i < 3; ++i) if(costs[i] < costs[best]) best = i;
+    rt.move_timer = std::max(0.f, rt.move_timer - dt);
+    for(int i = 0; i < 3; ++i){
+        if(directions[i] == rt.move_direction && rt.move_timer > 0.f &&
+           costs[i] <= costs[best] + 3.f && risks[i] <= risks[best] + 0.01f){
+            best = i;
+            break;
+        }
+    }
+    if(rt.move_timer <= 0.f || rt.move_direction != directions[best]) rt.move_timer = 0.12f;
+    rt.move_direction = directions[best];
+    float movement = rt.move_direction;
+    if(mirrorAware && movement * (targetX - bot.x) > 0.f && speed * dt > 0.f)
+        movement *= std::min(1.f, std::abs(targetX - bot.x) / (speed * dt));
+    if(bot.reverseTimer > 0.f) movement = -movement;
+    bot.x = clampf(bot.x + movement * speed * dt, 8.f, W - 8.f);
+    rt.state = earliestThreat < 0.8f ? BotState::EVADE
+        : (pickupX >= 0.f ? BotState::COLLECT : BotState::ATTACK);
+
+    const float shotWidth = std::max(19.f + cfg.hit_r, alignTolerance)
+        + (bot.spreadTimer > 0.f ? 20.f : 0.f);
+    const bool pressureShot = bot.x >= std::min(player.x, predictedX) - shotWidth &&
+                              bot.x <= std::max(player.x, predictedX) + shotWidth;
+    const bool pickupShot = pickupX >= 0.f && std::abs(bot.x - pickupX) <= POWERUP_R;
+    bool usefulShot = pressureShot || pickupShot;
+    if(mirrorAware && cooldown == 0)
+        usefulShot = evaluateShot(bot.x, bot, player, rt.tracked_vx, aimLead, cfg, board, traceDt).score > 0.f;
+    if(cooldown == 0 && usefulShot && rng.frand(0.f, 1.f) <= fireProbability){
+        if(cornerPressure && pressAttack && rt.shot_idle > 2.f) rt.pressure_timer = 0.15f;
+        fireFn(bullets, bot, 2);
+        synth.play(ProceduralSynth::SFX::FIRE, muted ? 0.f : volume);
+        cooldown = computeFireCooldown(cfg.fire_cd_p2_frames, bot.rapidTimer);
+        rt.attack_phase = (rt.attack_phase + 1) % 6;
+        rt.shot_idle = 0.f;
+        if(mirrorAware) rt.plan_timer = 0.f;
+    }
+    if(rt.debug){
+        rt.debug_pred_impact_x = impactX;
+        rt.debug_pred_intercept_x = predictedX;
+        rt.debug_best_pu_x = pickupX;
+        rt.debug_worst_tti = earliestThreat;
+    }
+}
+
 } // namespace
 
 void update(RuntimeState& rt,
@@ -22,6 +393,8 @@ void update(RuntimeState& rt,
             std::array<Bullet, MAX_BULLETS>& bullets,
             const std::array<PowerUp, MAX_POWERUPS>& powerups,
             const std::array<Bomb, MAX_BOMBS>& bombs,
+            const std::array<Mirror, MIRROR_PAIRS * 2>& mirrors,
+            const std::array<BarrierBrick, BARRIER_BRICKS * 2>& barriers,
             RNG& rng,
             int& cd2,
             float dt,
@@ -57,11 +430,10 @@ void update(RuntimeState& rt,
         case BotDifficulty::EASY:
             bc = {35.f, cfg.hit_r+10.f, 22.f, 0.75f, 0.85f, 0.55f, 1.2f, 3.0f, 25.f, 0.40f, 0.40f, 26.f, 16.f};
             break;
+        case BotDifficulty::MEDIUM:
         case BotDifficulty::HARD:
-            bc = {80.f, cfg.hit_r+2.f,  6.f, 1.00f, 1.00f, 0.95f, 0.3f, 0.8f, 65.f, 1.10f, 0.80f, 44.f, 28.f};
-            break;
         default:
-            bc = {55.f, cfg.hit_r+4.f, 10.f, 0.95f, 0.97f, 0.75f, 0.6f, 1.5f, 48.f, 0.85f, 0.60f, 34.f, 22.f};
+            bc = {80.f, cfg.hit_r+2.f,  6.f, 1.00f, 1.00f, 0.95f, 0.3f, 0.8f, 65.f, 1.10f, 0.80f, 44.f, 28.f};
             break;
     }
 
@@ -94,6 +466,15 @@ void update(RuntimeState& rt,
         }
         return;
     }
+
+    if(difficulty != BotDifficulty::EASY){
+        updateAdvanced(rt, p2, p1, bullets, powerups, bombs, mirrors, barriers,
+                   difficulty == BotDifficulty::HARD, rng, cd2, dt, cfg,
+                   bc.aim_lead, bc.align_tol, bc.fire_prob, bc.powerup_interest,
+                   synth, muted, sfxVolume, fireFn);
+        return;
+    }
+    rt.tracking_player = false;
 
     float prune_evade_score = 0.f;
     float want_x = 0.f;

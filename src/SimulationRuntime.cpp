@@ -39,6 +39,8 @@ void simulatePlayingFrame(FrameContext& context)
                                                  *context.bullets,
                                                  *context.powerups,
                                                  *context.bombs,
+                                                 *context.mirrors,
+                                                 *context.barriers,
                                                  *context.particles,
                                                  *context.rng,
                                                  *context.cfg,

@@ -129,6 +129,64 @@ void genMirrorsSeeded(std::array<Mirror, MIRROR_PAIRS * 2>& mirrors,
             mirrors[base + i] = Mirror{0.f, 0.f, true, 0.f, false};
         cnt = MIRROR_PAIRS;
     };
+    auto generateDuelLayout = [&](LayoutKind kind){
+        const bool fortress = kind == LayoutKind::FORTRESS;
+        const bool sparse = kind == LayoutKind::SPARSE;
+        const float shift = frand(-12.f, 12.f);
+        const float gateOffset = fortress ? W * 0.16f : W * 0.12f;
+        const float gateHalfWidth = sparse ? W * 0.08f : (fortress ? 20.f : 12.f);
+        const float gates[2] = {W * 0.5f + shift - gateOffset,
+                                W * 0.5f + shift + gateOffset};
+        const float pairSpan = frand(48.f, 64.f);
+        const float pairY = frand(PLAYER_SPAWN_TOP_Y + BARRIER_Y_OFFSET + 24.f, tYMax - 32.f);
+        const float pairCenters[2] = {W * 0.20f + shift, W * 0.80f + shift};
+        for(int side = 0; side < 2; ++side){
+            const bool slash = side == 1;
+            // Offset the exit mirror to catch the ray near its center, not its rim.
+            splace(pairCenters[side] - pairSpan * 0.5f, pairY - (slash ? 4.f : 0.f), slash);
+            splace(pairCenters[side] + pairSpan * 0.5f, pairY - (slash ? 0.f : 4.f), slash);
+        }
+
+        // Keep entry/exit columns and the horizontal bank shot clear of filler.
+        auto place = [&](float x, float y, bool slash){
+            for(float gate : gates)
+                if(std::abs(x - gate) < gateHalfWidth + MIRROR_R) return false;
+            if(sparse && x > W * 0.34f && x < W * 0.66f) return false;
+            for(int i = 0; i < 4; ++i)
+                if(std::abs(x - topArr[i].x) < 2.f * MIRROR_R + 4.f) return false;
+            for(float center : pairCenters)
+                if(std::abs(x - center) < pairSpan * 0.5f + MIRROR_R &&
+                   std::abs(y - pairY) < 2.f * MIRROR_R + 4.f) return false;
+            return splace(x, y, slash);
+        };
+
+        const int target = sparse ? 8 : MIRROR_PAIRS;
+        if(fortress){
+            // Closely spaced wall sections make the two reserved gates distinct.
+            const float wallY = tYMax - 16.f;
+            for(float x = xMin + 4.f; x <= xMax && topN < 16; x += 22.f)
+                place(x, wallY, x > W * 0.5f);
+        }
+        for(int tries = 0; topN < target && tries < 4000; ++tries){
+            float x, y;
+            if(kind == LayoutKind::CHANNELS){
+                const int column = irand(0, 2);
+                x = W * (0.20f + column * 0.30f) + shift + frand(-30.f, 30.f);
+                y = frand(tYMin, tYMax);
+            } else if(fortress){
+                x = frand(xMin, xMax);
+                y = frand(tYMin, spawnTopY - clearR - 3.f);
+            } else {
+                x = irand(0, 1) ? frand(W * 0.68f, xMax) : frand(xMin, W * 0.32f);
+                y = frand(tYMin, tYMax);
+            }
+            place(x, y, bool(irand(0, 1)));
+        }
+        for(int i = topN; i < MIRROR_PAIRS; ++i)
+            topArr[i] = Mirror{0.f, 0.f, true, 0.f, false};
+        reflectSymmetric();
+    };
+
     // ── Pick archetype: bits 5..8 → 12 choices ───────────────────────────────
     const int NUM_LAYOUTS = 12;
     int pick = static_cast<int>((boardSeed >> 5) % NUM_LAYOUTS);
@@ -206,77 +264,29 @@ void genMirrorsSeeded(std::array<Mirror, MIRROR_PAIRS * 2>& mirrors,
     }
 
     // ──────────────────────────────────────────────────── 3: CHANNELS ────────
-    // Three vertical corridors of alternating /\ mirrors.
-    // Aim into a channel — get your bullet pinballed sideways.
+    // Three mirror columns, two clear firing lanes and paired bank shots.
     case 3: {
         layoutKind = LayoutKind::CHANNELS;
         std::snprintf(g_layout_name, sizeof g_layout_name, "CHANNELS");
-        const float cx[3] = { W*0.22f, W*0.50f, W*0.78f };
-        const float yaLo = tYMin, yaHi = spawnTopY - clearR - 1.f;
-        const float ybLo = spawnTopY + clearR + 1.f, ybHi = tYMax;
-        for(int ch = 0; ch < 3 && topN < MIRROR_PAIRS; ++ch){
-            int slot = 0;
-            for(int s = 0; s < 3 && topN < MIRROR_PAIRS; ++s, ++slot){
-                float x = cx[ch] + frand(-20.f, 20.f);
-                float y = yaLo + (yaHi - yaLo) * (s + 1) / 4.f + frand(-4.f, 4.f);
-                splace(x, y, bool(slot & 1));
-            }
-            for(int s = 0; s < 4 && topN < MIRROR_PAIRS; ++s, ++slot){
-                float x = cx[ch] + frand(-20.f, 20.f);
-                float y = ybLo + (ybHi - ybLo) * (s + 1) / 5.f + frand(-4.f, 4.f);
-                splace(x, y, bool(slot & 1));
-            }
-        }
-        sfillRandom();
-        reflectSymmetric();
+        generateDuelLayout(layoutKind);
         break;
     }
 
     // ──────────────────────────────────────────────────── 4: FORTRESS ────────
-    // Symmetric: a dense mirror wall across the middle of each half = a hard
-    // horizontal barrier forcing shots around the sides.
+    // Symmetric wall sections separated by firing gates and bank-shot columns.
     case 4: {
         layoutKind = LayoutKind::FORTRESS;
         std::snprintf(g_layout_name, sizeof g_layout_name, "FORTRESS");
-        const float wallY = tYMax - 18.f;
-        const int   wallN = 13;
-        const float wallSpc = (xMax - xMin - 20.f) / float(wallN - 1);
-        for(int i = 0; i < wallN && topN < MIRROR_PAIRS; ++i){
-            float x = xMin + 10.f + i * wallSpc + frand(-5.f, 5.f);
-            float y = wallY + frand(-7.f, 7.f);
-            splace(x, y, bool(i & 1));
-        }
-        for(int tries = 0; topN < MIRROR_PAIRS && tries < 500; ++tries){
-            float x = frand(xMin, xMax);
-            float y = frand(tYMin, spawnTopY - clearR - 3.f);
-            splace(x, y, bool(irand(0, 1)));
-        }
-        sfillRandom();
-        reflectSymmetric();
+        generateDuelLayout(layoutKind);
         break;
     }
 
     // ──────────────────────────────────────────────────── 5: SPARSE ──────────
-    // Only 8 mirror pairs — wide open field.  Long-range duelling.
+    // Eight mirrors per half on the flanks, leaving the center open for duelling.
     case 5: {
         layoutKind = LayoutKind::SPARSE;
         std::snprintf(g_layout_name, sizeof g_layout_name, "SPARSE");
-        const int   sparseN = 8;
-        const float bigSep  = 55.f;
-        for(int tries = 0; topN < sparseN && tries < 2000; ++tries){
-            float x = frand(xMin + 15.f, xMax - 15.f);
-            float y = frand(tYMin, tYMax);
-            if(std::abs(y - spawnTopY) < clearR) continue;
-            bool ok = true;
-            for(int j = 0; j < topN && ok; ++j){
-                float dx = x - topArr[j].x, dy = y - topArr[j].y;
-                if(dx*dx + dy*dy < bigSep*bigSep) ok = false;
-            }
-            if(ok) topArr[topN++] = Mirror{x, y, bool(irand(0,1)), 0.f, true};
-        }
-        for(int i = topN; i < MIRROR_PAIRS; ++i) topArr[i] = Mirror{0.f, 0.f, true, 0.f, false};
-        topN = MIRROR_PAIRS;
-        reflectSymmetric();
+        generateDuelLayout(layoutKind);
         break;
     }
 

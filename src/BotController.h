@@ -27,6 +27,22 @@ struct RuntimeState {
     float log_bomb_cd = 0.f;
     BotState state = BotState::IDLE;
     float state_timer = 0.f;
+    bool tracking_player = false;
+    float tracked_vx = 0.f;
+    float move_direction = 0.f;
+    float move_timer = 0.f;
+    int attack_phase = 0;
+    float shot_idle = 0.f;
+    float plan_timer = 0.f;
+    float plan_x = W * 0.5f;
+    float plan_score = 0.f;
+    int plan_bounces = 0;
+    bool mirror_planning = false;
+    float pressure_timer = 0.f;
+    float reversal_timer = 0.f;
+    float retreat_timer = 0.f;
+    float turn_age = 100.f;
+    float last_motion_direction = 0.f;
 };
 
 inline void resetState(RuntimeState& rt)
@@ -36,6 +52,22 @@ inline void resetState(RuntimeState& rt)
     rt.prev_p1_x = W * 0.5f;
     rt.state = BotState::IDLE;
     rt.state_timer = 0.f;
+    rt.tracking_player = false;
+    rt.tracked_vx = 0.f;
+    rt.move_direction = 0.f;
+    rt.move_timer = 0.f;
+    rt.attack_phase = 0;
+    rt.shot_idle = 0.f;
+    rt.plan_timer = 0.f;
+    rt.plan_x = W * 0.5f;
+    rt.plan_score = 0.f;
+    rt.plan_bounces = 0;
+    rt.mirror_planning = false;
+    rt.pressure_timer = 0.f;
+    rt.reversal_timer = 0.f;
+    rt.retreat_timer = 0.f;
+    rt.turn_age = 100.f;
+    rt.last_motion_direction = 0.f;
     rt.debug_pred_impact_x = -1.f;
     rt.debug_pred_intercept_x = -1.f;
     rt.debug_best_pu_x = -1.f;
@@ -57,6 +89,8 @@ void update(RuntimeState& rt,
             std::array<Bullet, MAX_BULLETS>& bullets,
             const std::array<PowerUp, MAX_POWERUPS>& powerups,
             const std::array<Bomb, MAX_BOMBS>& bombs,
+            const std::array<Mirror, MIRROR_PAIRS * 2>& mirrors,
+            const std::array<BarrierBrick, BARRIER_BRICKS * 2>& barriers,
             RNG& rng,
             int& cd2,
             float dt,

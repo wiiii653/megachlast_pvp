@@ -46,6 +46,8 @@ The Donate screen lists the coffee link and wallet addresses with their networks
 
 Before each match, choose one 12-second round modifier: Shield, Rapid Fire, Spread Shot, or Overdrive. Choose a curated arena (Mirror Maze, Fortress, or Open Reactor) with Q/E. In match setup, P1 uses A/D, P2 uses Left/Right, and Enter starts the match. Escape returns to the menu. Controllers use the stick or D-pad to choose modifiers, P1's L1/R1 to choose the arena, and either controller's south button to start.
 
+The curated arenas have distinct shooting routes: Mirror Maze has three mirror columns with two clear firing lanes; Fortress has wall sections with wider firing gates; Open Reactor keeps a broad open center with mirrors on the flanks. Each includes two bank-shot pairs per player. Their positions vary with the board seed while preserving clear routes and symmetric opportunities for both players. Barriers must still be broken through, and mirrors rotate on impact, changing subsequent shots.
+
 ## Rules
 
 - Each player has ENERGY (0..100).
@@ -162,6 +164,8 @@ Release notes and active issue tracking are in [CHANGELOG.md](CHANGELOG.md) and 
 - `--assets-dir PATH` — override the default `assets/` directory when running.
 - `--bot` — enable AI opponent (controls Player 2).
 - `--bot-difficulty <easy|medium|hard>` — choose AI difficulty (default: medium).
+- Medium uses the previous Hard behavior: it compares left/right/hold escape paths, bounds movement prediction, fires short attack bursts, and targets useful power-ups. Healthy bots briefly contest stationary opponents after a firing lull; low-health bots prioritize evasion.
+- Hard adds mirror-aware planning: it searches for direct and bank shots, accounts for mirror rotations, opens useful paths through barriers, and predicts incoming ricochets and shots breaking through cover. It searches around firing gates and mirror edges and can prepare a bank shot by rotating a mirror first. It rechecks its firing path before each shot, favors led aim during steady movement, and shortens the lead after repeated turns. Healthy bots contest corner campers with brief pressure bursts followed by an inward retreat; low health restores evasion priority. Predictions use the current board and short-term player movement estimates, so ongoing combat can change a planned route. Speed, damage, health, and firing cooldowns follow the normal player rules.
 - `--perf <high|medium|low|ultra>` — select performance profile.
 - Runtime note: during heavy `PLAYING` scenes, effects now auto-scale down and recover to keep frame pacing smooth.
 - Runtime note: key gameplay SFX (hits/explosions) briefly duck active music streams for cue clarity.

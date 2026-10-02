@@ -1,4 +1,5 @@
 #include "ArenaLayout.h"
+#include "GameLogic.h"
 #include "Random.h"
 
 #include <cmath>
@@ -23,6 +24,56 @@ void checkClose(float got, float expected, const char* msg)
         std::cerr << "FAIL: " << msg << " got=" << got << " expected=" << expected << "\n";
         ++failures;
     }
+}
+
+int widestFiringLane(const std::array<Mirror, MIRROR_PAIRS * 2>& mirrors, int from, int to)
+{
+    int width = 0, widest = 0;
+    for(int x = from; x <= to; ++x){
+        bool clear = true;
+        for(const auto& m : mirrors)
+            if(m.alive && std::abs(m.x - x) <= MIRROR_R) clear = false;
+        width = clear ? width + 1 : 0;
+        widest = std::max(widest, width);
+    }
+    return widest;
+}
+
+int traceBankShot(std::array<Mirror, MIRROR_PAIRS * 2> mirrors, int half, int entry,
+                  bool barriersIntact, float stepSize = 1.f, float aimOffset = 0.f)
+{
+    Bullet bullet{};
+    bullet.alive = true;
+    bullet.x = mirrors[half * MIRROR_PAIRS + entry].x + aimOffset;
+    bullet.y = half == 0 ? PLAYER_SPAWN_TOP_Y : playerSpawnBottomY();
+    bullet.vy = half == 0 ? 1.f : -1.f;
+    std::array<BarrierBrick, BARRIER_BRICKS * 2> bricks{};
+    arena_layout::genBarriers(bricks);
+    int bounces = 0;
+    for(float distance = 0.f; distance < 650.f; distance += stepSize){
+        bullet.x += bullet.vx * stepSize;
+        bullet.y += bullet.vy * stepSize;
+        if(barriersIntact){
+            for(const auto& brick : bricks)
+                if(std::abs(bullet.x - brick.x) <= BRICK_W * 0.5f &&
+                   std::abs(bullet.y - brick.y) <= BRICK_H * 0.5f) return -2;
+        }
+        for(auto& m : mirrors){
+            if(!game_logic::bulletHitsMirror(bullet, m)) continue;
+            const auto velocity = game_logic::reflectMirrorVelocity(bullet.vx, bullet.vy, m.slash);
+            bullet.vx = velocity.x;
+            bullet.vy = velocity.y;
+            m.slash = !m.slash;
+            bullet.x += bullet.vx * (MIRROR_R + 1.5f);
+            bullet.y += bullet.vy * (MIRROR_R + 1.5f);
+            ++bounces;
+            break;
+        }
+        if((half == 0 && bullet.y >= playerSpawnBottomY()) ||
+           (half == 1 && bullet.y <= PLAYER_SPAWN_TOP_Y)) return bounces;
+        if(bullet.x < 0.f || bullet.x > W || bullet.y < 0.f || bullet.y > H) return -1;
+    }
+    return -1;
 }
 
 } // namespace
@@ -106,6 +157,67 @@ int main()
             }
         }
     }
+
+    for(const auto aspect : {ScreenAspect::Ratio16x10, ScreenAspect::Ratio16x9}){
+        setCanvasAspect(aspect);
+        for(int preset = 3; preset <= 5; ++preset){
+            for(uint32_t sample = 0; sample < 256; ++sample){
+                const uint32_t seed = ((sample * 12u + preset) << 5) | (sample % 32u);
+                std::array<Mirror, MIRROR_PAIRS * 2> mirrors{}, repeat{};
+                arena_layout::LayoutKind kind{};
+                char name[24]{};
+                arena_layout::genMirrorsSeeded(mirrors, seed, kind, name);
+                arena_layout::genMirrorsSeeded(repeat, seed, kind, name);
+                int count = 0;
+                for(int i = 0; i < MIRROR_PAIRS; ++i){
+                    const auto& m = mirrors[i];
+                    const auto& opposite = mirrors[i + MIRROR_PAIRS];
+                    check(m.alive == repeat[i].alive && m.x == repeat[i].x &&
+                          m.y == repeat[i].y && m.slash == repeat[i].slash,
+                          "curated mirrors reproduce from the seed");
+                    check(m.alive == opposite.alive, "curated density is equal for both players");
+                    if(!m.alive) continue;
+                    ++count;
+                    checkClose(m.x, opposite.x, "curated mirror x symmetry");
+                    checkClose(H - m.y, opposite.y, "curated mirror y symmetry");
+                    check(m.slash != opposite.slash, "curated reflection orientation symmetry");
+                    check(std::abs(m.y - PLAYER_SPAWN_TOP_Y) >= MIRROR_R + 8.f,
+                          "curated mirrors keep spawn clearance");
+                    for(int j = i + 1; j < MIRROR_PAIRS; ++j){
+                        if(!mirrors[j].alive) continue;
+                        const float dx = m.x - mirrors[j].x, dy = m.y - mirrors[j].y;
+                        check(dx * dx + dy * dy >= MIRROR_PAD * MIRROR_PAD - 0.001f,
+                              "curated mirrors keep spacing at both aspect ratios");
+                    }
+                }
+                check(count == (preset == 5 ? 8 : 20), "curated layouts retain intended density");
+                if(preset == 5){
+                    check(widestFiringLane(mirrors, 210, 430) >= 200,
+                          "Open Reactor retains a broad open center");
+                } else {
+                    const int minWidth = preset == 4 ? 40 : 24;
+                    check(widestFiringLane(mirrors, 180, 310) >= minWidth &&
+                          widestFiringLane(mirrors, 330, 460) >= minWidth,
+                          "dense arenas retain two clear firing gates");
+                }
+                for(int half = 0; half < 2; ++half){
+                    for(int entry : {0, 3}){
+                        for(float fps : {60.f, 120.f, 240.f}){
+                            int successfulAims = 0;
+                            for(int offset = -3; offset <= 3; ++offset)
+                                if(traceBankShot(mirrors, half, entry, false, 190.f / fps,
+                                                 static_cast<float>(offset)) == 4) ++successfulAims;
+                            check(successfulAims >= 4,
+                                  "both bank routes offer a usable aiming window at common frame rates");
+                        }
+                        check(traceBankShot(mirrors, half, entry, true) == -2,
+                              "bank routes still require breaking the barriers");
+                    }
+                }
+            }
+        }
+    }
+    setCanvasAspect(ScreenAspect::Ratio16x10);
 
     struct BombRangeCase {
         arena_layout::LayoutKind kind;
