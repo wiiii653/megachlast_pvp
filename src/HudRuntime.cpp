@@ -17,6 +17,15 @@ float clampf(float v, float lo, float hi)
     return std::max(lo, std::min(hi, v));
 }
 
+void fitBoardText(sf::Text& text, float height, float maxWidth)
+{
+    const auto bounds = text.getLocalBounds();
+    if(bounds.size.x <= 0.f || bounds.size.y <= 0.f) return;
+    const float scale = std::min(height / bounds.size.y, maxWidth / bounds.size.x);
+    text.setScale(sf::Vector2f(scale, scale));
+    text.setOrigin(bounds.position + bounds.size * 0.5f);
+}
+
 } // namespace
 
 void drawPlayerRows(sf::RenderTarget& rt, sf::Font& font, const Player& p1, const Player& p2)
@@ -448,19 +457,22 @@ void drawKnockoutOverlay(sf::RenderTarget& rt,
     float pulse = 0.75f + 0.25f * std::sin(timer * 18.f);
     std::string text = endsMatch ? "MATCH POINT!" : "K.O.!";
     sf::Text banner(headingFont ? *headingFont : font, text, endsMatch ? 24 : 30);
+    fitBoardText(banner, H * 0.03f, W * 0.24f);
     sf::Color color = scorer == 1
         ? sf::Color(70, static_cast<uint8_t>(210 + 45 * pulse), 255)
         : sf::Color(255, static_cast<uint8_t>(100 + 80 * pulse), 80);
     banner.setFillColor(color);
-    auto bounds = banner.getLocalBounds();
-    banner.setOrigin(bounds.position);
-    banner.setPosition(sf::Vector2f(W * 0.5f - bounds.size.x * 0.5f, H * 0.5f - 56.f));
+    const float bannerY = H * 0.5f - H * 0.13f;
+    banner.setPosition(sf::Vector2f(W * 0.5f, bannerY));
     rt.draw(banner);
 
     sf::Text scorerText(font, scorer == 1 ? "PLAYER 1 SCORES" : "PLAYER 2 SCORES", 10);
     scorerText.setFillColor(sf::Color(240, 240, 250, static_cast<uint8_t>(180 + 75 * pulse)));
     auto sb = scorerText.getLocalBounds();
-    scorerText.setPosition(sf::Vector2f(W * 0.5f - sb.size.x * 0.5f, H * 0.5f - 22.f));
+    const auto bannerBounds = banner.getGlobalBounds();
+    scorerText.setOrigin(sb.position + sb.size * 0.5f);
+    scorerText.setPosition(sf::Vector2f(W * 0.5f,
+                                      bannerBounds.position.y + bannerBounds.size.y + 6.f + sb.size.y * 0.5f));
     rt.draw(scorerText);
 }
 
@@ -475,10 +487,9 @@ void drawCountdownOverlay(sf::RenderTarget& rt,
     int num = std::max(1, static_cast<int>(std::ceil(countdownTimer)));
     float alpha = clampf(std::fmod(countdownTimer, 1.f) * 2.f, 0.f, 1.f);
     sf::Text ct(headingFont ? *headingFont : font, std::to_string(num), 28);
+    fitBoardText(ct, H * 0.05f, W * 0.05f);
     ct.setFillColor(sf::Color(255, 255, 180, static_cast<uint8_t>(180 + 75 * alpha)));
-    auto cb = ct.getLocalBounds();
-    ct.setOrigin(cb.position);
-    ct.setPosition(sf::Vector2f(W / 2.f - cb.size.x / 2.f, H / 2.f - 20.f));
+    ct.setPosition(sf::Vector2f(W / 2.f, H / 2.f - 10.f));
     rt.draw(ct);
 
     sf::Text go(headingFont ? *headingFont : font, "GET READY!", 11);
@@ -505,16 +516,14 @@ void drawCountdownOverlay(sf::RenderTarget& rt,
 void drawFightFlashOverlay(sf::RenderTarget& rt, sf::Font& font, float fightFlashTimer)
 {
     float frac = clampf(fightFlashTimer / 0.9f, 0.f, 1.f);
-    float sz = 24.f + (1.f - frac) * 16.f;
     uint8_t fa = static_cast<uint8_t>(std::min(255.f, frac * 2.f * 255.f));
-    sf::Text ft(font, "FIGHT!", static_cast<unsigned>(sz));
+    sf::Text ft(font, "FIGHT!", 24);
+    fitBoardText(ft, H * (0.03f + (1.f - frac) * 0.01f), W * 0.18f);
     float fp = 0.5f + 0.5f * std::sin(fightFlashTimer * 20.f);
     ft.setFillColor(sf::Color(255,
         static_cast<uint8_t>(220 + 35 * fp),
         static_cast<uint8_t>(60 + 80 * fp), fa));
-    auto fb = ft.getLocalBounds();
-    ft.setOrigin(fb.position);
-    ft.setPosition(sf::Vector2f(W / 2.f - fb.size.x / 2.f, H / 2.f - fb.size.y / 2.f));
+    ft.setPosition(sf::Vector2f(W / 2.f, H / 2.f));
     rt.draw(ft);
 }
 
@@ -841,17 +850,15 @@ void drawFragFloats(sf::RenderTarget& rt,
     for(const auto& f : fragFloats){
         if(!f.alive) continue;
         float frac = clampf(f.ttl / f.maxttl, 0.f, 1.f);
-        float scale = 1.f + (1.f - frac) * 0.55f;
+        float scale = 1.f + (1.f - frac) * 0.25f;
         uint8_t alpha = static_cast<uint8_t>(frac * 255.f);
-        sf::Text ft(font, "FRAG!",
-                    static_cast<unsigned>(std::max(1.f, 16.f * scale)));
+        sf::Text ft(font, "FRAG!", 16);
+        fitBoardText(ft, BRICK_H * scale, W * 0.10f);
         sf::Color fc = (f.scorer == 1)
             ? sf::Color(0, 255, 255, alpha)
             : sf::Color(255, 80, 80, alpha);
         ft.setFillColor(fc);
-        auto fb = ft.getLocalBounds();
-        ft.setPosition(sf::Vector2f(f.x - fb.size.x * 0.5f,
-                                    f.y - fb.size.y * 0.5f));
+        ft.setPosition(sf::Vector2f(f.x, f.y));
         rt.draw(ft);
     }
 }
@@ -899,8 +906,9 @@ void drawTextOverlays(sf::RenderTarget& rt, sf::Font& font, const TextOverlayCon
                           context.controlsScroll, context.controlsCapturing,
                           context.controlsCaptureAction, *context.controllers, &headingFont);
 
-    drawKnockoutOverlay(rt, font, context.knockoutTimer,
-                        context.knockoutScorer, context.knockoutEndsMatch, &headingFont);
+    if(context.state == GameState::COUNTDOWN || context.state == GameState::PLAYING)
+        drawKnockoutOverlay(rt, font, context.knockoutTimer,
+                            context.knockoutScorer, context.knockoutEndsMatch, &headingFont);
 }
 
 } // namespace hud_runtime
