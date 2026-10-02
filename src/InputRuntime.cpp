@@ -1,4 +1,5 @@
 #include "InputRuntime.h"
+#include "DonationConfig.h"
 
 #include "ControlsInput.h"
 #include "ControllerInput.h"
@@ -620,15 +621,14 @@ bool handleDonateKeyPressed(const sf::Event::KeyPressed& kp,
                             const controls::Profile& keyboard)
 {
     const Action a = resolveAction(keyboard, GameState::DONATE, kp.scancode);
-    if(a == Action::UiUp || a == Action::UiDown)
-        donateSel = (donateSel + 1) % 2;
-    if(a == Action::UiConfirm && donateSel == 0){
-        sf::Clipboard::setString("https://buymeacoffee.com/ojnen");
-        donateMsgTimer = 2.0f;
-    }
+    if(a == Action::UiUp)
+        donateSel = (donateSel + donations::entryCount - 1) % donations::entryCount;
+    if(a == Action::UiDown)
+        donateSel = (donateSel + 1) % donations::entryCount;
+    if(a == Action::UiUp || a == Action::UiDown) donateMsgTimer = 0.f;
     if(a == Action::UiBack) state = GameState::MENU;
-    if(kp.scancode == sf::Keyboard::Scan::C){
-        sf::Clipboard::setString("https://buymeacoffee.com/ojnen");
+    if(a == Action::UiConfirm || kp.scancode == sf::Keyboard::Scan::C){
+        sf::Clipboard::setString(donations::entries[donateSel].address);
         donateMsgTimer = 2.0f;
     }
     return true;

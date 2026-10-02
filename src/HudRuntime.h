@@ -10,6 +10,7 @@
 namespace hud_runtime {
 
 struct TextOverlayContext {
+    sf::Font* headingFont = nullptr;
     const char* appVersion = "";
     GameState state = GameState::MENU;
     float dt = 0.f;
@@ -61,8 +62,8 @@ void drawPersistentInfo(sf::RenderTarget& rt,
                         bool botEnabled,
                         BotDifficulty botDifficulty);
 void drawMenuInstructions(sf::RenderTarget& rt, sf::Font& font, float menuAnim, bool showBlink, int menuSel);
-void drawDonateOverlay(sf::RenderTarget& rt, sf::Font& font, float& donateMsgTimer, float dt, int donateSel);
-void drawPausedOverlay(sf::RenderTarget& rt, sf::Font& font);
+void drawDonateOverlay(sf::RenderTarget& rt, sf::Font& font, float& donateMsgTimer, float dt, int donateSel, sf::Font* headingFont = nullptr);
+void drawPausedOverlay(sf::RenderTarget& rt, sf::Font& font, sf::Font* headingFont = nullptr);
 void drawGameOverOverlay(sf::RenderTarget& rt,
                          sf::Font& font,
                          float menuAnim,
@@ -71,19 +72,22 @@ void drawGameOverOverlay(sf::RenderTarget& rt,
                          int p2Score,
                          int p1RoundWins,
                          int p2RoundWins,
-                         bool showBlink);
-void drawMatchSetupOverlay(sf::RenderTarget& rt, sf::Font& font, const MatchSetup& setup);
+                         bool showBlink,
+                         sf::Font* headingFont = nullptr);
+void drawMatchSetupOverlay(sf::RenderTarget& rt, sf::Font& font, const MatchSetup& setup, sf::Font* headingFont = nullptr);
 void drawKnockoutOverlay(sf::RenderTarget& rt,
                          sf::Font& font,
                          float timer,
                          int scorer,
-                         bool endsMatch);
+                         bool endsMatch,
+                         sf::Font* headingFont = nullptr);
 void drawCountdownOverlay(sf::RenderTarget& rt,
                           sf::Font& font,
                           float countdownTimer,
                           sf::Color layoutColor,
                           const char* layoutName,
-                          uint32_t boardSeed);
+                          uint32_t boardSeed,
+                          sf::Font* headingFont = nullptr);
 void drawFightFlashOverlay(sf::RenderTarget& rt, sf::Font& font, float fightFlashTimer);
 void drawSettingsPanel(sf::RenderTarget& rt,
                        sf::Font& font,
@@ -95,7 +99,8 @@ void drawSettingsPanel(sf::RenderTarget& rt,
                        bool botEnabled,
                        BotDifficulty botDifficulty,
                        const GraphicsSettings& graphicsSettings,
-                       const ControllerSettings& controllers);
+                       const ControllerSettings& controllers,
+                       sf::Font* headingFont = nullptr);
 void drawControlsPanel(sf::RenderTarget& rt,
                        sf::Font& font,
                        float menuAnim,
@@ -104,7 +109,8 @@ void drawControlsPanel(sf::RenderTarget& rt,
                        int controlsScroll,
                        bool controlsCapturing,
                        int controlsCaptureAction,
-                       const ControllerSettings& controllers);
+                       const ControllerSettings& controllers,
+                       sf::Font* headingFont = nullptr);
 void drawFragFloats(sf::RenderTarget& rt,
                     sf::Font& font,
                     const std::array<FragFloat, MAX_FRAG_FLOATS>& fragFloats);

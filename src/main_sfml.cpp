@@ -697,7 +697,7 @@ int main(int argc, char** argv){
         renderCtx.drawSpecialStars = [&]{ render_runtime::drawSpecialStars(rt, specialStars, menuAnim); };
         renderCtx.drawBarriers = [&]{ render_runtime::drawAllBarriers(rt, barriers, menuAnim); };
         renderCtx.drawParticles = [&]{ render_runtime::drawParticles(rt, particles); };
-        renderCtx.drawFragFloats = [&]{ if(haveFont) hud_runtime::drawFragFloats(rt, font, fragFloats); };
+        renderCtx.drawFragFloats = [&]{ if(haveFont) hud_runtime::drawFragFloats(rt, haveRetroTitleFont ? retroTitleFont : font, fragFloats); };
         renderCtx.drawPlayerRows = [&]{ if(haveFont) hud_runtime::drawPlayerRows(rt, font, p1, p2); };
         render_runtime::drawIngameElements(rt, renderCtx);
 
@@ -726,6 +726,7 @@ int main(int argc, char** argv){
 
         if(haveFont){
             hud_runtime::TextOverlayContext hudCtx{};
+            hudCtx.headingFont = haveRetroTitleFont ? &retroTitleFont : &font;
             hudCtx.appVersion = BUILD_VERSION_LABEL;
             hudCtx.state = state;
             hudCtx.dt = dt;

@@ -40,7 +40,9 @@ General:
 - F11: toggle fullscreen
 - Escape: open menu from game screens (quit only when already in menu)
 
-Developer shortcuts (`B`, `V`, `G`, `P`, `M`, `,`, `.`, `K`, `L`, `O`, `D`, `F11`) are also configurable from the Keyboard profile and keep their defaults. The `C` copy-link shortcut on the Donate screen is a fixed convenience shortcut.
+Developer shortcuts (`B`, `V`, `G`, `P`, `M`, `,`, `.`, `K`, `L`, `O`, `D`, `F11`) are also configurable from the Keyboard profile and keep their defaults. The `C` copy shortcut on the Donate screen is a fixed convenience shortcut.
+
+The Donate screen lists the coffee link and wallet addresses with their networks. Use Up/Down (or the controller stick/D-pad) to select an entry, then Enter, C, or the controller's south button to copy its link or address. USDT on TRON (TRC-20) and Ethereum (ERC-20) use separate entries; match the displayed network when sending.
 
 Before each match, choose one 12-second round modifier: Shield, Rapid Fire, Spread Shot, or Overdrive. Choose a curated arena (Mirror Maze, Fortress, or Open Reactor) with Q/E. In match setup, P1 uses A/D, P2 uses Left/Right, and Enter starts the match. Escape returns to the menu. Controllers use the stick or D-pad to choose modifiers, P1's L1/R1 to choose the arena, and either controller's south button to start.
 

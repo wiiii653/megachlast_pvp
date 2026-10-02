@@ -1,6 +1,7 @@
 #include "HudRuntime.h"
 
 #include "ControlsInput.h"
+#include "DonationConfig.h"
 #include "GameConstants.h"
 
 #include <algorithm>
@@ -70,7 +71,8 @@ void drawPlayerRows(sf::RenderTarget& rt, sf::Font& font, const Player& p1, cons
         float txtY = cy + 1.f;
 
         float x = cx;
-        sf::Text lbl(font, "P1", 8);
+        static sf::Text lbl(font, "P1", 8);
+        lbl.setFont(font);
         lbl.setFillColor(sf::Color(0, 255, 255, 230));
         lbl.setPosition(sf::Vector2f(x, txtY));
         rt.draw(lbl);
@@ -79,13 +81,17 @@ void drawPlayerRows(sf::RenderTarget& rt, sf::Font& font, const Player& p1, cons
         drawInlineBar(x, barY, p1.energy, sf::Color(0, 255, 255));
         x += BAR_W + PAD;
 
-        sf::Text kt(font, kbuf, 7);
+        static sf::Text kt(font, "", 7);
+        kt.setFont(font);
+        kt.setString(kbuf);
         kt.setFillColor(sf::Color(0, 230, 230, 210));
         kt.setPosition(sf::Vector2f(x, txtY));
         rt.draw(kt);
         x += kt.getLocalBounds().size.x + PAD;
 
-        sf::Text pt(font, pbuf, 7);
+        static sf::Text pt(font, "", 7);
+        pt.setFont(font);
+        pt.setString(pbuf);
         pt.setFillColor(sf::Color(255, 220, 40, 210));
         pt.setPosition(sf::Vector2f(x, txtY));
         rt.draw(pt);
@@ -108,10 +114,14 @@ void drawPlayerRows(sf::RenderTarget& rt, sf::Font& font, const Player& p1, cons
         float txtY = cy + 1.f;
 
         float rowW = 4.f + 14.f + PAD + BAR_W + PAD;
-        sf::Text ktMeasure(font, kbuf, 7);
-        rowW += ktMeasure.getLocalBounds().size.x + PAD;
-        sf::Text ptMeasure(font, pbuf, 7);
-        rowW += ptMeasure.getLocalBounds().size.x + PAD;
+        static sf::Text kt(font, "", 7);
+        kt.setFont(font);
+        kt.setString(kbuf);
+        rowW += kt.getLocalBounds().size.x + PAD;
+        static sf::Text pt(font, "", 7);
+        pt.setFont(font);
+        pt.setString(pbuf);
+        rowW += pt.getLocalBounds().size.x + PAD;
         rowW += 4 * 5.f + 4.f;
 
         float cx = W - rowW - 2.f;
@@ -123,13 +133,11 @@ void drawPlayerRows(sf::RenderTarget& rt, sf::Font& font, const Player& p1, cons
         x = traitDot(x, dotY, p2.spreadTimer, sf::Color(120, 255, 100, 220));
         x = traitDot(x, dotY, p2.overdriveTimer, sf::Color(255, 100, 255, 220));
 
-        sf::Text kt(font, kbuf, 7);
         kt.setFillColor(sf::Color(255, 100, 100, 210));
         kt.setPosition(sf::Vector2f(x, txtY));
         rt.draw(kt);
         x += kt.getLocalBounds().size.x + PAD;
 
-        sf::Text pt(font, pbuf, 7);
         pt.setFillColor(sf::Color(255, 220, 40, 210));
         pt.setPosition(sf::Vector2f(x, txtY));
         rt.draw(pt);
@@ -138,7 +146,8 @@ void drawPlayerRows(sf::RenderTarget& rt, sf::Font& font, const Player& p1, cons
         drawInlineBar(x, barY, p2.energy, sf::Color(255, 80, 80));
         x += BAR_W + PAD;
 
-        sf::Text lbl(font, "P2", 8);
+        static sf::Text lbl(font, "P2", 8);
+        lbl.setFont(font);
         lbl.setFillColor(sf::Color(255, 80, 80, 230));
         lbl.setPosition(sf::Vector2f(x, txtY));
         rt.draw(lbl);
@@ -159,7 +168,9 @@ void drawPersistentInfo(sf::RenderTarget& rt,
     char fb[64];
     std::snprintf(fb, sizeof(fb), "PERF:%s FX:%d FPS:%.0f",
                   pn[static_cast<int>(perfLevel)], fxLevel, fpsDisplay);
-    sf::Text pt(font, fb, 7);
+    static sf::Text pt(font, "", 7);
+    pt.setFont(font);
+    pt.setString(fb);
     pt.setFillColor(sf::Color(120, 130, 155, 175));
     auto pb = pt.getLocalBounds();
 
@@ -169,7 +180,9 @@ void drawPersistentInfo(sf::RenderTarget& rt,
         botStr += dn[static_cast<int>(botDifficulty)];
         botStr += "]";
     }
-    sf::Text bt(font, botStr, 7);
+    static sf::Text bt(font, "", 7);
+    bt.setFont(font);
+    bt.setString(botStr);
     bt.setFillColor(botEnabled ? sf::Color(220, 210, 95, 190) : sf::Color(115, 125, 150, 155));
     auto bb = bt.getLocalBounds();
 
@@ -179,7 +192,9 @@ void drawPersistentInfo(sf::RenderTarget& rt,
     rt.draw(bt);
 
     if(appVersion && appVersion[0] != '\0'){
-        sf::Text vt(font, appVersion, 7);
+        static sf::Text vt(font, "", 7);
+        vt.setFont(font);
+        vt.setString(appVersion);
         vt.setFillColor(sf::Color(120, 130, 155, 175));
         vt.setPosition(sf::Vector2f(4.f, 4.f));
         rt.draw(vt);
@@ -203,13 +218,17 @@ void drawMenuInstructions(sf::RenderTarget& rt, sf::Font& font, float menuAnim, 
             ly += INFO_BLANK_GAP;
             continue;
         }
-        sf::Text shadow(font, l.txt, INFO_FONT_SIZE);
+        static sf::Text shadow(font, "", INFO_FONT_SIZE);
+        shadow.setFont(font);
+        shadow.setString(l.txt);
         shadow.setFillColor(sf::Color(0, 0, 0, 140));
         auto sb = shadow.getLocalBounds();
         shadow.setPosition(sf::Vector2f(W / 2.f - sb.size.x / 2.f + 1.f, ly + 1.f));
         rt.draw(shadow);
 
-        sf::Text lt(font, l.txt, INFO_FONT_SIZE);
+        static sf::Text lt(font, "", INFO_FONT_SIZE);
+        lt.setFont(font);
+        lt.setString(l.txt);
         lt.setFillColor(l.col);
         auto lb = lt.getLocalBounds();
         lt.setPosition(sf::Vector2f(W / 2.f - lb.size.x / 2.f, ly));
@@ -218,19 +237,24 @@ void drawMenuInstructions(sf::RenderTarget& rt, sf::Font& font, float menuAnim, 
     }
 
     float sp = 0.6f + 0.4f * std::sin(menuAnim * 4.f);
-    const char* const menuItems[] = {"PLAY", "SETTINGS", "DONATE"};
+    static std::array<sf::Text, 3> menuItems = {
+        sf::Text(font, "PLAY", 12),
+        sf::Text(font, "SETTINGS", 12),
+        sf::Text(font, "DONATE", 12)
+    };
     const float itemGap = 12.f;
     float itemWidths[3]{};
     float totalWidth = 0.f;
     for(int i = 0; i < 3; ++i){
-        sf::Text item(font, menuItems[i], 12);
+        auto& item = menuItems[i];
+        item.setFont(font);
         itemWidths[i] = item.getLocalBounds().size.x;
         totalWidth += itemWidths[i];
     }
     totalWidth += itemGap * 2.f;
     float itemX = W / 2.f - totalWidth / 2.f;
     for(int i = 0; i < 3; ++i){
-        sf::Text item(font, menuItems[i], 12);
+        auto& item = menuItems[i];
         item.setPosition(sf::Vector2f(itemX, H - 58.f));
         const bool selected = i == menuSel;
         item.setFillColor(selected && showBlink ? sf::Color(
@@ -241,74 +265,82 @@ void drawMenuInstructions(sf::RenderTarget& rt, sf::Font& font, float menuAnim, 
         itemX += itemWidths[i] + itemGap;
     }
 
-    sf::Text hint(font, "LEFT/RIGHT SELECT   ENTER / X ACCEPT", 8);
+    static sf::Text hint(font, "LEFT/RIGHT SELECT   ENTER / X ACCEPT", 8);
+    hint.setFont(font);
     hint.setFillColor(sf::Color(180, 180, 200));
     const auto hb = hint.getLocalBounds();
     hint.setPosition(sf::Vector2f(W / 2.f - hb.size.x / 2.f, H - 35.f));
     rt.draw(hint);
 }
 
-void drawDonateOverlay(sf::RenderTarget& rt, sf::Font& font, float& donateMsgTimer, float dt, int donateSel)
+void drawDonateOverlay(sf::RenderTarget& rt, sf::Font& font, float& donateMsgTimer, float dt, int donateSel, sf::Font* headingFont)
 {
     sf::RectangleShape panel(sf::Vector2f((float)W, (float)H));
     panel.setFillColor(sf::Color(0, 0, 0, 210));
     rt.draw(panel);
 
-    sf::Text title(font, "DONATE", 20);
+    sf::Text title(headingFont ? *headingFont : font, "DONATE", 20);
     title.setFillColor(sf::Color(255, 230, 140));
     auto tb = title.getLocalBounds();
-    title.setPosition(sf::Vector2f(W / 2.f - tb.size.x / 2.f, 50.f));
+    title.setPosition(sf::Vector2f(W / 2.f - tb.size.x / 2.f, 16.f));
     rt.draw(title);
 
-    const bool buyMeSelected = donateSel == 0;
-    sf::Text buyMe(font, "BUY ME A COFFEE", 12);
-    buyMe.setFillColor(buyMeSelected ? sf::Color(255, 220, 120) : sf::Color(160, 160, 180));
-    auto bm = buyMe.getLocalBounds();
-    buyMe.setPosition(sf::Vector2f(W / 2.f - bm.size.x / 2.f, 112.f));
-    rt.draw(buyMe);
+    sf::Text intro(font, "Choose the matching network when sending crypto.", 9);
+    intro.setFillColor(sf::Color(180, 180, 200));
+    intro.setPosition(sf::Vector2f(W / 2.f - intro.getLocalBounds().size.x / 2.f, 49.f));
+    rt.draw(intro);
 
-    sf::Text bitcoin(font, "BITCOIN / LIGHTNING", 12);
-    bitcoin.setFillColor(!buyMeSelected ? sf::Color(255, 220, 120) : sf::Color(130, 130, 150));
-    auto btc = bitcoin.getLocalBounds();
-    bitcoin.setPosition(sf::Vector2f(W / 2.f - btc.size.x / 2.f, 138.f));
-    rt.draw(bitcoin);
+    sf::Text label(font, "METHOD / NETWORK", 9);
+    label.setFillColor(sf::Color(160, 160, 180));
+    label.setPosition(sf::Vector2f(24.f, 72.f));
+    rt.draw(label);
+    sf::Text address(font, "ADDRESS / LINK", 9);
+    address.setFillColor(sf::Color(160, 160, 180));
+    address.setPosition(sf::Vector2f(220.f, 72.f));
+    rt.draw(address);
 
-    sf::Text placeholder(font, "COMING SOON - ADDRESS NOT CONFIGURED", 8);
-    placeholder.setFillColor(sf::Color(120, 120, 140));
-    auto ph = placeholder.getLocalBounds();
-    placeholder.setPosition(sf::Vector2f(W / 2.f - ph.size.x / 2.f, 158.f));
-    rt.draw(placeholder);
+    for(int i = 0; i < donations::entryCount; ++i){
+        const float y = 96.f + i * 22.f;
+        const bool selected = i == donateSel;
+        if(selected){
+            sf::RectangleShape highlight(sf::Vector2f(W - 32.f, 20.f));
+            highlight.setPosition(sf::Vector2f(16.f, y - 3.f));
+            highlight.setFillColor(sf::Color(70, 55, 25, 180));
+            rt.draw(highlight);
+        }
+        label.setString(donations::entries[i].label);
+        label.setFillColor(selected ? sf::Color(255, 220, 120) : sf::Color(170, 170, 190));
+        label.setPosition(sf::Vector2f(24.f, y));
+        rt.draw(label);
+        address.setString(donations::entries[i].address);
+        address.setFillColor(selected ? sf::Color(230, 230, 255) : sf::Color(170, 180, 210));
+        address.setPosition(sf::Vector2f(220.f, y));
+        rt.draw(address);
+    }
 
-    const std::string donateUrl = "https://buymeacoffee.com/ojnen";
-    sf::Text url(font, donateUrl, 12);
-    url.setFillColor(sf::Color(200, 200, 255));
-    auto ub = url.getLocalBounds();
-    url.setPosition(sf::Vector2f(W / 2.f - ub.size.x / 2.f, 185.f));
-    rt.draw(url);
-
-    sf::Text hint(font, "Up/Down select   Enter accept   C copies link   Esc back", 8);
+    sf::Text hint(font, "Up/Down: select   Enter / C / Pad A: copy   Esc / Pad B: back", 8);
     hint.setFillColor(sf::Color(160, 160, 180));
     auto hb = hint.getLocalBounds();
-    hint.setPosition(sf::Vector2f(W / 2.f - hb.size.x / 2.f, 215.f));
+    hint.setPosition(sf::Vector2f(W / 2.f - hb.size.x / 2.f, H - 48.f));
     rt.draw(hint);
 
     if(donateMsgTimer > 0.f){
-        sf::Text cm(font, "Link copied to clipboard!", 10);
+        sf::Text cm(font, donateSel == 0 ? "Link copied to clipboard!" : "Wallet address copied to clipboard!", 10);
         cm.setFillColor(sf::Color(120, 255, 120));
         auto cb = cm.getLocalBounds();
-        cm.setPosition(sf::Vector2f(W / 2.f - cb.size.x / 2.f, 245.f));
+        cm.setPosition(sf::Vector2f(W / 2.f - cb.size.x / 2.f, H - 28.f));
         rt.draw(cm);
     }
     if(donateMsgTimer > 0.f) donateMsgTimer = std::max(0.f, donateMsgTimer - dt);
 }
 
-void drawPausedOverlay(sf::RenderTarget& rt, sf::Font& font)
+void drawPausedOverlay(sf::RenderTarget& rt, sf::Font& font, sf::Font* headingFont)
 {
     sf::RectangleShape dim(sf::Vector2f((float)W, (float)H));
     dim.setFillColor(sf::Color(0, 0, 0, 100));
     rt.draw(dim);
 
-    sf::Text pt(font, "~~ PAUSED ~~", 16);
+    sf::Text pt(headingFont ? *headingFont : font, "~~ PAUSED ~~", 16);
     pt.setFillColor(sf::Color(200, 200, 255));
     auto pb = pt.getLocalBounds();
     pt.setPosition(sf::Vector2f(W / 2.f - pb.size.x / 2.f, H / 2.f - 10.f));
@@ -329,7 +361,8 @@ void drawGameOverOverlay(sf::RenderTarget& rt,
                          int p2Score,
                          int p1RoundWins,
                          int p2RoundWins,
-                         bool showBlink)
+                         bool showBlink,
+                         sf::Font* headingFont)
 {
     sf::RectangleShape dim(sf::Vector2f((float)W, (float)H));
     dim.setFillColor(sf::Color(0, 0, 0, 140));
@@ -340,7 +373,7 @@ void drawGameOverOverlay(sf::RenderTarget& rt,
     sf::Color wc = (winner == 1)
         ? sf::Color(0, static_cast<uint8_t>(200 + 55 * wp), static_cast<uint8_t>(200 + 55 * wp))
         : sf::Color(static_cast<uint8_t>(200 + 55 * wp), 60, 60);
-    sf::Text wt(font, winmsg, 16);
+    sf::Text wt(headingFont ? *headingFont : font, winmsg, 16);
     wt.setFillColor(wc);
     auto wb = wt.getLocalBounds();
     wt.setPosition(sf::Vector2f(W / 2.f - wb.size.x / 2.f, H / 2.f - 20.f));
@@ -362,13 +395,13 @@ void drawGameOverOverlay(sf::RenderTarget& rt,
     rt.draw(rm);
 }
 
-void drawMatchSetupOverlay(sf::RenderTarget& rt, sf::Font& font, const MatchSetup& setup)
+void drawMatchSetupOverlay(sf::RenderTarget& rt, sf::Font& font, const MatchSetup& setup, sf::Font* headingFont)
 {
     sf::RectangleShape dim(sf::Vector2f(static_cast<float>(W), static_cast<float>(H)));
     dim.setFillColor(sf::Color(0, 0, 0, 170));
     rt.draw(dim);
 
-    sf::Text title(font, "MATCH SETUP", 18);
+    sf::Text title(headingFont ? *headingFont : font, "MATCH SETUP", 18);
     title.setFillColor(sf::Color(220, 220, 255));
     auto tb = title.getLocalBounds();
     title.setPosition(sf::Vector2f(W * 0.5f - tb.size.x * 0.5f, H * 0.5f - 62.f));
@@ -408,18 +441,20 @@ void drawKnockoutOverlay(sf::RenderTarget& rt,
                          sf::Font& font,
                          float timer,
                          int scorer,
-                         bool endsMatch)
+                         bool endsMatch,
+                         sf::Font* headingFont)
 {
     if(timer <= 0.f || scorer == 0) return;
     float pulse = 0.75f + 0.25f * std::sin(timer * 18.f);
     std::string text = endsMatch ? "MATCH POINT!" : "K.O.!";
-    sf::Text banner(font, text, endsMatch ? 24 : 30);
+    sf::Text banner(headingFont ? *headingFont : font, text, endsMatch ? 24 : 30);
     sf::Color color = scorer == 1
         ? sf::Color(70, static_cast<uint8_t>(210 + 45 * pulse), 255)
         : sf::Color(255, static_cast<uint8_t>(100 + 80 * pulse), 80);
     banner.setFillColor(color);
     auto bounds = banner.getLocalBounds();
-    banner.setPosition(sf::Vector2f(W * 0.5f - bounds.size.x * 0.5f, H * 0.5f - 48.f));
+    banner.setOrigin(bounds.position);
+    banner.setPosition(sf::Vector2f(W * 0.5f - bounds.size.x * 0.5f, H * 0.5f - 56.f));
     rt.draw(banner);
 
     sf::Text scorerText(font, scorer == 1 ? "PLAYER 1 SCORES" : "PLAYER 2 SCORES", 10);
@@ -434,17 +469,19 @@ void drawCountdownOverlay(sf::RenderTarget& rt,
                           float countdownTimer,
                           sf::Color layoutColor,
                           const char* layoutName,
-                          uint32_t boardSeed)
+                          uint32_t boardSeed,
+                          sf::Font* headingFont)
 {
     int num = std::max(1, static_cast<int>(std::ceil(countdownTimer)));
     float alpha = clampf(std::fmod(countdownTimer, 1.f) * 2.f, 0.f, 1.f);
-    sf::Text ct(font, std::to_string(num), 28);
+    sf::Text ct(headingFont ? *headingFont : font, std::to_string(num), 28);
     ct.setFillColor(sf::Color(255, 255, 180, static_cast<uint8_t>(180 + 75 * alpha)));
     auto cb = ct.getLocalBounds();
+    ct.setOrigin(cb.position);
     ct.setPosition(sf::Vector2f(W / 2.f - cb.size.x / 2.f, H / 2.f - 20.f));
     rt.draw(ct);
 
-    sf::Text go(font, "GET READY!", 11);
+    sf::Text go(headingFont ? *headingFont : font, "GET READY!", 11);
     go.setFillColor(sf::Color(180, 180, 200, 160));
     auto gb = go.getLocalBounds();
     go.setPosition(sf::Vector2f(W / 2.f - gb.size.x / 2.f, H / 2.f + 12.f));
@@ -476,6 +513,7 @@ void drawFightFlashOverlay(sf::RenderTarget& rt, sf::Font& font, float fightFlas
         static_cast<uint8_t>(220 + 35 * fp),
         static_cast<uint8_t>(60 + 80 * fp), fa));
     auto fb = ft.getLocalBounds();
+    ft.setOrigin(fb.position);
     ft.setPosition(sf::Vector2f(W / 2.f - fb.size.x / 2.f, H / 2.f - fb.size.y / 2.f));
     rt.draw(ft);
 }
@@ -490,7 +528,8 @@ void drawSettingsPanel(sf::RenderTarget& rt,
                        bool botEnabled,
                        BotDifficulty botDifficulty,
                        const GraphicsSettings& graphicsSettings,
-                       const ControllerSettings& controllers)
+                       const ControllerSettings& controllers,
+                       sf::Font* headingFont)
 {
     constexpr int OPT_MUSIC = 0;
     constexpr int OPT_SFX = 1;
@@ -532,7 +571,7 @@ void drawSettingsPanel(sf::RenderTarget& rt,
         static_cast<uint8_t>(60 + hp * 60), 200));
     rt.draw(hbar);
 
-    sf::Text titleT(font, "SETTINGS", 13);
+    sf::Text titleT(headingFont ? *headingFont : font, "SETTINGS", 13);
     titleT.setFillColor(sf::Color(200, 200, 255));
     auto ttl = titleT.getLocalBounds();
     titleT.setPosition(sf::Vector2f(px + panelW / 2.f - ttl.size.x / 2.f, py + 3.f));
@@ -707,7 +746,8 @@ void drawControlsPanel(sf::RenderTarget& rt,
                        int controlsScroll,
                        bool controlsCapturing,
                        int controlsCaptureAction,
-                       const ControllerSettings& controllers)
+                       const ControllerSettings& controllers,
+                       sf::Font* headingFont)
 {
     const auto pid = static_cast<controls::ProfileId>(controlsProfile);
     const std::size_t actionCount = controls::profileActionCount(pid);
@@ -718,7 +758,7 @@ void drawControlsPanel(sf::RenderTarget& rt,
     rt.draw(panel);
 
     float titlePulse = 0.7f + 0.3f * std::sin(menuAnim * 3.f);
-    sf::Text title(font, "CONTROLS", 15);
+    sf::Text title(headingFont ? *headingFont : font, "CONTROLS", 15);
     title.setFillColor(sf::Color(
         static_cast<uint8_t>(170 + 60 * titlePulse),
         static_cast<uint8_t>(170 + 60 * titlePulse), 255));
@@ -818,8 +858,9 @@ void drawFragFloats(sf::RenderTarget& rt,
 
 void drawTextOverlays(sf::RenderTarget& rt, sf::Font& font, const TextOverlayContext& context)
 {
+    sf::Font& headingFont = context.headingFont ? *context.headingFont : font;
     if(context.state == GameState::DONATE && context.donateMsgTimer)
-        drawDonateOverlay(rt, font, *context.donateMsgTimer, context.dt, context.donateSel);
+        drawDonateOverlay(rt, font, *context.donateMsgTimer, context.dt, context.donateSel, &headingFont);
 
     drawPersistentInfo(rt, font, context.appVersion, context.perfLevel, context.fxLevel, context.fpsDisplay,
                        context.botEnabled, context.botDifficulty);
@@ -830,36 +871,36 @@ void drawTextOverlays(sf::RenderTarget& rt, sf::Font& font, const TextOverlayCon
     }
 
     if(context.state == GameState::MATCH_SETUP && context.matchSetup)
-        drawMatchSetupOverlay(rt, font, *context.matchSetup);
+        drawMatchSetupOverlay(rt, font, *context.matchSetup, &headingFont);
 
     if(context.state == GameState::PAUSED)
-        drawPausedOverlay(rt, font);
+        drawPausedOverlay(rt, font, &headingFont);
 
     if(context.state == GameState::GAME_OVER)
         drawGameOverOverlay(rt, font, context.menuAnim, context.winner,
                             context.p1Score, context.p2Score,
-                            context.p1RoundWins, context.p2RoundWins, context.showBlink);
+                            context.p1RoundWins, context.p2RoundWins, context.showBlink, &headingFont);
 
     if(context.state == GameState::COUNTDOWN)
         drawCountdownOverlay(rt, font, context.countdownTimer, context.layoutColor,
-                             context.layoutName, context.boardSeed);
+                             context.layoutName, context.boardSeed, &headingFont);
 
     if(context.fightFlashTimer > 0.f && context.state == GameState::PLAYING)
-        drawFightFlashOverlay(rt, font, context.fightFlashTimer);
+        drawFightFlashOverlay(rt, headingFont, context.fightFlashTimer);
 
     if(context.state == GameState::SETTINGS && context.cfg && context.graphicsSettings && context.controllers)
         drawSettingsPanel(rt, font, context.menuAnim, context.settingsSel, *context.cfg,
                           context.musicVolume, context.sfxVolume,
                           context.botEnabled, context.botDifficulty,
-                          *context.graphicsSettings, *context.controllers);
+                          *context.graphicsSettings, *context.controllers, &headingFont);
 
     if(context.state == GameState::CONTROLS && context.controllers)
         drawControlsPanel(rt, font, context.menuAnim, context.controlsProfile, context.controlsSel,
                           context.controlsScroll, context.controlsCapturing,
-                          context.controlsCaptureAction, *context.controllers);
+                          context.controlsCaptureAction, *context.controllers, &headingFont);
 
     drawKnockoutOverlay(rt, font, context.knockoutTimer,
-                        context.knockoutScorer, context.knockoutEndsMatch);
+                        context.knockoutScorer, context.knockoutEndsMatch, &headingFont);
 }
 
 } // namespace hud_runtime

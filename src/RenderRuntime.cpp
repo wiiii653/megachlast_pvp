@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace render_runtime {
 namespace {
@@ -879,9 +880,11 @@ void drawMenuTitle(sf::RenderTarget& rt, sf::Font& font, float t, int fxLevel)
         titleSweepShaderInit = titleSweepShader.loadFromMemory(kTitleSweepFrag, sf::Shader::Type::Fragment);
     }
 
-    sf::Text title(font, "MEGACHLAST PvP", 29);
+    static sf::Text title(font, "MEGACHLAST PvP", 29);
+    title.setFont(font);
     title.setStyle(sf::Text::Bold);
-    sf::Text sub(font, "// ONE SCREEN DUEL //", 9);
+    static sf::Text sub(font, "// ONE SCREEN DUEL //", 9);
+    sub.setFont(font);
 
     auto tb = title.getLocalBounds();
     auto sb = sub.getLocalBounds();
@@ -894,14 +897,14 @@ void drawMenuTitle(sf::RenderTarget& rt, sf::Font& font, float t, int fxLevel)
 
     float pulse = 0.75f + 0.25f * std::sin(t * 2.8f);
     float cpulse = std::abs(std::sin(t * 0.7f));
-    title.setFillColor(sf::Color(
+    const sf::Color titleColor(
         static_cast<uint8_t>(80  + 175*pulse),
         static_cast<uint8_t>(80  + 120*pulse*cpulse),
-        255));
-    sf::Text titleShadow = title;
-    titleShadow.setFillColor(sf::Color(0, 0, 0, 180));
-    titleShadow.setPosition(sf::Vector2f(cx + 3.f, titleY + 3.f));
-    rt.draw(titleShadow);
+        255);
+    title.setFillColor(sf::Color(0, 0, 0, 180));
+    title.setPosition(sf::Vector2f(cx + 3.f, titleY + 3.f));
+    rt.draw(title);
+    title.setFillColor(titleColor);
     title.setPosition(sf::Vector2f(cx, titleY));
     rt.draw(title);
 
@@ -913,13 +916,12 @@ void drawMenuTitle(sf::RenderTarget& rt, sf::Font& font, float t, int fxLevel)
         titleSweepShader.setUniform("coreHalf", 6.f);
         titleSweepShader.setUniform("glowColor", sf::Glsl::Vec4(0.94f, 0.98f, 1.00f, 0.95f));
 
-        sf::Text titleFx = title;
-        titleFx.setFillColor(sf::Color::White);
-        titleFx.setPosition(sf::Vector2f(cx, titleY + 1.8f));
+        title.setFillColor(sf::Color::White);
+        title.setPosition(sf::Vector2f(cx, titleY + 1.8f));
 
         sf::RenderStates rs(sf::BlendAdd);
         rs.shader = &titleSweepShader;
-        rt.draw(titleFx, rs);
+        rt.draw(title, rs);
     }
 
     float spulse = 0.5f + 0.5f * std::sin(t * 1.9f + 1.f);
@@ -969,15 +971,23 @@ void drawPlasmaBg(sf::RenderTarget& rt, float t, bool titleMode)
 
     static sf::VertexArray va(sf::PrimitiveType::Triangles,
                               static_cast<std::size_t>((GXN-1) * (GYN-1) * 6));
+    va.resize(static_cast<std::size_t>((GXN-1) * (GYN-1) * 6));
+    static std::vector<sf::Color> colors;
+    colors.resize(static_cast<std::size_t>(GXN * GYN));
+    for(int gy = 0; gy < GYN; ++gy){
+        for(int gx = 0; gx < GXN; ++gx){
+            colors[gy * GXN + gx] = evalPlasmaBgColor(titleMode, gx * STEP, gy * STEP, t);
+        }
+    }
     std::size_t vi = 0;
     for(int gy = 0; gy < GYN-1; gy++){
         for(int gx = 0; gx < GXN-1; gx++){
             float x0 = gx * STEP, y0 = gy * STEP;
             float x1 = x0 + STEP, y1 = y0 + STEP;
-            sf::Color c00 = evalPlasmaBgColor(titleMode, x0, y0, t);
-            sf::Color c10 = evalPlasmaBgColor(titleMode, x1, y0, t);
-            sf::Color c01 = evalPlasmaBgColor(titleMode, x0, y1, t);
-            sf::Color c11 = evalPlasmaBgColor(titleMode, x1, y1, t);
+            sf::Color c00 = colors[gy * GXN + gx];
+            sf::Color c10 = colors[gy * GXN + gx + 1];
+            sf::Color c01 = colors[(gy + 1) * GXN + gx];
+            sf::Color c11 = colors[(gy + 1) * GXN + gx + 1];
             va[vi].position = {x0,y0}; va[vi].color = c00; vi++;
             va[vi].position = {x1,y0}; va[vi].color = c10; vi++;
             va[vi].position = {x0,y1}; va[vi].color = c01; vi++;

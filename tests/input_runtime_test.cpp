@@ -165,6 +165,19 @@ int main()
         GameState donateState = GameState::DONATE;
         float donateMsgTimer = 0.f;
         int donateSel = 0;
+        sf::Event::KeyPressed donateKey{};
+        donateKey.scancode = sf::Keyboard::Scan::Up;
+        input_runtime::handleDonateKeyPressed(donateKey, donateState, donateMsgTimer, donateSel, keyboard);
+        check(donateSel == 8, "Donate Up wraps from coffee to the TRX wallet");
+        donateKey.scancode = sf::Keyboard::Scan::Down;
+        input_runtime::handleDonateKeyPressed(donateKey, donateState, donateMsgTimer, donateSel, keyboard);
+        check(donateSel == 0, "Donate Down wraps back to coffee");
+        donateMsgTimer = 2.f;
+        for(int i = 1; i <= 8; ++i){
+            input_runtime::handleDonateKeyPressed(donateKey, donateState, donateMsgTimer, donateSel, keyboard);
+            check(donateSel == i, "Donate navigation reaches each wallet");
+        }
+        check(donateMsgTimer == 0.f, "changing donation selection clears copy feedback");
         input_runtime::handleDonateKeyPressed(esc, donateState, donateMsgTimer, donateSel, keyboard);
         check(donateState == GameState::MENU, "Escape returns to the menu from Donate");
     }
