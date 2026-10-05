@@ -14,6 +14,15 @@
 
 namespace input_runtime {
 
+bool isRematchConfirmPress(GameState state,
+                          GameState previousState,
+                          bool pressed,
+                          bool previouslyPressed)
+{
+    return state == GameState::GAME_OVER && previousState == GameState::GAME_OVER &&
+           pressed && !previouslyPressed;
+}
+
 void handleKeyPressed(const sf::Event::KeyPressed& kp,
                       sf::RenderWindow& win,
                       FrameContext& context);
@@ -340,7 +349,7 @@ void updateControllerActions(sf::RenderWindow& win, FrameContext& context)
         if(rose(current.east, previous.east))
             emitKeyboardAction(Action::GameMenu, win, context);
     } else if(state == GameState::GAME_OVER){
-        if(rose(current.south, previous.south))
+        if(isRematchConfirmPress(state, previousState, current.south, previous.south))
             emitKeyboardAction(Action::UiConfirm, win, context);
         if(rose(current.east, previous.east))
             emitKeyboardAction(Action::UiBack, win, context);

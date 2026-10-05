@@ -105,6 +105,10 @@ int main()
     check(state == GameState::GAME_OVER && winner == 1, "full PvP match ends with P1 winning");
     check(match.p1_round_wins == 2 && match.p2_round_wins == 1, "three-round match counts round wins correctly");
     check(p1.frags == 7 && p2.frags == 5, "final HUD frags include kills from all three rounds");
+    input.kLCtrl = input.kRCtrl = true;
+    for(int i = 0; i < 600; ++i) tick();
+    check(state == GameState::GAME_OVER && winner == 1, "holding fire keeps PvP at game over");
+    check(p1.frags == 7 && p2.frags == 5 && deaths == 12, "game over freezes combat and match scores");
     round_runtime::rematchCountdownRound(p1, p2, match, cd1, cd2, spawnTimer,
                                          countdown, state, reset, [](bool){});
     check(p1.frags == 0 && p2.frags == 0, "rematch clears match frags");
