@@ -150,7 +150,7 @@ target_link_libraries(input_state_test PRIVATE bot_controller procedural_synth S
 target_link_libraries(frame_runtime_test PRIVATE SFML::Audio)
 target_link_libraries(render_runtime_test PRIVATE render_runtime)
 target_link_libraries(bot_controller PRIVATE procedural_synth)
-target_link_libraries(bot_controller_test PRIVATE bot_controller)
+target_link_libraries(bot_controller_test PRIVATE bot_controller procedural_synth)
 target_link_libraries(bot_planning_test PRIVATE bot_controller arena_layout procedural_synth SFML::Audio)
 target_link_libraries(render_runtime PUBLIC SFML::Graphics)
 target_link_libraries(audio_runtime PUBLIC SFML::Audio)
