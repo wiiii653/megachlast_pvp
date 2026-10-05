@@ -71,7 +71,7 @@ void drawPlayerRows(sf::RenderTarget& rt, sf::Font& font, const Player& p1, cons
 
     {
         char kbuf[16], pbuf[20];
-        std::snprintf(kbuf, sizeof(kbuf), "FRAGS:%d", p1.score);
+        std::snprintf(kbuf, sizeof(kbuf), "FRAGS:%d", p1.frags);
         std::snprintf(pbuf, sizeof(pbuf), " SCORE:%d", p1.points);
 
         float cx = 4.f;
@@ -115,7 +115,7 @@ void drawPlayerRows(sf::RenderTarget& rt, sf::Font& font, const Player& p1, cons
 
     {
         char kbuf[16], pbuf[20];
-        std::snprintf(kbuf, sizeof(kbuf), "FRAGS:%d", p2.score);
+        std::snprintf(kbuf, sizeof(kbuf), "FRAGS:%d", p2.frags);
         std::snprintf(pbuf, sizeof(pbuf), "SCORE:%d ", p2.points);
 
         float cy = 2.f;

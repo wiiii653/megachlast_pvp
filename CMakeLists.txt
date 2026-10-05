@@ -111,6 +111,7 @@ add_project_test_executable(fx_runtime tests/fx_runtime_test.cpp src/FxRuntime.c
 add_project_test_executable(effects_runtime tests/effects_runtime_test.cpp src/EffectsRuntime.cpp)
 add_project_test_executable(audio_runtime tests/audio_runtime_test.cpp src/AssetRuntime.cpp)
 add_project_test_executable(projectile_runtime tests/projectile_runtime_test.cpp src/ProjectileRuntime.cpp src/RoundRuntime.cpp)
+add_project_test_executable(pvp_match tests/pvp_match_test.cpp src/ProjectileRuntime.cpp src/RoundRuntime.cpp src/BoardRuntime.cpp src/GameUpdateRuntime.cpp src/FrameRuntime.cpp src/SimulationRuntime.cpp)
 add_project_test_executable(input_state tests/input_state_test.cpp src/GameUpdateRuntime.cpp)
 
 set(SFML_PROVIDER "AUTO" CACHE STRING "SFML provider: AUTO, SYSTEM, or FETCH")
@@ -144,6 +145,7 @@ target_link_libraries(input_runtime_test PRIVATE bot_controller SFML::Graphics S
 target_link_libraries(effects_runtime_test PRIVATE particles)
 target_link_libraries(audio_runtime_test PRIVATE audio_runtime)
 target_link_libraries(projectile_runtime_test PRIVATE arena_layout particles procedural_synth SFML::Audio)
+target_link_libraries(pvp_match_test PRIVATE arena_layout particles bot_controller procedural_synth SFML::Graphics SFML::Audio)
 target_link_libraries(input_state_test PRIVATE bot_controller procedural_synth SFML::Audio SFML::Window)
 target_link_libraries(frame_runtime_test PRIVATE SFML::Audio)
 target_link_libraries(render_runtime_test PRIVATE render_runtime)

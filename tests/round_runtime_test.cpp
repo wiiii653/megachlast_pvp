@@ -31,8 +31,10 @@ int main()
         Player p1{};
         Player p2{};
         p1.score = 1;
+        p1.frags = 4;
         p1.points = 25;
         p2.score = 1;
+        p2.frags = 3;
         p2.points = 50;
         Config cfg{};
         cfg.target_score = 3;
@@ -54,6 +56,7 @@ int main()
             p2.score = 0;
             p1.points = 0;
             p2.points = 0;
+            p1.frags = p2.frags = 0;
         };
         auto playGetReady = [&](bool loop){ getReadyLoop = loop; };
 
@@ -74,6 +77,7 @@ int main()
 
         check(resetCount == 1, "non-winning frag resets the round");
         check(p1.score == 2 && p2.score == 1, "frag transition preserves updated scores");
+        check(p1.frags == 5 && p2.frags == 3, "frag transition preserves cumulative match frags");
         check(p1.points == 125 && p2.points == 50, "frag transition preserves updated points");
         check(p2.invulnTimer == AFTERKILL_INVULN, "victim gets after-kill invulnerability");
         check(cd1 == 0 && cd2 == 0, "frag transition clears fire cooldowns");

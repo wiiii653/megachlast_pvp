@@ -56,6 +56,7 @@ The curated arenas have distinct shooting routes: Mirror Maze has three mirror c
 - Mirror blocks reflect bullets and rotate on hit.
 - Being hit also applies a brief SLOWED debuff (half movement speed for up to 2 s, stacks per hit).
 - First to 5 frags wins a round; the first player to win two rounds wins the match (configurable via `TARGET_SCORE` and `ROUNDS_TO_WIN` in `assets/settings.cfg`).
+- HUD `FRAGS` counts all kills credited to that player throughout the match, across rounds. The round score resets each round; match frags reset when starting a new match, rematch, or manual score reset.
 - After a match, Enter starts a rematch with the same arena and modifiers.
 
 ## Build (SFML 3)

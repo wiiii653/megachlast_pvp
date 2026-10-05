@@ -113,6 +113,7 @@ struct Player {
     float slowTimer    =0.f;
     float reverseTimer =0.f;
     float overdriveTimer=0.f;
+    int   frags=0;
 };
 
 struct Mirror {
