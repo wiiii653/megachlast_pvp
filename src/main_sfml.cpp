@@ -698,7 +698,7 @@ int main(int argc, char** argv){
         renderCtx.drawBarriers = [&]{ render_runtime::drawAllBarriers(rt, barriers, menuAnim); };
         renderCtx.drawParticles = [&]{ render_runtime::drawParticles(rt, particles); };
         renderCtx.drawFragFloats = [&]{ if(haveFont) hud_runtime::drawFragFloats(rt, haveRetroTitleFont ? retroTitleFont : font, fragFloats); };
-        renderCtx.drawPlayerRows = [&]{ if(haveFont) hud_runtime::drawPlayerRows(rt, font, p1, p2); };
+        renderCtx.drawPlayerRows = []{};
         render_runtime::drawIngameElements(rt, renderCtx);
 
         bool postfxDisabled = render_runtime::isPostfxDisabled(g_runtime.no_postfx,
@@ -724,7 +724,9 @@ int main(int argc, char** argv){
         postfxCtx.drawScanlines = [&]{ render_runtime::drawScanlines(rt); };
         render_runtime::drawPostfxOverlays(rt, postfxCtx);
 
-        if(haveFont){
+        auto drawHud = [&]{
+            if(!haveFont) return;
+            if(state != GameState::MENU) hud_runtime::drawPlayerRows(win, font, p1, p2);
             hud_runtime::TextOverlayContext hudCtx{};
             hudCtx.headingFont = haveRetroTitleFont ? &retroTitleFont : &font;
             hudCtx.appVersion = BUILD_VERSION_LABEL;
@@ -766,13 +768,13 @@ int main(int argc, char** argv){
             hudCtx.graphicsSettings = &g_graphics;
             hudCtx.controllers = &g_controllers;
             hudCtx.drawMenuTitle = [&]{
-                render_runtime::drawMenuTitle(rt,
+                render_runtime::drawMenuTitle(win,
                                               haveRetroTitleFont ? retroTitleFont : font,
                                               menuAnim,
                                               g_fx_runtime.fx_level);
             };
-            hud_runtime::drawTextOverlays(rt, font, hudCtx);
-        }
+            hud_runtime::drawTextOverlays(win, font, hudCtx);
+        };
 
         rt.display();
 
@@ -786,6 +788,11 @@ int main(int argc, char** argv){
         compositeCtx.shakeIntensity = g_shake_intensity;
         compositeCtx.randomRange = [&](float lo, float hi){ return R.frand(lo, hi); };
         render_runtime::compositeToWindow(win, compositeCtx);
+
+        // Draw UI in canvas coordinates after the shaken scene is composited.
+        win.setView(sf::View(sf::FloatRect({0.f, 0.f},
+                                         {static_cast<float>(W), static_cast<float>(H)})));
+        drawHud();
 
         win.display();
     }
