@@ -192,7 +192,6 @@ void simulateProjectilesAndCollisions(std::array<Bullet, MAX_BULLETS>& bullets,
                 }
             }
 
-            bool roundTransitioned = false;
             Player* targets2[] = { &p1, &p2 };
             for(Player* tgt : targets2){
                 if(tgt->invulnTimer > 0.f) continue;
@@ -216,13 +215,10 @@ void simulateProjectilesAndCollisions(std::array<Bullet, MAX_BULLETS>& bullets,
                         if(hooks.triggerMusicDuck) hooks.triggerMusicDuck(0.55f, 0.30f);
                         if(hooks.triggerScreenShake) hooks.triggerScreenShake(0.50f, 9.0f);
                         if(hooks.applyFragTransition) hooks.applyFragTransition(*tgt, scorerB);
-                        roundTransitioned = true;
-                        if(roundTransitioned) break;
+                        return;
                     }
                 }
             }
-            if(roundTransitioned) break;
-
             const float fspd = 210.f;
             const float fttl = 0.9f;
             int emitted = 0;
@@ -306,6 +302,7 @@ void simulateProjectilesAndCollisions(std::array<Bullet, MAX_BULLETS>& bullets,
                 if(hooks.triggerMusicDuck) hooks.triggerMusicDuck(0.55f, 0.30f);
                 if(hooks.triggerScreenShake) hooks.triggerScreenShake(0.50f, 9.0f);
                 if(hooks.applyFragTransition) hooks.applyFragTransition(*tgt, scorer);
+                return;
             }
             break;
         }

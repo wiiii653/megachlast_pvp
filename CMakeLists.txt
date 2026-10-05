@@ -110,7 +110,7 @@ add_project_test_executable(render_runtime tests/render_runtime_test.cpp)
 add_project_test_executable(fx_runtime tests/fx_runtime_test.cpp src/FxRuntime.cpp)
 add_project_test_executable(effects_runtime tests/effects_runtime_test.cpp src/EffectsRuntime.cpp)
 add_project_test_executable(audio_runtime tests/audio_runtime_test.cpp src/AssetRuntime.cpp)
-add_project_test_executable(projectile_runtime tests/projectile_runtime_test.cpp src/ProjectileRuntime.cpp)
+add_project_test_executable(projectile_runtime tests/projectile_runtime_test.cpp src/ProjectileRuntime.cpp src/RoundRuntime.cpp)
 add_project_test_executable(input_state tests/input_state_test.cpp src/GameUpdateRuntime.cpp)
 
 set(SFML_PROVIDER "AUTO" CACHE STRING "SFML provider: AUTO, SYSTEM, or FETCH")
