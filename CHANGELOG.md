@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased
+## 1.0.0-rc.1
+
+- Renamed the executable to `megachlast` (`megachlast.exe` on Windows) and updated release launchers.
+- Added title-menu and gameplay screenshots to the README and release packages.
+- Fixed duplicate frags after lethal bullet and bomb hits, and preserved total frags across rounds.
+- Prevented held controller confirmation from immediately restarting a finished match.
+- Added numbered round announcements, a deciding-round label, and round-winner messages between rounds.
+- Kept the HUD stationary during screen shake and fixed the bot test's SFML dependency in CI.
 
 - Darkened the title-menu background outside the oval mask by 20% to make the masked region stand out more clearly.
 - Reworked the title-menu plasma background to match the in-game blue field, with distinct darker cloud masses drifting over it.

@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(ENABLE_SANITIZERS "Enable Address/UndefinedBehavior sanitizers" OFF)
-set(APP_VERSION "EA-0.1.0")
+set(APP_VERSION "1.0.0-rc.1")
 set(APP_GIT_HASH "nogit")
 find_package(Git QUIET)
 if(GIT_FOUND)
@@ -73,6 +73,7 @@ add_executable(megablast_pvp
     src/RoundRuntime.cpp
     src/SimulationRuntime.cpp
     src/PerfLog.cpp)
+set_target_properties(megablast_pvp PROPERTIES OUTPUT_NAME megachlast)
 
 # ProceduralSynth library (shared between game and test)
 add_library(procedural_synth STATIC src/ProceduralSynth.cpp)
@@ -192,10 +193,12 @@ install(DIRECTORY assets/ DESTINATION assets
         PATTERN "settings.cfg" EXCLUDE)
 install(FILES README.md LICENSE EARLY_ACCESS.md CHANGELOG.md KNOWN_ISSUES.md
         DESTINATION .)
+install(FILES docs/screenshots/title-menu.png docs/screenshots/in-game.png
+        DESTINATION docs/screenshots)
 
 set(CPACK_PACKAGE_NAME "megachlast_pvp")
 set(CPACK_PACKAGE_VENDOR "Megachlast PvP")
-set(CPACK_PACKAGE_VERSION "0.1.0")
+set(CPACK_PACKAGE_VERSION "1.0.0-rc.1")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Megachlast PvP one-screen duel shooter")
 set(CPACK_GENERATOR "TGZ;ZIP")
 include(CPack)
