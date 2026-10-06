@@ -76,7 +76,7 @@ int main()
     context.spawnThrusterFn = [](auto&, auto&, float, float, int){};
     context.projectileHooks = &hooks;
     auto tick = [&]{
-        frame_runtime::updateCountdownAndFightFlash(state, countdown, flash, context.dt, []{});
+        frame_runtime::updateCountdownAndFightFlash(state, countdown, flash, context.dt, []{}, match.starting_round);
         frame_runtime::updatePlayerTimers(state, p1, p2, context.dt);
         context.state = state;
         simulation_runtime::simulatePlayingFrame(context);
@@ -87,8 +87,11 @@ int main()
     // Both humans score, both win a round, then P1 wins the deciding round.
     for(int scorer : {2, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1}){
         input = {};
-        for(int i = 0; i < 240 && state == GameState::COUNTDOWN; ++i) tick();
+        const bool newRound = match.starting_round;
+        for(int i = 0; i < 600 && state == GameState::COUNTDOWN; ++i) tick();
         check(state == GameState::PLAYING, "PvP countdown returns to playing");
+        check(newRound ? flash > 1.f : flash == 0.f,
+              "full match announces each new round but not ordinary respawns");
         spawnTimer = 1000.f;
         input.kLCtrl = scorer == 1;
         input.kRCtrl = scorer == 2;

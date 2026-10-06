@@ -513,18 +513,26 @@ void drawCountdownOverlay(sf::RenderTarget& rt,
     rt.draw(st);
 }
 
-void drawFightFlashOverlay(sf::RenderTarget& rt, sf::Font& font, float fightFlashTimer)
+void drawRoundStartOverlay(sf::RenderTarget& rt, sf::Font& font, float timer,
+                           int roundNumber, bool decidingRound)
 {
-    float frac = clampf(fightFlashTimer / 0.9f, 0.f, 1.f);
+    float frac = clampf(timer / 1.5f, 0.f, 1.f);
     uint8_t fa = static_cast<uint8_t>(std::min(255.f, frac * 2.f * 255.f));
-    sf::Text ft(font, "FIGHT!", 24);
-    fitBoardText(ft, H * (0.03f + (1.f - frac) * 0.01f), W * 0.18f);
-    float fp = 0.5f + 0.5f * std::sin(fightFlashTimer * 20.f);
+    sf::Text ft(font, "ROUND " + std::to_string(roundNumber), 24);
+    fitBoardText(ft, H * 0.09f, W * 0.75f);
+    float fp = 0.5f + 0.5f * std::sin(timer * 20.f);
     ft.setFillColor(sf::Color(255,
         static_cast<uint8_t>(220 + 35 * fp),
         static_cast<uint8_t>(60 + 80 * fp), fa));
     ft.setPosition(sf::Vector2f(W / 2.f, H / 2.f));
     rt.draw(ft);
+    if(decidingRound){
+        sf::Text subtitle(font, "DECIDING ROUND", 12);
+        fitBoardText(subtitle, H * 0.035f, W * 0.75f);
+        subtitle.setFillColor(sf::Color(255, 220, 100, fa));
+        subtitle.setPosition(sf::Vector2f(W * 0.5f, H * 0.6f));
+        rt.draw(subtitle);
+    }
 }
 
 void drawSettingsPanel(sf::RenderTarget& rt,
@@ -888,12 +896,32 @@ void drawTextOverlays(sf::RenderTarget& rt, sf::Font& font, const TextOverlayCon
                             context.p1Score, context.p2Score,
                             context.p1RoundWins, context.p2RoundWins, context.showBlink, &headingFont);
 
-    if(context.state == GameState::COUNTDOWN)
+    const bool roundResult = context.state == GameState::COUNTDOWN &&
+                             context.startingRound && context.lastRoundWinner != 0 &&
+                             context.countdownTimer > 3.f;
+    if(roundResult){
+        sf::RectangleShape dim(sf::Vector2f(static_cast<float>(W), static_cast<float>(H)));
+        dim.setFillColor(sf::Color(0, 0, 0, 160));
+        rt.draw(dim);
+        sf::Text result(headingFont,
+                        "PLAYER " + std::to_string(context.lastRoundWinner) + " WINS THE ROUND", 18);
+        fitBoardText(result, H * 0.065f, W * 0.9f);
+        result.setFillColor(context.lastRoundWinner == 1 ? sf::Color::Cyan : sf::Color(255, 100, 80));
+        result.setPosition(sf::Vector2f(W * 0.5f, H * 0.5f));
+        rt.draw(result);
+    }
+
+    if(context.state == GameState::COUNTDOWN && !roundResult)
         drawCountdownOverlay(rt, font, context.countdownTimer, context.layoutColor,
                              context.layoutName, context.boardSeed, &headingFont);
 
-    if(context.fightFlashTimer > 0.f && context.state == GameState::PLAYING)
-        drawFightFlashOverlay(rt, headingFont, context.fightFlashTimer);
+    if(context.fightFlashTimer > 0.f && context.state == GameState::PLAYING && context.startingRound){
+        const int roundNumber = context.p1RoundWins + context.p2RoundWins + 1;
+        const bool decidingRound = context.cfg &&
+            context.p1RoundWins == context.cfg->rounds_to_win - 1 &&
+            context.p2RoundWins == context.cfg->rounds_to_win - 1;
+        drawRoundStartOverlay(rt, headingFont, context.fightFlashTimer, roundNumber, decidingRound);
+    }
 
     if(context.state == GameState::SETTINGS && context.cfg && context.graphicsSettings && context.controllers)
         drawSettingsPanel(rt, font, context.menuAnim, context.settingsSel, *context.cfg,
@@ -906,7 +934,8 @@ void drawTextOverlays(sf::RenderTarget& rt, sf::Font& font, const TextOverlayCon
                           context.controlsScroll, context.controlsCapturing,
                           context.controlsCaptureAction, *context.controllers, &headingFont);
 
-    if(context.state == GameState::COUNTDOWN || context.state == GameState::PLAYING)
+    if(!roundResult && !context.startingRound &&
+       (context.state == GameState::COUNTDOWN || context.state == GameState::PLAYING))
         drawKnockoutOverlay(rt, font, context.knockoutTimer,
                             context.knockoutScorer, context.knockoutEndsMatch, &headingFont);
 }

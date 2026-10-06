@@ -57,6 +57,7 @@ The curated arenas have distinct shooting routes: Mirror Maze has three mirror c
 - Being hit also applies a brief SLOWED debuff (half movement speed for up to 2 s, stacks per hit).
 - First to 5 frags wins a round; the first player to win two rounds wins the match (configurable via `TARGET_SCORE` and `ROUNDS_TO_WIN` in `assets/settings.cfg`).
 - HUD `FRAGS` counts all kills credited to that player throughout the match, across rounds. The round score resets each round; match frags reset when starting a new match, rematch, or manual score reset.
+- New rounds show `ROUND 1`, `ROUND 2`, etc.; the final possible round also shows `DECIDING ROUND`. Between rounds, the winning player is announced for two seconds before the next countdown. Ordinary respawns only use the countdown.
 - After a match, Enter starts a rematch with the same arena and modifiers.
 
 ## Build (SFML 3)

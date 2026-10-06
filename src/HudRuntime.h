@@ -29,6 +29,8 @@ struct TextOverlayContext {
     int p2Score = 0;
     int p1RoundWins = 0;
     int p2RoundWins = 0;
+    bool startingRound = true;
+    int lastRoundWinner = 0;
     float knockoutTimer = 0.f;
     int knockoutScorer = 0;
     bool knockoutEndsMatch = false;
@@ -88,7 +90,8 @@ void drawCountdownOverlay(sf::RenderTarget& rt,
                           const char* layoutName,
                           uint32_t boardSeed,
                           sf::Font* headingFont = nullptr);
-void drawFightFlashOverlay(sf::RenderTarget& rt, sf::Font& font, float fightFlashTimer);
+void drawRoundStartOverlay(sf::RenderTarget& rt, sf::Font& font, float timer,
+                           int roundNumber, bool decidingRound);
 void drawSettingsPanel(sf::RenderTarget& rt,
                        sf::Font& font,
                        float menuAnim,

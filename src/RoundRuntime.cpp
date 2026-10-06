@@ -66,7 +66,7 @@ void startNextRound(Player& p1,
     p2.frags = frags2;
     cd1 = cd2 = 0;
     powerupSpawnTimer = POWERUP_SPAWN_INTERVAL * POWERUP_FIRST_SPAWN_FACTOR;
-    countdownTimer = 2.f;
+    countdownTimer = 5.f;
     state = GameState::COUNTDOWN;
     playGetReady(false);
 }
@@ -102,6 +102,8 @@ void applyFragTransition(Player& p1,
         int roundWinner = (p1.score >= cfg.target_score) ? 1 : 2;
         if(roundWinner == 1) ++match.p1_round_wins;
         else ++match.p2_round_wins;
+        match.starting_round = true;
+        match.last_round_winner = roundWinner;
 
         if(match.p1_round_wins >= cfg.rounds_to_win || match.p2_round_wins >= cfg.rounds_to_win){
             winner = roundWinner;
@@ -115,6 +117,8 @@ void applyFragTransition(Player& p1,
         return;
     }
 
+    match.starting_round = false;
+    match.last_round_winner = 0;
     resetBoardKeepingRoundScores(p1, p2, resetRound);
     victim.invulnTimer = AFTERKILL_INVULN;
     cd1 = 0;

@@ -51,7 +51,8 @@ void updateStateAndTimers(UpdateContext& context)
                                  *context.countdownTimer,
                                  *context.fightFlashTimer,
                                  context.dt,
-                                 context.playIngameMusic);
+                                 context.playIngameMusic,
+                                 context.startingRound);
     updateScreenShake(context.dt,
                       *context.shakeTimer,
                       *context.shakeDuration,
@@ -63,13 +64,14 @@ void updateCountdownAndFightFlash(GameState& state,
                                   float& countdownTimer,
                                   float& fightFlashTimer,
                                   float dt,
-                                  const std::function<void()>& playIngameMusic)
+                                  const std::function<void()>& playIngameMusic,
+                                  bool startingRound)
 {
     if(state == GameState::COUNTDOWN){
         countdownTimer -= dt;
         if(countdownTimer <= 0.f){
             state = GameState::PLAYING;
-            fightFlashTimer = 0.9f;
+            fightFlashTimer = startingRound ? 1.5f : 0.f;
             playIngameMusic();
         }
     }

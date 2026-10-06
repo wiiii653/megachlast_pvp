@@ -85,6 +85,8 @@ int main()
                    "frag transition resets powerup spawn timer");
         checkClose(countdownTimer, 2.f, "frag transition starts short countdown");
         check(state == GameState::COUNTDOWN, "frag transition enters countdown");
+        check(!match.starting_round && match.last_round_winner == 0,
+              "ordinary kill does not announce a new round");
         check(winner == 0, "non-winning frag leaves winner unset");
         check(match.p1_round_wins == 0 && match.p2_round_wins == 0,
               "non-winning frag leaves match wins unchanged");
@@ -129,6 +131,9 @@ int main()
         check(match.p1_round_wins == 1 && match.p2_round_wins == 0, "round win updates match score");
         check(winner == 0, "round win does not end a best-of-three match");
         check(state == GameState::COUNTDOWN, "round win enters next-round countdown");
+        check(match.starting_round && match.last_round_winner == 1,
+              "round transition announces the winning player and next round");
+        checkClose(countdownTimer, 5.f, "round result lasts two seconds before a full countdown");
         check(!getReadyLoop, "round win plays non-looping get-ready track");
         check(cd1 == 0 && cd2 == 0, "round win clears cooldowns");
     }
@@ -199,6 +204,8 @@ int main()
         check(cd1 == 0 && cd2 == 0, "rematch clears cooldowns");
         check(state == GameState::COUNTDOWN && !loop, "rematch enters countdown with non-looping audio");
         checkClose(countdownTimer, 3.f, "rematch starts a full countdown");
+        check(match.starting_round && match.last_round_winner == 0,
+              "rematch announces round one without a stale round result");
     }
 
     return failures == 0 ? 0 : 1;

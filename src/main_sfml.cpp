@@ -271,7 +271,7 @@ int main(int argc, char** argv){
     int       menu_sel   = 0;
     int  cd1=0, cd2=0;
     float countdownTimer = 0.f;
-    float fightFlashTimer = 0.f;  // "FIGHT!" overlay after countdown
+    float fightFlashTimer = 0.f;  // Round title after the opening countdown.
     float knockoutTimer = 0.f;
     int knockoutScorer = 0;
     bool knockoutEndsMatch = false;
@@ -427,6 +427,7 @@ int main(int argc, char** argv){
         knockoutTimer = 1.15f;
         knockoutScorer = scorer;
         knockoutEndsMatch = (state == GameState::GAME_OVER);
+        fightFlashTimer = 0.f;
     };
 
     auto startCountdownFromMenu = [&]{
@@ -589,6 +590,7 @@ int main(int argc, char** argv){
         frameCtx.state = &state;
         frameCtx.countdownTimer = &countdownTimer;
         frameCtx.fightFlashTimer = &fightFlashTimer;
+        frameCtx.startingRound = match.starting_round;
         frameCtx.dt = dt;
         frameCtx.haveMusic = musicRuntime.have_menu;
         frameCtx.music = &musicRuntime.menu;
@@ -747,6 +749,8 @@ int main(int argc, char** argv){
             hudCtx.p2Score = p2.score;
             hudCtx.p1RoundWins = match.p1_round_wins;
             hudCtx.p2RoundWins = match.p2_round_wins;
+            hudCtx.startingRound = match.starting_round;
+            hudCtx.lastRoundWinner = match.last_round_winner;
             hudCtx.knockoutTimer = knockoutTimer;
             hudCtx.knockoutScorer = knockoutScorer;
             hudCtx.knockoutEndsMatch = knockoutEndsMatch;
