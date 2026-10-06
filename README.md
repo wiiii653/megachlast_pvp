@@ -3,6 +3,16 @@
 Two-player duel shooter on a single shared screen.
 Players face each other: P2 top, P1 bottom. Horizontal movement only. Mirror blocks reflect and redirect bullets.
 
+## Screenshots
+
+### Title menu
+
+![Megachlast title menu](docs/screenshots/title-menu.png)
+
+### Gameplay
+
+![Megachlast gameplay](docs/screenshots/in-game.png)
+
 ## Controls
 
 Player 1 (bottom):
@@ -85,11 +95,11 @@ On Windows, use `--config Release` with `cmake --install` and `-C Release` with 
 
 ## GitHub Releases
 
-Push a version tag such as `v0.1.0` to run the multiplatform release workflow.
+Push a version tag such as `v1.0.0` to run the multiplatform release workflow.
 It builds and smoke-checks Linux, macOS, and Windows, then attaches the
 platform archives to a GitHub Release automatically. The repository's GitHub
 Actions workflow requires write access to repository contents for this step.
-Tags with a suffix, such as `v0.1.0-rc.3`, produce prereleases.
+Tags with a suffix, such as `v1.0.0-rc.1`, produce prereleases.
 
 - Linux x86_64 (Ubuntu 24.04+): extract the `.tar.gz` and run `play.sh`.
 - Windows x64: extract the `.zip` and run `play.bat`.
@@ -147,7 +157,7 @@ The executable links `Psapi` on Windows for perf logging support.
 
 ```bash
 # From project root (assets/ must be in CWD):
-./build/megablast_pvp
+./build/megachlast
 
 # Or via CMake:
 cmake --build build --target run
@@ -156,7 +166,7 @@ cmake --build build --target run
 ## Early Access
 
 Early Access release process and quality gate checklist are documented in [EARLY_ACCESS.md](EARLY_ACCESS.md).
-Runtime overlay includes a build label in the form `EA-0.1.0+<git-hash>` for bug report traceability.
+Runtime overlay includes a build label in the form `1.0.0-rc.1+<git-hash>` for bug report traceability.
 Release notes and active issue tracking are in [CHANGELOG.md](CHANGELOG.md) and [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ## Settings & CLI
@@ -191,10 +201,10 @@ Linux graphics fallback profiles:
 If launch logs mention `failed to load driver: nvidia-drm`, try:
 
 ```bash
-./build/megablast_pvp --gl-info --gl-profile clean
-./build/megablast_pvp --gl-info --gl-profile nvidia
-./build/megablast_pvp --gl-info --gl-profile dri3-off
-./build/megablast_pvp --gl-info --gl-profile software
+./build/megachlast --gl-info --gl-profile clean
+./build/megachlast --gl-info --gl-profile nvidia
+./build/megachlast --gl-info --gl-profile dri3-off
+./build/megachlast --gl-info --gl-profile software
 ```
 
 Keyboard shortcuts:

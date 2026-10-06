@@ -22,11 +22,15 @@ build = args.build.resolve()
 package = root / 'release' / ('megachlast-' + args.platform)
 package.mkdir(parents=True, exist_ok=False)
 windows = sys.platform == 'win32'
-exe_name = 'megablast_pvp' + ('.exe' if windows else '')
+exe_name = 'megachlast' + ('.exe' if windows else '')
 exe = build / ('Release' if windows else '') / exe_name
 target = package / exe_name
 shutil.copy2(exe, target)
 shutil.copytree(root / 'assets', package / 'assets', ignore=shutil.ignore_patterns('settings.cfg'))
+screenshots = package / 'docs' / 'screenshots'
+screenshots.mkdir(parents=True)
+for name in ('title-menu.png', 'in-game.png'):
+    shutil.copy2(root / 'docs' / 'screenshots' / name, screenshots / name)
 for name in ('LICENSE', 'README.md', 'EARLY_ACCESS.md', 'CHANGELOG.md', 'KNOWN_ISSUES.md'):
     shutil.copy2(root / name, package / name)
 
@@ -83,10 +87,10 @@ else:
 
 if windows:
     launcher = package / 'play.bat'
-    launcher.write_text('@echo off\ncd /d "%~dp0"\nmegablast_pvp.exe %*\n')
+    launcher.write_text('@echo off\ncd /d "%~dp0"\nmegachlast.exe %*\n')
 else:
     launcher = package / ('play.command' if sys.platform == 'darwin' else 'play.sh')
-    launcher.write_text('#!/bin/sh\ncd -- "$(dirname -- "$0")" || exit 1\nexec ./megablast_pvp "$@"\n')
+    launcher.write_text('#!/bin/sh\ncd -- "$(dirname -- "$0")" || exit 1\nexec ./megachlast "$@"\n')
     launcher.chmod(0o755)
 
 environment = dict(os.environ)
