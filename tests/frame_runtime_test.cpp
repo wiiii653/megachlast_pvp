@@ -53,6 +53,16 @@ void runUpdate(GameState state, int& menuPlayCount)
 
 int main()
 {
+    for(bool startingRound : {false, true}){
+        GameState state = GameState::COUNTDOWN;
+        float countdown = 0.01f, title = 0.f;
+        int musicStarts = 0;
+        frame_runtime::updateCountdownAndFightFlash(state, countdown, title, 0.02f,
+                                                    [&]{ ++musicStarts; }, startingRound);
+        check(state == GameState::PLAYING && musicStarts == 1, "countdown resumes combat and music");
+        check(startingRound ? title > 1.f : title == 0.f,
+              "round title appears for a new round, never an ordinary respawn");
+    }
     int menuPlayCount = 0;
     runUpdate(GameState::MENU, menuPlayCount);
     check(menuPlayCount == 1, "menu state restarts stopped menu music");

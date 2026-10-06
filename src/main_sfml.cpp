@@ -271,7 +271,7 @@ int main(int argc, char** argv){
     int       menu_sel   = 0;
     int  cd1=0, cd2=0;
     float countdownTimer = 0.f;
-    float fightFlashTimer = 0.f;  // "FIGHT!" overlay after countdown
+    float fightFlashTimer = 0.f;  // Round title after the opening countdown.
     float knockoutTimer = 0.f;
     int knockoutScorer = 0;
     bool knockoutEndsMatch = false;
@@ -427,6 +427,7 @@ int main(int argc, char** argv){
         knockoutTimer = 1.15f;
         knockoutScorer = scorer;
         knockoutEndsMatch = (state == GameState::GAME_OVER);
+        fightFlashTimer = 0.f;
     };
 
     auto startCountdownFromMenu = [&]{
@@ -589,6 +590,7 @@ int main(int argc, char** argv){
         frameCtx.state = &state;
         frameCtx.countdownTimer = &countdownTimer;
         frameCtx.fightFlashTimer = &fightFlashTimer;
+        frameCtx.startingRound = match.starting_round;
         frameCtx.dt = dt;
         frameCtx.haveMusic = musicRuntime.have_menu;
         frameCtx.music = &musicRuntime.menu;
@@ -698,7 +700,7 @@ int main(int argc, char** argv){
         renderCtx.drawBarriers = [&]{ render_runtime::drawAllBarriers(rt, barriers, menuAnim); };
         renderCtx.drawParticles = [&]{ render_runtime::drawParticles(rt, particles); };
         renderCtx.drawFragFloats = [&]{ if(haveFont) hud_runtime::drawFragFloats(rt, haveRetroTitleFont ? retroTitleFont : font, fragFloats); };
-        renderCtx.drawPlayerRows = [&]{ if(haveFont) hud_runtime::drawPlayerRows(rt, font, p1, p2); };
+        renderCtx.drawPlayerRows = []{};
         render_runtime::drawIngameElements(rt, renderCtx);
 
         bool postfxDisabled = render_runtime::isPostfxDisabled(g_runtime.no_postfx,
@@ -724,7 +726,9 @@ int main(int argc, char** argv){
         postfxCtx.drawScanlines = [&]{ render_runtime::drawScanlines(rt); };
         render_runtime::drawPostfxOverlays(rt, postfxCtx);
 
-        if(haveFont){
+        auto drawHud = [&]{
+            if(!haveFont) return;
+            if(state != GameState::MENU) hud_runtime::drawPlayerRows(win, font, p1, p2);
             hud_runtime::TextOverlayContext hudCtx{};
             hudCtx.headingFont = haveRetroTitleFont ? &retroTitleFont : &font;
             hudCtx.appVersion = BUILD_VERSION_LABEL;
@@ -745,6 +749,8 @@ int main(int argc, char** argv){
             hudCtx.p2Score = p2.score;
             hudCtx.p1RoundWins = match.p1_round_wins;
             hudCtx.p2RoundWins = match.p2_round_wins;
+            hudCtx.startingRound = match.starting_round;
+            hudCtx.lastRoundWinner = match.last_round_winner;
             hudCtx.knockoutTimer = knockoutTimer;
             hudCtx.knockoutScorer = knockoutScorer;
             hudCtx.knockoutEndsMatch = knockoutEndsMatch;
@@ -766,13 +772,13 @@ int main(int argc, char** argv){
             hudCtx.graphicsSettings = &g_graphics;
             hudCtx.controllers = &g_controllers;
             hudCtx.drawMenuTitle = [&]{
-                render_runtime::drawMenuTitle(rt,
+                render_runtime::drawMenuTitle(win,
                                               haveRetroTitleFont ? retroTitleFont : font,
                                               menuAnim,
                                               g_fx_runtime.fx_level);
             };
-            hud_runtime::drawTextOverlays(rt, font, hudCtx);
-        }
+            hud_runtime::drawTextOverlays(win, font, hudCtx);
+        };
 
         rt.display();
 
@@ -786,6 +792,11 @@ int main(int argc, char** argv){
         compositeCtx.shakeIntensity = g_shake_intensity;
         compositeCtx.randomRange = [&](float lo, float hi){ return R.frand(lo, hi); };
         render_runtime::compositeToWindow(win, compositeCtx);
+
+        // Draw UI in canvas coordinates after the shaken scene is composited.
+        win.setView(sf::View(sf::FloatRect({0.f, 0.f},
+                                         {static_cast<float>(W), static_cast<float>(H)})));
+        drawHud();
 
         win.display();
     }

@@ -12,6 +12,11 @@
 
 namespace input_runtime {
 
+bool isRematchConfirmPress(GameState state,
+                          GameState previousState,
+                          bool pressed,
+                          bool previouslyPressed);
+
 enum SettingsOption {
     OPT_MUSIC = 0,
     OPT_SFX = 1,

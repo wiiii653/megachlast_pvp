@@ -17,6 +17,7 @@ void resetRoundAndClearScores(Player& p1,
     p2.score = 0;
     p1.points = 0;
     p2.points = 0;
+    p1.frags = p2.frags = 0;
     match = {};
     resetRound();
     cd1 = 0;
@@ -32,11 +33,15 @@ void resetBoardKeepingRoundScores(Player& p1,
     int score2 = p2.score;
     int points1 = p1.points;
     int points2 = p2.points;
+    int frags1 = p1.frags;
+    int frags2 = p2.frags;
     resetRound();
     p1.score = score1;
     p2.score = score2;
     p1.points = points1;
     p2.points = points2;
+    p1.frags = frags1;
+    p2.frags = frags2;
 }
 
 void startNextRound(Player& p1,
@@ -51,13 +56,17 @@ void startNextRound(Player& p1,
 {
     int points1 = p1.points;
     int points2 = p2.points;
+    int frags1 = p1.frags;
+    int frags2 = p2.frags;
     resetRound();
     p1.score = p2.score = 0;
     p1.points = points1;
     p2.points = points2;
+    p1.frags = frags1;
+    p2.frags = frags2;
     cd1 = cd2 = 0;
     powerupSpawnTimer = POWERUP_SPAWN_INTERVAL * POWERUP_FIRST_SPAWN_FACTOR;
-    countdownTimer = 2.f;
+    countdownTimer = 5.f;
     state = GameState::COUNTDOWN;
     playGetReady(false);
 }
@@ -81,9 +90,11 @@ void applyFragTransition(Player& p1,
 {
     if(scorer == 1){
         p1.score++;
+        p1.frags++;
         p1.points += 100;
     } else {
         p2.score++;
+        p2.frags++;
         p2.points += 100;
     }
 
@@ -91,6 +102,8 @@ void applyFragTransition(Player& p1,
         int roundWinner = (p1.score >= cfg.target_score) ? 1 : 2;
         if(roundWinner == 1) ++match.p1_round_wins;
         else ++match.p2_round_wins;
+        match.starting_round = true;
+        match.last_round_winner = roundWinner;
 
         if(match.p1_round_wins >= cfg.rounds_to_win || match.p2_round_wins >= cfg.rounds_to_win){
             winner = roundWinner;
@@ -104,6 +117,8 @@ void applyFragTransition(Player& p1,
         return;
     }
 
+    match.starting_round = false;
+    match.last_round_winner = 0;
     resetBoardKeepingRoundScores(p1, p2, resetRound);
     victim.invulnTimer = AFTERKILL_INVULN;
     cd1 = 0;

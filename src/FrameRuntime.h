@@ -14,6 +14,7 @@ struct UpdateContext {
     GameState* state = nullptr;
     float* countdownTimer = nullptr;
     float* fightFlashTimer = nullptr;
+    bool startingRound = true;
     float dt = 0.f;
     bool haveMusic = false;
     sf::Music* music = nullptr;
@@ -45,7 +46,8 @@ void updateCountdownAndFightFlash(GameState& state,
                                   float& countdownTimer,
                                   float& fightFlashTimer,
                                   float dt,
-                                  const std::function<void()>& playIngameMusic);
+                                  const std::function<void()>& playIngameMusic,
+                                  bool startingRound = true);
 
 void updateScreenShake(float dt,
                        float& shakeTimer,

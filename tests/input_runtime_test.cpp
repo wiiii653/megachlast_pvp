@@ -20,6 +20,17 @@ void check(bool ok, const char* message)
 
 int main()
 {
+    check(!input_runtime::isRematchConfirmPress(GameState::GAME_OVER, GameState::PLAYING, true, false),
+          "entering game over cannot treat held fire as rematch confirmation");
+    check(!input_runtime::isRematchConfirmPress(GameState::GAME_OVER, GameState::GAME_OVER, true, true),
+          "holding confirm after game over cannot restart the match");
+    check(!input_runtime::isRematchConfirmPress(GameState::GAME_OVER, GameState::GAME_OVER, false, true),
+          "releasing confirm does not restart the match");
+    check(input_runtime::isRematchConfirmPress(GameState::GAME_OVER, GameState::GAME_OVER, true, false),
+          "fresh confirm after game over permits a rematch");
+    check(!input_runtime::isRematchConfirmPress(GameState::PLAYING, GameState::PLAYING, true, false),
+          "fire during playing is not a rematch confirmation");
+
     const controls::Profile keyboard =
         controls::defaultProfile(controls::ProfileId::Keyboard);
 

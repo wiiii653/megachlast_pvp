@@ -1,6 +1,7 @@
 #include "ProjectileRuntime.h"
 
 #include "ProceduralSynth.h"
+#include "RoundRuntime.h"
 
 #include <cmath>
 #include <iostream>
@@ -101,6 +102,59 @@ int main()
         simulate(f, synth, hooks);
         check(!f.bombs[0].alive && !f.bullets[0].alive, "bomb detonation consumes bomb and projectile");
         check(fragCount == 1 && scorer == 2, "bomb kill credits the player who shot the bomb");
+    }
+
+    for(int owner : {1, 2}){
+        Fixture f;
+        Player& shooter = owner == 1 ? f.p1 : f.p2;
+        Player& victim = owner == 1 ? f.p2 : f.p1;
+        shooter.score = f.cfg.target_score - 1;
+        victim.energy = f.cfg.damage;
+        MatchState match{};
+        (owner == 1 ? match.p1_round_wins : match.p2_round_wins) = f.cfg.rounds_to_win - 1;
+        GameState state = GameState::PLAYING;
+        int winner = 0, cd1 = 0, cd2 = 0;
+        float spawnTimer = 0.f, countdownTimer = 0.f;
+        int fragCount = 0;
+        for(int i = 0; i < 3; ++i) setBullet(f.bullets[i], victim.x, victim.y, owner);
+        setBullet(f.bullets[3], shooter.x, shooter.y, owner == 1 ? 2 : 1);
+        projectile_runtime::Hooks hooks{};
+        hooks.applyFragTransition = [&](Player& target, int scorer){
+            ++fragCount;
+            round_runtime::applyFragTransition(f.p1, f.p2, target, scorer, f.cfg, match,
+                                               winner, state, cd1, cd2, spawnTimer, countdownTimer,
+                                               []{}, [](bool){});
+        };
+        simulate(f, synth, hooks);
+        check(fragCount == 1, "winning frame counts only one death despite overlapping bullets");
+        check(shooter.score == f.cfg.target_score && shooter.points == 100,
+              "winning frame awards exactly one frag and 100 points");
+        check((owner == 1 ? match.p1_round_wins : match.p2_round_wins) == f.cfg.rounds_to_win,
+              "winning frame awards exactly one round win");
+        check(winner == owner && state == GameState::GAME_OVER, "winning frame ends the match");
+        check(shooter.energy == 100.f, "later bullets cannot damage the winner after match end");
+    }
+
+    for(int owner : {1, 2}){
+        for(bool bombKill : {false, true}){
+            Fixture f;
+            Player& victim = owner == 1 ? f.p1 : f.p2;
+            victim.energy = f.cfg.damage;
+            // A returning reflected bullet retains its original owner.
+            setBullet(f.bullets[0], victim.x, victim.y, owner);
+            setBullet(f.bullets[1], victim.x, victim.y, owner);
+            if(bombKill) f.bombs[0] = {victim.x, victim.y, 0.f, true, 0};
+            int fragCount = 0, scorer = 0;
+            projectile_runtime::Hooks hooks{};
+            hooks.applyFragTransition = [&](Player& target, int creditedPlayer){
+                ++fragCount;
+                scorer = creditedPlayer;
+                check(&target == &victim, "self-kill identifies the correct victim");
+            };
+            simulate(f, synth, hooks);
+            check(fragCount == 1, "self-kill stops collision processing after one frag");
+            check(scorer == (owner == 1 ? 2 : 1), "bullet and bomb self-kills credit the opponent");
+        }
     }
 
     return failures == 0 ? 0 : 1;

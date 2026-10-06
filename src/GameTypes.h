@@ -24,6 +24,8 @@ enum class GameState : uint8_t { MENU=0, PLAYING=1, PAUSED=2, GAME_OVER=3, COUNT
 struct MatchState {
     int p1_round_wins = 0;
     int p2_round_wins = 0;
+    bool starting_round = true;
+    int last_round_winner = 0;
 };
 
 enum class RoundModifier : uint8_t { SHIELD, RAPID, SPREAD, OVERDRIVE, COUNT };
@@ -113,6 +115,7 @@ struct Player {
     float slowTimer    =0.f;
     float reverseTimer =0.f;
     float overdriveTimer=0.f;
+    int   frags=0;
 };
 
 struct Mirror {
